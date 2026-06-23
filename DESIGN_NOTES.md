@@ -70,33 +70,39 @@ Every structural or routing mechanism must be judged against simple conditional
 centroid baselines. A model score above the global mean is not sufficient when a
 single-token or token-pair table explains most of the target.
 
-## Multiscale additive addressing
+## Adaptive multiscale addressing
 
-A single convex mixture was structurally mismatched to the current vector task:
-independent delayed factors must be added, not averaged. The machine therefore
-uses independent lag-1, lag-2 and lag-4 address namespaces. Channel zero is an
-anchor; later channels are additive residual memories. The lag sequence is a
-generic exponentially spaced temporal sketch, not a semantic decomposition of
-the task.
+A single convex mixture was structurally mismatched to the current tasks:
+independent delayed factors must be added, not averaged. Earlier versions solved
+this by fixing lag-1, lag-2 and lag-4 address namespaces. The theory-alignment
+branch retains additive channels but no longer treats those lags as immutable
+meta-structure.
 
-Each channel receives an exact-address candidate before control-edge or neighbor
-candidates can consume the beam. Responsibilities are normalized per channel,
-so a busy address view cannot erase another view. The active work remains bounded
-by the beam even though total capacity triples.
+`address_lags` now specifies only seed channels. In adaptive mode the machine
+proposes additional temporal views under a bounded meta-rule. Each proposal has
+its own namespace, nodes and local parameters. It first adapts, then freezes for
+a validation tail. The decision criterion is exact whole-channel ablation on
+that frozen tail, not training loss and not the sum of independent node scores.
 
-Address-local vectors are immutable under foreign-context retrieval. A control
-edge may alter selection probability, but it cannot rewrite the destination's
-stored centroid from the source context. This separates local knowledge from
-routing credit.
+Accepted channels remain subject to mature counterfactual auditing. A rejected
+or persistently harmful channel is retired as a structural unit: all of its
+nodes are erased, indexes rebuilt and route references cleaned while unrelated
+logical node identities remain stable.
 
-Exact nodes learn sequential local residual means. Fixed EMA rates were rejected:
-with roughly ten samples per address they remained strongly biased toward node
-initialization. The anchor uses `1/n`; residual stages use a mild recency
-pseudocount to track the still-changing upstream estimates.
+Responsibilities are normalized per enabled channel, so a busy address view
+cannot erase another view. Exact-address nodes still receive a reserved mass;
+control-edge and neighboring candidates receive only the bounded remainder.
+The active work is limited by the beam even while persistent capacity grows.
 
-The benchmark includes a fixed multiscale residual-table control with the same
-lags. The learned machine must be compared against this control, not only against
-a token or token-pair centroid.
+Address-local vectors or logits remain immutable under foreign-context
+retrieval. A control edge may alter selection probability, but it cannot rewrite
+the destination's local knowledge from the source context.
+
+For vector regression, exact nodes learn sequential local residual means. For
+token cross-entropy, enabled channels add local logits before one softmax. The
+fixed `[1,2,4]` model remains available with `adaptive_topology=false` as a
+strong structural control. The adaptive model must be compared against it rather
+than being credited merely for beating a unigram baseline.
 
 ## Token cross-entropy objective
 

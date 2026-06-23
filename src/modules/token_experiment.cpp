@@ -284,6 +284,10 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
     result.eval_examples = total_examples - warmup_examples;
     result.sequence_count = dataset.sequence_count();
     result.address_lags = config.address_lags;
+    result.learned_address_lags = model.learned_address_lags();
+    result.learned_channel_credit = model.learned_channel_credit();
+    result.learned_channel_phase = model.learned_channel_phase();
+    result.topology_events = model.topology_events();
     result.exact_region_mass = config.exact_region_mass;
     result.edge_score_weight = config.edge_score_weight;
     result.softmax_temperature = config.softmax_temperature;
@@ -314,8 +318,36 @@ std::string to_json(const TokenExperimentResult& result) {
         << "  \"sequence_count\": " << result.sequence_count << ",\n"
         << "  \"train_examples\": " << result.train_examples << ",\n"
         << "  \"eval_examples\": " << result.eval_examples << ",\n"
-        << "  \"address_lags\": [" << result.address_lags[0] << ", "
-        << result.address_lags[1] << ", " << result.address_lags[2] << "],\n"
+        << "  \"address_lags\": [";
+    for (std::size_t i = 0; i < result.address_lags.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << result.address_lags[i];
+    }
+    out << "],\n  \"learned_address_lags\": [";
+    for (std::size_t i = 0; i < result.learned_address_lags.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << result.learned_address_lags[i];
+    }
+    out << "],\n  \"learned_channel_credit\": [";
+    for (std::size_t i = 0; i < result.learned_channel_credit.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << result.learned_channel_credit[i];
+    }
+    out << "],\n  \"learned_channel_phase\": [";
+    for (std::size_t i = 0; i < result.learned_channel_phase.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_channel_phase[i]);
+    }
+    out << "],\n  \"topology_events\": [";
+    for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
+        if (i != 0U) out << ", ";
+        const auto& event = result.topology_events[i];
+        out << "{\"step\":" << event.step
+            << ",\"lag\":" << event.lag
+            << ",\"decision\":" << static_cast<unsigned>(event.decision)
+            << ",\"credit\":" << event.credit << "}";
+    }
+    out << "],\n"
         << "  \"exact_region_mass\": " << result.exact_region_mass << ",\n"
         << "  \"edge_score_weight\": " << result.edge_score_weight << ",\n"
         << "  \"softmax_temperature\": " << result.softmax_temperature << ",\n"
@@ -326,6 +358,12 @@ std::string to_json(const TokenExperimentResult& result) {
         << "  \"avg_candidates\": " << result.diagnostics.avg_candidates << ",\n"
         << "  \"created_total\": " << result.diagnostics.created_total << ",\n"
         << "  \"estimated_bytes\": " << result.diagnostics.estimated_bytes << ",\n"
+        << "  \"topology_proposals\": " << result.diagnostics.topology_proposals << ",\n"
+        << "  \"topology_accepted\": " << result.diagnostics.topology_accepted << ",\n"
+        << "  \"topology_rejected\": " << result.diagnostics.topology_rejected << ",\n"
+        << "  \"topology_pruned\": " << result.diagnostics.topology_pruned << ",\n"
+        << "  \"active_channels\": " << result.diagnostics.active_channels << ",\n"
+        << "  \"probe_channels\": " << result.diagnostics.probe_channels << ",\n"
         << "  \"simd_enabled\": "
         << (result.diagnostics.simd_enabled ? "true" : "false") << ",\n";
     emit_metrics("train", result.train);

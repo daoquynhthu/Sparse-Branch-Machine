@@ -1,0 +1,218 @@
+#include "sbm/machine.hpp"
+
+#include "sbm/math.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <stdexcept>
+
+namespace sbm {
+
+bool SparseBranchMachine::channel_enabled(std::size_t channel) const noexcept {
+    if (channel >= topology_.size()) return false;
+    const auto phase = topology_[channel].phase;
+    return phase == ChannelPhase::Seed || phase == ChannelPhase::Probe ||
+           phase == ChannelPhase::Active;
+}
+
+bool SparseBranchMachine::channel_learning_enabled(std::size_t channel) const noexcept {
+    if (!channel_enabled(channel)) return false;
+    const auto& state = topology_[channel];
+    if (state.phase != ChannelPhase::Probe) return true;
+    const auto age = total_steps_ - state.born_step;
+    const auto validation = std::min(config_.topology_validation_steps,
+                                     config_.topology_probe_steps);
+    return age + validation < config_.topology_probe_steps;
+}
+
+std::vector<std::uint64_t> SparseBranchMachine::make_signatures(
+    std::span<const std::uint32_t> window) const {
+    std::vector<std::uint64_t> signatures(topology_.size(), 0U);
+    for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
+        if (!channel_enabled(channel)) continue;
+        signatures[channel] = lagged_token_signature(
+            window, config_.token_alphabet, topology_[channel].lag,
+            config_.seed ^ mix64(static_cast<std::uint64_t>(channel) + 0x9E3779B97F4A7C15ULL));
+    }
+    return signatures;
+}
+
+void SparseBranchMachine::retire_channel(std::size_t channel) {
+    if (channel >= topology_.size() || channel == 0U) return;
+    topology_[channel].phase = ChannelPhase::Retired;
+
+    for (std::size_t slot = ids_.size(); slot-- > 0;) {
+        if (channels_[slot] == channel) erase_slot(slot);
+    }
+    std::vector<NodeId> filtered_route;
+    std::vector<float> filtered_responsibility;
+    filtered_route.reserve(previous_route_.size());
+    filtered_responsibility.reserve(previous_responsibilities_.size());
+    for (std::size_t index = 0; index < previous_route_.size(); ++index) {
+        const auto slot = slot_of(previous_route_[index]);
+        if (slot == SIZE_MAX || channels_[slot] == channel) continue;
+        filtered_route.push_back(previous_route_[index]);
+        filtered_responsibility.push_back(index < previous_responsibilities_.size()
+            ? previous_responsibilities_[index] : 1.0F);
+    }
+    previous_route_ = std::move(filtered_route);
+    previous_responsibilities_ = std::move(filtered_responsibility);
+    trace_.clear();
+    rebuild_indexes();
+}
+
+void SparseBranchMachine::maybe_finalize_topology_probe() {
+    if (!config_.adaptive_topology) return;
+    for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
+        auto& state = topology_[channel];
+        if (state.phase != ChannelPhase::Probe) continue;
+        const auto age = total_steps_ - state.born_step;
+        if (age < config_.topology_probe_steps ||
+            state.observations < config_.topology_min_observations) {
+            return;
+        }
+        const double mean_credit = state.credit_sum /
+            static_cast<double>(std::max<std::uint64_t>(1U, state.observations));
+        if (mean_credit >= static_cast<double>(config_.topology_accept_credit)) {
+            topology_events_.push_back({total_steps_, state.lag,
+                                        TopologyDecision::Accepted,
+                                        static_cast<float>(mean_credit)});
+            state.phase = ChannelPhase::Active;
+            state.born_step = total_steps_;
+            state.observations = 0U;
+            state.credit_sum = 0.0;
+            ++topology_accepted_;
+        } else {
+            topology_events_.push_back({total_steps_, state.lag,
+                                        TopologyDecision::Rejected,
+                                        static_cast<float>(mean_credit)});
+            retire_channel(channel);
+            ++topology_rejected_;
+        }
+        next_probe_step_ = total_steps_ + config_.topology_probe_interval;
+        return;
+    }
+    for (std::size_t channel = 1U; channel < topology_.size(); ++channel) {
+        auto& state = topology_[channel];
+        if (state.phase != ChannelPhase::Active) continue;
+        const auto age = total_steps_ - state.born_step;
+        if (age < config_.topology_prune_patience ||
+            state.observations < config_.topology_prune_patience ||
+            state.credit_ema >= config_.topology_prune_credit) {
+            continue;
+        }
+        topology_events_.push_back({total_steps_, state.lag,
+                                    TopologyDecision::Pruned,
+                                    state.credit_ema});
+        retire_channel(channel);
+        ++topology_pruned_;
+        next_probe_step_ = total_steps_ + config_.topology_probe_interval;
+        return;
+    }
+}
+
+void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
+    maybe_finalize_topology_probe();
+    if (!learn || !config_.adaptive_topology || total_steps_ < next_probe_step_) return;
+
+    for (const auto& state : topology_) {
+        if (state.phase == ChannelPhase::Probe) return;
+    }
+
+    std::size_t enabled = 0U;
+    for (const auto& state : topology_) {
+        if (state.phase == ChannelPhase::Seed || state.phase == ChannelPhase::Active ||
+            state.phase == ChannelPhase::Probe) {
+            ++enabled;
+        }
+    }
+    if (enabled >= config_.max_address_channels) return;
+
+    auto lag_in_use = [&](std::uint32_t lag) {
+        return std::any_of(topology_.begin(), topology_.end(), [&](const auto& state) {
+            return state.phase != ChannelPhase::Retired && state.lag == lag;
+        });
+    };
+
+    std::uint32_t proposal = 0U;
+    for (std::uint32_t attempts = 0U; attempts < config_.topology_max_lag; ++attempts) {
+        if (next_lag_candidate_ > config_.topology_max_lag) next_lag_candidate_ = 2U;
+        const auto candidate = next_lag_candidate_++;
+        if (candidate != 0U && !lag_in_use(candidate)) {
+            proposal = candidate;
+            break;
+        }
+    }
+    if (proposal == 0U) return;
+
+    std::size_t slot = topology_.size();
+    for (std::size_t index = 1U; index < topology_.size(); ++index) {
+        if (topology_[index].phase == ChannelPhase::Retired) {
+            slot = index;
+            break;
+        }
+    }
+    if (slot == topology_.size()) {
+        if (topology_.size() >= config_.max_address_channels) return;
+        topology_.push_back({});
+    }
+
+    topology_[slot] = {proposal, ChannelPhase::Probe, 0.0F, 0.0, 0U, total_steps_};
+    topology_events_.push_back({total_steps_, proposal,
+                                TopologyDecision::Proposed, 0.0F});
+    ++topology_proposals_;
+    next_probe_step_ = total_steps_ + config_.topology_probe_steps;
+}
+
+void SparseBranchMachine::observe_topology_credit(
+    std::span<const float> channel_credit) {
+    if (!config_.adaptive_topology) return;
+    for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
+        auto& state = topology_[channel];
+        if (!channel_enabled(channel) || channel >= channel_credit.size()) continue;
+        const float credit = channel_credit[channel];
+        state.credit_ema = config_.topology_credit_decay * state.credit_ema +
+            (1.0F - config_.topology_credit_decay) * credit;
+        if (state.phase == ChannelPhase::Active) ++state.observations;
+        if (state.phase == ChannelPhase::Probe) {
+            const auto age = total_steps_ - state.born_step;
+            const auto validation = std::min(config_.topology_validation_steps,
+                                             config_.topology_probe_steps);
+            const auto validation_start = config_.topology_probe_steps - validation;
+            if (age >= validation_start &&
+                age >= config_.topology_probe_warmup) {
+                state.credit_sum += static_cast<double>(credit);
+                ++state.observations;
+            }
+        }
+    }
+}
+
+std::vector<std::uint32_t> SparseBranchMachine::learned_address_lags() const {
+    std::vector<std::uint32_t> result;
+    for (const auto& state : topology_) {
+        if (state.phase == ChannelPhase::Seed || state.phase == ChannelPhase::Probe ||
+            state.phase == ChannelPhase::Active) {
+            result.push_back(state.lag);
+        }
+    }
+    return result;
+}
+
+std::vector<float> SparseBranchMachine::learned_channel_credit() const {
+    std::vector<float> result;
+    result.reserve(topology_.size());
+    for (const auto& state : topology_) result.push_back(state.credit_ema);
+    return result;
+}
+
+std::vector<std::uint8_t> SparseBranchMachine::learned_channel_phase() const {
+    std::vector<std::uint8_t> result;
+    result.reserve(topology_.size());
+    for (const auto& state : topology_) {
+        result.push_back(static_cast<std::uint8_t>(state.phase));
+    }
+    return result;
+}
+
+} // namespace sbm

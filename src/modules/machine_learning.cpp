@@ -4,7 +4,6 @@
 #include "sbm/math.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -88,11 +87,8 @@ StepStats SparseBranchMachine::step(std::uint32_t token,
     history_.push_back(token);
     if (history_.size() > config_.context_width) history_.pop_front();
     const std::vector<std::uint32_t> window(history_.begin(), history_.end());
-    std::array<std::uint64_t, kAddressChannelCount> signatures{};
-    for (std::size_t channel = 0; channel < signatures.size(); ++channel) {
-        signatures[channel] = lagged_token_signature(
-            window, config_.token_alphabet, config_.address_lags[channel]);
-    }
+    maybe_begin_topology_probe(learn);
+    const auto signatures = make_signatures(window);
     auto [active, examined] = select_route(signatures);
 
     // Prediction and all metrics are fixed before the target can modify any
@@ -116,6 +112,7 @@ StepStats SparseBranchMachine::step(std::uint32_t token,
     // receive the first unbiased sample of the quantity they are responsible
     // for, rather than starting residual channels at zero.
     for (std::uint8_t channel = 0; channel < signatures.size(); ++channel) {
+        if (!channel_enabled(channel)) continue;
         const auto signature = signatures[channel];
         const auto exact_bucket = bucket_index(channel, signature);
         std::size_t exact_count = 0;
@@ -147,7 +144,8 @@ StepStats SparseBranchMachine::step(std::uint32_t token,
             normalized_mse > config_.split_loss_threshold;
 
         NodeId representative = nearest_exact;
-        if (can_grow && (exact_count == 0 || persistent_conflict)) {
+        if (can_grow && channel_learning_enabled(channel) &&
+            (exact_count == 0 || persistent_conflict)) {
             const float channel_mass = channel == 0U ? 1.0F : config_.residual_channel_gain;
             for (std::uint32_t component = 0; component < config_.vector_dim; ++component) {
                 initial_value[component] =
@@ -180,6 +178,30 @@ StepStats SparseBranchMachine::step(std::uint32_t token,
                          config_.vector_dim);
         }
     }
+
+    std::vector<float> channel_credit(signatures.size(), 0.0F);
+    std::vector<float> without_prediction(config_.vector_dim, 0.0F);
+    for (std::size_t channel = 0; channel < signatures.size(); ++channel) {
+        if (!channel_enabled(channel)) continue;
+        std::copy(prediction_buffer_.begin(), prediction_buffer_.end(),
+                  without_prediction.begin());
+        bool removed = false;
+        for (const auto& node : active) {
+            if (node.channel != channel || std::abs(node.responsibility) < 1e-7F) continue;
+            const auto slot = slot_of(node.id);
+            if (slot == SIZE_MAX) continue;
+            detail::axpy(without_prediction.data(),
+                         output_vectors_.data() + slot * config_.vector_dim,
+                         -node.responsibility, config_.vector_dim);
+            removed = true;
+        }
+        if (!removed) continue;
+        const float without_mse = detail::squared_distance(
+            without_prediction.data(), target.data(), target.size()) / dimension;
+        const float without_normalized = without_mse / std::max(target_energy, 1e-5F);
+        channel_credit[channel] = without_normalized - normalized_mse;
+    }
+    observe_topology_credit(channel_credit);
 
     std::vector<NodeId> route;
     std::vector<float> contributions;
@@ -217,7 +239,7 @@ StepStats SparseBranchMachine::step(std::uint32_t token,
             }
             for (const auto* node : exact_nodes) {
                 const auto slot = slot_of(node->id);
-                if (slot == SIZE_MAX) continue;
+                if (slot == SIZE_MAX || !channel_learning_enabled(node->channel)) continue;
                 if (visits_[slot] == 0 && !hot_indexed_[slot]) {
                     hot_buckets_[bucket_index(channels_[slot], prototypes_[slot])]
                         .push_back(ids_[slot]);

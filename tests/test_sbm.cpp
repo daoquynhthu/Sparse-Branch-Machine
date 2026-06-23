@@ -130,5 +130,42 @@ int main() {
     assert(token_result.eval_examples == token_dataset.example_count() - 2500);
     assert(token_result.oracle_cross_entropy > 0.0);
 
+    // Adaptive topology must propose, validate and safely reject an unhelpful
+    // channel without disturbing the seed channel.
+    sbm::Config topology_config = token_config;
+    topology_config.adaptive_topology = true;
+    topology_config.address_lags = {1U};
+    topology_config.max_address_channels = 3U;
+    topology_config.beam_width = 3U;
+    topology_config.topology_probe_interval = 8U;
+    topology_config.topology_probe_steps = 48U;
+    topology_config.topology_validation_steps = 16U;
+    topology_config.topology_min_observations = 8U;
+    topology_config.topology_accept_credit = 10.0F;
+    topology_config.topology_prune_patience = 10000U;
+    sbm::SparseBranchMachine topology_machine(topology_config);
+    for (std::size_t i = 0; i < 256; ++i) {
+        const auto position = i % (token_dataset.tokens.size() - 1U);
+        (void)topology_machine.step_token(token_dataset.tokens[position],
+                                          token_dataset.tokens[position + 1U], true);
+    }
+    const auto topology_diag = topology_machine.diagnostics();
+    assert(topology_diag.topology_proposals > 0U);
+    assert(topology_diag.topology_rejected > 0U);
+    const auto learned_lags = topology_machine.learned_address_lags();
+    assert(!learned_lags.empty() && learned_lags.front() == 1U);
+
+    sbm::Config fixed_topology_config = token_config;
+    fixed_topology_config.adaptive_topology = false;
+    fixed_topology_config.address_lags = {1U, 2U, 4U};
+    sbm::SparseBranchMachine fixed_topology_machine(fixed_topology_config);
+    for (std::size_t i = 0; i < 128; ++i) {
+        (void)fixed_topology_machine.step_token(token_dataset.tokens[i],
+                                                token_dataset.tokens[i + 1U], true);
+    }
+    assert(fixed_topology_machine.diagnostics().topology_proposals == 0U);
+    assert(fixed_topology_machine.learned_address_lags() ==
+           fixed_topology_config.address_lags);
+
     std::cout << "all tests passed; SIMD=" << sbm::simd_available() << '\n';
 }

@@ -1,0 +1,202 @@
+{
+  "dataset_hash": 2195559232913211147,
+  "eval_cross_entropy": 3.41936467,
+  "unigram_baseline_eval_cross_entropy": 3.46580394,
+  "multiscale_baseline_eval_cross_entropy": 3.39917707,
+  "oracle_cross_entropy": 2.91963489,
+  "learned_address_lags": [
+    1,
+    2
+  ],
+  "learned_channel_credit": [
+    0.02281684,
+    0.01117602,
+    -0.01268333,
+    -0.01009831,
+    -0.00560197
+  ],
+  "learned_channel_phase": [
+    0,
+    2,
+    3,
+    3,
+    3
+  ],
+  "topology_proposals": 13,
+  "topology_accepted": 3,
+  "topology_rejected": 10,
+  "topology_pruned": 2,
+  "live_nodes": 8212,
+  "avg_active": 5.91672264,
+  "avg_candidates": 35.48152785,
+  "topology_events": [
+    {
+      "step": 2048,
+      "lag": 2,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 6144,
+      "lag": 2,
+      "decision": 1,
+      "credit": 0.00076011
+    },
+    {
+      "step": 8192,
+      "lag": 3,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 12288,
+      "lag": 3,
+      "decision": 2,
+      "credit": -0.00181397
+    },
+    {
+      "step": 14336,
+      "lag": 4,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 18432,
+      "lag": 4,
+      "decision": 2,
+      "credit": -0.00405464
+    },
+    {
+      "step": 20480,
+      "lag": 5,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 24576,
+      "lag": 5,
+      "decision": 1,
+      "credit": 0.00116928
+    },
+    {
+      "step": 26624,
+      "lag": 6,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 30720,
+      "lag": 6,
+      "decision": 1,
+      "credit": 0.00100323
+    },
+    {
+      "step": 32768,
+      "lag": 7,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 36864,
+      "lag": 7,
+      "decision": 2,
+      "credit": -0.00220235
+    },
+    {
+      "step": 38912,
+      "lag": 8,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 43008,
+      "lag": 8,
+      "decision": 2,
+      "credit": -0.00118003
+    },
+    {
+      "step": 45056,
+      "lag": 9,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 49152,
+      "lag": 9,
+      "decision": 2,
+      "credit": -0.00039629
+    },
+    {
+      "step": 51200,
+      "lag": 10,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 55296,
+      "lag": 10,
+      "decision": 2,
+      "credit": -0.00206227
+    },
+    {
+      "step": 57344,
+      "lag": 11,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 61440,
+      "lag": 11,
+      "decision": 2,
+      "credit": -0.00364333
+    },
+    {
+      "step": 61441,
+      "lag": 5,
+      "decision": 3,
+      "credit": -0.01017201
+    },
+    {
+      "step": 63489,
+      "lag": 12,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 67585,
+      "lag": 12,
+      "decision": 2,
+      "credit": -0.00674629
+    },
+    {
+      "step": 67652,
+      "lag": 6,
+      "decision": 3,
+      "credit": -0.01009831
+    },
+    {
+      "step": 69700,
+      "lag": 13,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 73796,
+      "lag": 13,
+      "decision": 2,
+      "credit": -0.00520997
+    },
+    {
+      "step": 75844,
+      "lag": 14,
+      "decision": 0,
+      "credit": 0.0
+    },
+    {
+      "step": 79940,
+      "lag": 14,
+      "decision": 2,
+      "credit": -0.00732211
+    }
+  ]
+}

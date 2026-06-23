@@ -35,6 +35,12 @@ public:
     [[nodiscard]] std::span<const float> last_prediction() const noexcept {
         return prediction_buffer_;
     }
+    [[nodiscard]] std::vector<std::uint32_t> learned_address_lags() const;
+    [[nodiscard]] std::vector<float> learned_channel_credit() const;
+    [[nodiscard]] std::vector<std::uint8_t> learned_channel_phase() const;
+    [[nodiscard]] const std::vector<TopologyEvent>& topology_events() const noexcept {
+        return topology_events_;
+    }
 
 private:
     struct CandidateNode {
@@ -49,6 +55,14 @@ private:
         bool exact_region{};
         std::uint8_t channel{};
     };
+    struct AddressChannelState {
+        std::uint32_t lag{};
+        ChannelPhase phase{ChannelPhase::Retired};
+        float credit_ema{};
+        double credit_sum{};
+        std::uint64_t observations{};
+        std::uint64_t born_step{};
+    };
     struct TraceFrame {
         std::vector<NodeId> route;
         std::vector<float> contribution;
@@ -56,6 +70,14 @@ private:
     };
 
     [[nodiscard]] std::uint32_t bucket(std::uint64_t signature) const noexcept;
+    [[nodiscard]] bool channel_enabled(std::size_t channel) const noexcept;
+    [[nodiscard]] bool channel_learning_enabled(std::size_t channel) const noexcept;
+    [[nodiscard]] std::vector<std::uint64_t> make_signatures(
+        std::span<const std::uint32_t> window) const;
+    void maybe_begin_topology_probe(bool learn);
+    void maybe_finalize_topology_probe();
+    void observe_topology_credit(std::span<const float> channel_credit);
+    void retire_channel(std::size_t channel);
     [[nodiscard]] std::size_t bucket_index(std::uint8_t channel,
                                            std::uint64_t signature) const noexcept;
     [[nodiscard]] NodeId new_node(std::uint64_t signature, std::span<const float> initial,
@@ -88,6 +110,14 @@ private:
                                       float edge_prior) const noexcept;
 
     Config config_;
+    std::vector<AddressChannelState> topology_;
+    std::uint32_t next_lag_candidate_{2U};
+    std::uint64_t next_probe_step_{};
+    std::uint64_t topology_proposals_{};
+    std::uint64_t topology_accepted_{};
+    std::uint64_t topology_rejected_{};
+    std::uint64_t topology_pruned_{};
+    std::vector<TopologyEvent> topology_events_;
     std::uint64_t rng_state_{};
 
     std::vector<NodeId> ids_;

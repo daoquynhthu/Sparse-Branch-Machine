@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(sparse_branch_machine VERSION 2.0.0 LANGUAGES CXX)
+project(sparse_branch_machine VERSION 3.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,6 +36,7 @@ sbm_configure_target(sbm_core)
 
 add_library(sbm_machine SHARED
   src/modules/machine_storage.cpp
+  src/modules/machine_topology.cpp
   src/modules/machine_routing.cpp
   src/modules/machine_learning.cpp
   src/modules/token_objective.cpp

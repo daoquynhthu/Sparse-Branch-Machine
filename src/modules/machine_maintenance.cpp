@@ -146,8 +146,13 @@ void SparseBranchMachine::prefill_distractors(std::size_t count) {
             const auto sample = static_cast<int>(detail::next_random(rng_state_) % 2001U) - 1000;
             component = static_cast<float>(sample) / 1000.0F;
         }
-        const auto channel = static_cast<std::uint8_t>(
-            detail::next_random(rng_state_) % config_.address_lags.size());
+        std::vector<std::uint8_t> enabled_channels;
+        for (std::uint8_t channel = 0; channel < topology_.size(); ++channel) {
+            if (channel_enabled(channel)) enabled_channels.push_back(channel);
+        }
+        if (enabled_channels.empty()) break;
+        const auto channel = enabled_channels[static_cast<std::size_t>(
+            detail::next_random(rng_state_) % enabled_channels.size())];
         (void)new_node(detail::next_random(rng_state_), value, kInvalidNode, channel);
     }
 }
@@ -195,12 +200,26 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         id_to_slot_.capacity() * sizeof(std::uint32_t) +
         edge_capacity * sizeof(Edge) +
         bucket_capacity * sizeof(NodeId);
+    std::uint64_t seed_channels = 0U;
+    std::uint64_t probe_channels = 0U;
+    std::uint64_t active_channels = 0U;
+    std::uint64_t retired_channels = 0U;
+    for (const auto& state : topology_) {
+        switch (state.phase) {
+            case ChannelPhase::Seed: ++seed_channels; break;
+            case ChannelPhase::Probe: ++probe_channels; break;
+            case ChannelPhase::Active: ++active_channels; break;
+            case ChannelPhase::Retired: ++retired_channels; break;
+        }
+    }
     return {total_steps_, ids_.size(), next_id_, edge_count,
             static_cast<double>(total_active_) / static_cast<double>(denominator),
             static_cast<double>(total_candidates_) / static_cast<double>(denominator),
             total_created_, total_merged_, total_pruned_, cold, warm, mature, dormant,
             anchor, residual, stale_bucket_refs_skipped_, stale_edge_refs_skipped_,
-            bytes, simd_available()};
+            bytes, topology_proposals_, topology_accepted_, topology_rejected_,
+            topology_pruned_, seed_channels, probe_channels, active_channels, retired_channels,
+            simd_available()};
 }
 
 } // namespace sbm

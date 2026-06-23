@@ -8,9 +8,9 @@ namespace sbm {
 SparseBranchMachine::SparseBranchMachine(Config config)
     : config_(config),
       rng_state_(config.seed),
-      buckets_(config.address_lags.size() * (std::size_t{1} << config.bucket_bits)),
-      hot_buckets_(config.address_lags.size() * (std::size_t{1} << config.bucket_bits)),
-      bucket_last_split_step_(config.address_lags.size() *
+      buckets_(static_cast<std::size_t>(config.max_address_channels) * (std::size_t{1} << config.bucket_bits)),
+      hot_buckets_(static_cast<std::size_t>(config.max_address_channels) * (std::size_t{1} << config.bucket_bits)),
+      bucket_last_split_step_(static_cast<std::size_t>(config.max_address_channels) *
                               (std::size_t{1} << config.bucket_bits), 0),
       prediction_buffer_(config.vector_dim, 0.0F),
       logit_buffer_(config.vector_dim, 0.0F) {
@@ -20,12 +20,17 @@ SparseBranchMachine::SparseBranchMachine(Config config)
     if (config.bucket_bits == 0 || config.bucket_bits > 20) {
         throw std::invalid_argument("bucket_bits must be in [1,20]");
     }
-    if (config.beam_width < config.address_lags.size() ||
+    if (config.address_lags.empty() || config.max_address_channels == 0U ||
+        config.max_address_channels > kMaxAddressChannels ||
+        config.address_lags.size() > config.max_address_channels ||
+        config.beam_width < (config.adaptive_topology
+            ? config.max_address_channels
+            : config.address_lags.size()) ||
         config.bucket_scan_limit == 0 || config.max_edges_per_node == 0 ||
         config.max_specializations_per_bucket == 0) {
         throw std::invalid_argument("invalid routing budget");
     }
-    if (config.address_lags.front() == 0U) {
+    if (config.address_lags.front() == 0U || config.topology_max_lag == 0U) {
         throw std::invalid_argument("address lags must be positive");
     }
     if (!std::all_of(config.address_lags.begin(), config.address_lags.end(),
@@ -39,7 +44,13 @@ SparseBranchMachine::SparseBranchMachine(Config config)
             }
         }
     }
-    if (config.exact_region_mass < 0.0F || config.exact_region_mass > 1.0F ||
+    if (config.topology_probe_steps == 0U ||
+        config.topology_validation_steps == 0U ||
+        config.topology_validation_steps > config.topology_probe_steps ||
+        config.topology_min_observations == 0U ||
+        config.topology_min_observations > config.topology_validation_steps ||
+        config.topology_credit_decay < 0.0F || config.topology_credit_decay >= 1.0F ||
+        config.exact_region_mass < 0.0F || config.exact_region_mass > 1.0F ||
         config.residual_channel_gain <= 0.0F ||
         config.residual_recency_pseudocount < 0.0F) {
         throw std::invalid_argument("invalid mixture or residual configuration");
@@ -51,6 +62,13 @@ SparseBranchMachine::SparseBranchMachine(Config config)
         config.logit_decay < 0.0F || config.logit_decay >= 1.0F) {
         throw std::invalid_argument("invalid token-objective configuration");
     }
+    topology_.reserve(config.max_address_channels);
+    for (std::size_t index = 0; index < config.address_lags.size(); ++index) {
+        topology_.push_back({config.address_lags[index],
+                             index == 0U ? ChannelPhase::Seed : ChannelPhase::Active,
+                             0.0F, 0.0, 0U, 0U});
+    }
+    next_probe_step_ = config.topology_probe_interval;
 }
 
 void SparseBranchMachine::reset_sequence() {
@@ -85,7 +103,7 @@ NodeId SparseBranchMachine::new_node(std::uint64_t signature,
                                      NodeId parent,
                                      std::uint8_t channel) {
     if (next_id_ == kInvalidNode) throw std::overflow_error("node ids exhausted");
-    if (channel >= config_.address_lags.size()) {
+    if (channel >= topology_.size() || !channel_enabled(channel)) {
         throw std::out_of_range("invalid address channel");
     }
     const NodeId id = next_id_++;

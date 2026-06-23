@@ -1,0 +1,36 @@
+{
+  "task": {
+    "alphabet": null,
+    "hidden_dim": null,
+    "interaction_strength": 0.2,
+    "length": null,
+    "math_temperature": 0.8,
+    "noise_std": null,
+    "seeds": [
+      7,
+      11,
+      19
+    ],
+    "sequence_length": 1024,
+    "sequences": 64,
+    "task": "token-ce",
+    "vector_dim": null,
+    "vocab_size": 32,
+    "warmup": 40000
+  },
+  "search_parameters": [
+    "topology_probe_interval",
+    "topology_probe_steps",
+    "topology_validation_steps",
+    "topology_min_observations",
+    "topology_accept_credit"
+  ],
+  "objective": "minimize mean eval_cross_entropy",
+  "best": {
+    "config": {},
+    "id": "44136fa355b3678a",
+    "mean_eval_cross_entropy": 3.4286542899999994,
+    "mean_eval_r2": null
+  },
+  "note": "Automatic successive-halving search retained the unchanged default configuration on the shorter calibration task."
+}

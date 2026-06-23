@@ -6,3 +6,5 @@ __pycache__/
 *.pyc
 tuning_*.json
 best_config*.json
+!research_results/
+!research_results/*.json

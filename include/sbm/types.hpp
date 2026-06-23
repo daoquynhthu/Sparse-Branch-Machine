@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -9,9 +8,18 @@ namespace sbm {
 
 using NodeId = std::uint32_t;
 inline constexpr NodeId kInvalidNode = UINT32_MAX;
-inline constexpr std::size_t kAddressChannelCount = 3U;
+inline constexpr std::size_t kMaxAddressChannels = 8U;
 
 enum class NodePhase : std::uint8_t { Cold, Warm, Mature, Dormant };
+enum class ChannelPhase : std::uint8_t { Seed, Probe, Active, Retired };
+enum class TopologyDecision : std::uint8_t { Proposed, Accepted, Rejected, Pruned };
+
+struct TopologyEvent {
+    std::uint64_t step{};
+    std::uint32_t lag{};
+    TopologyDecision decision{TopologyDecision::Proposed};
+    float credit{};
+};
 
 enum class ObjectiveKind : std::uint8_t {
     VectorRegression = 0U,
@@ -52,9 +60,21 @@ struct Config {
     float responsibility_temperature{3.0F};
     float exact_region_mass{0.88F};
     float min_update_responsibility{0.01F};
-    // Generic exponentially spaced temporal address views.  Channel zero is
-    // the primary prediction anchor; later channels store additive residuals.
-    std::array<std::uint32_t, kAddressChannelCount> address_lags{1U, 2U, 4U};
+    // Seed address views. In adaptive mode these are only the initial topology;
+    // additional temporal views are proposed and retained by measured predictive credit.
+    std::vector<std::uint32_t> address_lags{1U};
+    bool adaptive_topology{true};
+    std::uint32_t max_address_channels{6};
+    std::uint32_t topology_max_lag{16};
+    std::uint32_t topology_probe_interval{2048};
+    std::uint32_t topology_probe_warmup{512};
+    std::uint32_t topology_probe_steps{4096};
+    std::uint32_t topology_validation_steps{1024};
+    std::uint32_t topology_min_observations{512};
+    float topology_accept_credit{0.0005F};
+    float topology_credit_decay{0.995F};
+    std::uint32_t topology_prune_patience{32768};
+    float topology_prune_credit{-0.01F};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};
     float residual_mature_learning_rate{0.030F};
@@ -111,6 +131,14 @@ struct Diagnostics {
     std::uint64_t stale_bucket_refs_skipped{};
     std::uint64_t stale_edge_refs_skipped{};
     std::uint64_t estimated_bytes{};
+    std::uint64_t topology_proposals{};
+    std::uint64_t topology_accepted{};
+    std::uint64_t topology_rejected{};
+    std::uint64_t topology_pruned{};
+    std::uint64_t seed_channels{};
+    std::uint64_t probe_channels{};
+    std::uint64_t active_channels{};
+    std::uint64_t retired_channels{};
     bool simd_enabled{};
 };
 

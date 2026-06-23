@@ -31,11 +31,11 @@ Default calibration:
 - metrics: NLL, bits/token, perplexity, top-1/top-5 and target probability;
 - oracle NLL: recorded by the mathematical generator.
 
-Across seeds 7, 11 and 19, the default model obtains mean frozen NLL about 3.411,
-versus about 3.466 for the unigram baseline and about 2.914 for the generator
-oracle.  The fixed multiscale conditional-table control remains stronger at
-about 3.392.  The task therefore exposes a real remaining gap instead of
-saturating.
+On the theory-alignment branch the default topology starts from lag 1 and
+learns which additional address channels survive. Across seeds 7, 11 and 19 it
+obtains mean frozen NLL 3.41847 and finishes with learned lags `[1,2]`. A fixed
+`[1,2,4]` control obtains 3.41132, the unigram baseline is about 3.466 and the
+generator oracle about 2.914. The unresolved gap is retained deliberately.
 
 ## Tokenizer alignment
 
@@ -69,27 +69,24 @@ The previous continuous-vector mathematical task remains available as
 `--task vector`.  It is useful for regression experiments and SIMD validation.
 The dataset handle and experiment API dispatch automatically by dataset kind.
 
-## Sparse token learning
+## Adaptive sparse token learning
 
-Each active node stores a local logit vector.  The three temporal address views
-contribute additively to the aggregate logits:
-
-```text
-logits = lag-1 local logits + lag-2 local logits + lag-4 local logits
-p      = softmax(logits / temperature)
-```
-
-For an exact-address node with responsibility `r`, local learning applies the
-cross-entropy gradient only to that node:
+Each active node stores a local logit vector. The model begins with a seed
+address topology, normally lag 1. Additional temporal channels are proposed at
+runtime, locally adapted, frozen for a validation tail and accepted only when
+exact channel ablation improves cross-entropy.
 
 ```text
-local_logits += learning_rate * r * (smoothed_one_hot(target) - p)
+seed channel -> propose lag -> adapt local nodes -> freeze candidate
+             -> ablate whole channel -> accept or erase
 ```
 
-Nodes reached through foreign control edges are read-only; the edge may receive
-routing credit, but the destination node is not overwritten by another address
-context.  Logits are re-centered after each update because softmax is invariant
-to a shared offset.
+Accepted channels contribute additive logits. Exact-address nodes receive local
+cross-entropy gradients; nodes recalled through foreign control edges remain
+read-only. Accepted non-seed channels are audited continuously and can later be
+retired if their sustained counterfactual contribution becomes negative.
+
+All topology decisions are emitted in result JSON. See `THEORY_ALIGNMENT.md`.
 
 ## Shared-library interface
 
@@ -153,9 +150,10 @@ part of the accepted workflow.
 ## Current limits
 
 - Local token output is still a dense vector over the vocabulary.
-- The three temporal address lags remain fixed meta-structure.
-- The model is close to, but does not beat, the fixed multiscale conditional
-  table on the present mathematical token task.
+- Proposal generation still enumerates temporal lags; arbitrary address
+  programs are not yet synthesized.
+- The adaptive topology currently retains `[1,2]` and remains weaker than the
+  fixed `[1,2,4]` control on the present task.
 - Control edges carry routing credit only; they do not yet transform logits.
 - Formal tokenizer ID ingestion is implemented, but corpus streaming, sharding,
   masking and distributed checkpointing are not yet present.

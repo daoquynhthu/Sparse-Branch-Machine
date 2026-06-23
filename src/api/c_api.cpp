@@ -128,28 +128,23 @@ bool parse_bool(std::string_view text, const char* name) {
     throw std::invalid_argument(std::string("invalid boolean for ") + name);
 }
 
-std::array<std::uint32_t, sbm::kAddressChannelCount> parse_lags(std::string_view text) {
-    std::array<std::uint32_t, sbm::kAddressChannelCount> result{};
+std::vector<std::uint32_t> parse_lags(std::string_view text) {
+    std::vector<std::uint32_t> result;
     std::size_t offset = 0;
-    for (std::size_t i = 0; i < result.size(); ++i) {
+    while (offset <= text.size()) {
         const auto comma = text.find(',', offset);
         const auto part = text.substr(offset, comma == std::string_view::npos
                                               ? std::string_view::npos
                                               : comma - offset);
         if (part.empty()) throw std::invalid_argument("address_lags contains an empty item");
-        result[i] = parse_integer<std::uint32_t>(part, "address_lags");
-        if (comma == std::string_view::npos) {
-            if (i + 1U != result.size()) {
-                throw std::invalid_argument("address_lags must contain exactly three values");
-            }
-            offset = text.size();
-        } else {
-            offset = comma + 1U;
+        result.push_back(parse_integer<std::uint32_t>(part, "address_lags"));
+        if (result.size() > sbm::kMaxAddressChannels) {
+            throw std::invalid_argument("too many address_lags");
         }
+        if (comma == std::string_view::npos) break;
+        offset = comma + 1U;
     }
-    if (offset != text.size()) {
-        throw std::invalid_argument("address_lags must contain exactly three values");
-    }
+    if (result.empty()) throw std::invalid_argument("address_lags must not be empty");
     return result;
 }
 
@@ -192,7 +187,19 @@ constexpr ParameterDescriptor kParameters[] = {
     {"responsibility_temperature", "float", "3.0", "0.25", "12.0", "log", true, true, false, "Soft responsibility temperature within a route."},
     {"exact_region_mass", "float", "0.88", "0.50", "1.0", "linear", true, true, false, "Prediction mass reserved for exact address regions."},
     {"min_update_responsibility", "float", "0.01", "0.0", "0.20", "linear", true, true, false, "Minimum local responsibility required for a parameter update."},
-    {"address_lags", "uint32[3]", "1,2,4", "", "", "categorical", false, false, false, "Three positive, unique temporal address lags."},
+    {"address_lags", "uint32[]", "1", "", "", "categorical", false, false, false, "Seed temporal address lags; adaptive topology may add more."},
+    {"adaptive_topology", "bool", "true", "", "", "categorical", false, false, false, "Enable predictive-credit topology proposals."},
+    {"max_address_channels", "uint32", "6", "1", "8", "linear", true, false, false, "Maximum simultaneous address channels."},
+    {"topology_max_lag", "uint32", "16", "2", "256", "log", true, false, false, "Largest temporal lag eligible for proposal."},
+    {"topology_probe_interval", "uint32", "2048", "128", "16384", "log", true, false, false, "Delay between topology proposals."},
+    {"topology_probe_warmup", "uint32", "512", "0", "4096", "linear", true, false, false, "Probe steps ignored before credit collection."},
+    {"topology_probe_steps", "uint32", "4096", "512", "32768", "log", true, false, false, "Lifetime of a candidate address channel."},
+    {"topology_validation_steps", "uint32", "1024", "128", "8192", "log", true, false, false, "Frozen tail used for out-of-sample topology selection."},
+    {"topology_min_observations", "uint32", "512", "64", "8192", "log", true, false, false, "Minimum probe observations before a decision."},
+    {"topology_accept_credit", "float", "0.0005", "0.0", "0.05", "linear", true, false, false, "Mean counterfactual NLL gain required to retain a channel."},
+    {"topology_credit_decay", "float", "0.995", "0.90", "0.9999", "linear", true, false, false, "EMA decay for address-channel credit."},
+    {"topology_prune_patience", "uint32", "32768", "512", "65536", "log", true, false, false, "Mature observations required before channel retirement."},
+    {"topology_prune_credit", "float", "-0.01", "-0.05", "0.0", "linear", true, false, false, "Credit threshold for retiring an accepted channel."},
     {"residual_channel_gain", "float", "1.0", "0.25", "2.0", "linear", true, true, false, "Gain applied to additive residual channels."},
     {"residual_learning_rate", "float", "0.10", "0.005", "0.50", "log", true, false, false, "Legacy residual update cap used by non-mean paths."},
     {"residual_mature_learning_rate", "float", "0.03", "0.001", "0.20", "log", true, false, false, "Legacy mature residual update cap."},
@@ -243,6 +250,18 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_FLOAT(exact_region_mass)
     SBM_SET_FLOAT(min_update_responsibility)
     if (name == "address_lags") { config.address_lags = parse_lags(value); return true; }
+    SBM_SET_BOOL(adaptive_topology)
+    SBM_SET_UINT(max_address_channels)
+    SBM_SET_UINT(topology_max_lag)
+    SBM_SET_UINT(topology_probe_interval)
+    SBM_SET_UINT(topology_probe_warmup)
+    SBM_SET_UINT(topology_probe_steps)
+    SBM_SET_UINT(topology_validation_steps)
+    SBM_SET_UINT(topology_min_observations)
+    SBM_SET_FLOAT(topology_accept_credit)
+    SBM_SET_FLOAT(topology_credit_decay)
+    SBM_SET_UINT(topology_prune_patience)
+    SBM_SET_FLOAT(topology_prune_credit)
     SBM_SET_FLOAT(residual_channel_gain)
     SBM_SET_FLOAT(residual_learning_rate)
     SBM_SET_FLOAT(residual_mature_learning_rate)
@@ -295,8 +314,24 @@ std::string config_json(const sbm::Config& c) {
         << "  \"responsibility_temperature\": " << c.responsibility_temperature << ",\n"
         << "  \"exact_region_mass\": " << c.exact_region_mass << ",\n"
         << "  \"min_update_responsibility\": " << c.min_update_responsibility << ",\n"
-        << "  \"address_lags\": [" << c.address_lags[0] << ", " << c.address_lags[1]
-        << ", " << c.address_lags[2] << "],\n"
+        << "  \"address_lags\": [";
+    for (std::size_t i = 0; i < c.address_lags.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << c.address_lags[i];
+    }
+    out << "],\n"
+        << "  \"adaptive_topology\": " << c.adaptive_topology << ",\n"
+        << "  \"max_address_channels\": " << c.max_address_channels << ",\n"
+        << "  \"topology_max_lag\": " << c.topology_max_lag << ",\n"
+        << "  \"topology_probe_interval\": " << c.topology_probe_interval << ",\n"
+        << "  \"topology_probe_warmup\": " << c.topology_probe_warmup << ",\n"
+        << "  \"topology_probe_steps\": " << c.topology_probe_steps << ",\n"
+        << "  \"topology_validation_steps\": " << c.topology_validation_steps << ",\n"
+        << "  \"topology_min_observations\": " << c.topology_min_observations << ",\n"
+        << "  \"topology_accept_credit\": " << c.topology_accept_credit << ",\n"
+        << "  \"topology_credit_decay\": " << c.topology_credit_decay << ",\n"
+        << "  \"topology_prune_patience\": " << c.topology_prune_patience << ",\n"
+        << "  \"topology_prune_credit\": " << c.topology_prune_credit << ",\n"
         << "  \"residual_channel_gain\": " << c.residual_channel_gain << ",\n"
         << "  \"residual_learning_rate\": " << c.residual_learning_rate << ",\n"
         << "  \"residual_mature_learning_rate\": " << c.residual_mature_learning_rate << ",\n"
@@ -371,8 +406,8 @@ const std::string& static_schema() {
 
 extern "C" {
 
-uint32_t sbm_api_version(void) { return 2U; }
-const char* sbm_api_version_string(void) { return "2.0.0"; }
+uint32_t sbm_api_version(void) { return 3U; }
+const char* sbm_api_version_string(void) { return "3.0.0"; }
 const char* sbm_last_error(void) { return g_last_error.c_str(); }
 const char* sbm_parameter_schema_json(void) { return static_schema().c_str(); }
 

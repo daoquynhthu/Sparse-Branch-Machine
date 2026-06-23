@@ -290,3 +290,35 @@ The automated tuner was updated to minimize cross-entropy for token tasks,
 filter parameters by task applicability and always include the default
 configuration.  A nine-candidate, three-seed successive-halving run retained the
 default configuration as best; no manually selected override was accepted.
+
+## 2026-06-23 — theory-alignment-v9: learned address topology
+
+A new `theory-alignment-v9` branch was created from committed token-training
+baseline `b47713b` in a separate Git worktree.  The existing dirty worktree was
+left untouched.
+
+The fixed `lag-1/2/4` topology was replaced in the default research mode by one
+seed channel and an explicit topology lifecycle.  Candidate lag channels are
+proposed one at a time, trained locally, frozen for an out-of-sample validation
+tail and evaluated by exact whole-channel ablation.  Positive validation credit
+accepts the channel; rejection deletes all of its nodes and rebuilds indexes.
+Accepted channels receive continuing counterfactual credit and can be retired
+when mature credit is strongly negative.
+
+An earlier version selected structure on the same samples used to train the
+probe.  It accepted spurious lag-5 and lag-9 channels on one seed.  This was
+rejected as training-error model selection.  The accepted implementation adds a
+frozen validation tail and records every proposal, acceptance, rejection and
+retirement as a `TopologyEvent`.
+
+Three-seed full-task results are intentionally below the fixed-topology control:
+
+- adaptive seed `[1]`: mean frozen NLL 3.41847;
+- fixed `[1,2,4]`: mean frozen NLL 3.41132.
+
+All adaptive runs end with `[1,2]`.  In seed 7 the model proposes lag 4 at step
+14,336 and rejects it at step 18,432 with validation credit -0.00405.  It briefly
+accepts lag 5 and lag 6, then mature auditing retires both after their credit
+falls below the conservative negative threshold.  This demonstrates a complete
+and auditable structural lifecycle, while also showing that the current local
+learner does not yet assign positive reusable value to the known lag-4 factor.

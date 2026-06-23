@@ -1,0 +1,120 @@
+{
+  "adaptive": {
+    "runs": [
+      {
+        "dataset_hash": 2195559232913211147,
+        "eval_cross_entropy": 3.41936467,
+        "learned_address_lags": [
+          1,
+          2
+        ],
+        "learned_channel_credit": [
+          0.02281684,
+          0.01117602,
+          -0.01268333,
+          -0.01009831,
+          -0.00560197
+        ],
+        "learned_channel_phase": [
+          0,
+          2,
+          3,
+          3,
+          3
+        ],
+        "topology_proposals": 13,
+        "topology_accepted": 3,
+        "topology_rejected": 10,
+        "topology_pruned": 2,
+        "live_nodes": 8212,
+        "avg_active": 5.91672264,
+        "avg_candidates": 35.48152785
+      },
+      {
+        "dataset_hash": 148259111409531357,
+        "eval_cross_entropy": 3.41766682,
+        "learned_address_lags": [
+          1,
+          2
+        ],
+        "learned_channel_credit": [
+          0.0382806,
+          0.01088616,
+          0.00314516,
+          -0.01000577,
+          -0.01149444
+        ],
+        "learned_channel_phase": [
+          0,
+          2,
+          3,
+          3,
+          3
+        ],
+        "topology_proposals": 13,
+        "topology_accepted": 3,
+        "topology_rejected": 10,
+        "topology_pruned": 2,
+        "live_nodes": 8218,
+        "avg_active": 5.89857108,
+        "avg_candidates": 35.98796257
+      },
+      {
+        "dataset_hash": 18033101719306103290,
+        "eval_cross_entropy": 3.41838063,
+        "learned_address_lags": [
+          1,
+          2
+        ],
+        "learned_channel_credit": [
+          0.03557252,
+          0.01404118,
+          0.0009183,
+          -0.01010201
+        ],
+        "learned_channel_phase": [
+          0,
+          2,
+          3,
+          3
+        ],
+        "topology_proposals": 13,
+        "topology_accepted": 3,
+        "topology_rejected": 10,
+        "topology_pruned": 2,
+        "live_nodes": 8213,
+        "avg_active": 5.89624298,
+        "avg_candidates": 35.72632969
+      }
+    ],
+    "mean_eval_cross_entropy": 3.4184707066666666
+  },
+  "fixed_1_2_4": {
+    "runs": [
+      {
+        "dataset_hash": 2195559232913211147,
+        "eval_cross_entropy": 3.4125048,
+        "live_nodes": 12318,
+        "avg_active": 5.97520762,
+        "avg_candidates": 36.28429562
+      },
+      {
+        "dataset_hash": 148259111409531357,
+        "eval_cross_entropy": 3.41006371,
+        "live_nodes": 12324,
+        "avg_active": 5.97514656,
+        "avg_candidates": 36.46259007
+      },
+      {
+        "dataset_hash": 18033101719306103290,
+        "eval_cross_entropy": 3.41140129,
+        "live_nodes": 12318,
+        "avg_active": 5.9761236,
+        "avg_candidates": 36.49792379
+      }
+    ],
+    "mean_eval_cross_entropy": 3.411323266666667
+  },
+  "unigram_mean": 3.4657920866666667,
+  "oracle_mean": 2.9143158700000003
+}

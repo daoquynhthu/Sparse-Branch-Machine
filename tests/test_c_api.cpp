@@ -6,7 +6,7 @@
 #include <string_view>
 
 int main() {
-    assert(sbm_api_version() == 2U);
+    assert(sbm_api_version() == 3U);
     assert(std::strlen(sbm_api_version_string()) > 0U);
 
     const std::string_view schema(sbm_parameter_schema_json());

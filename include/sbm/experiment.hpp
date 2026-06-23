@@ -3,10 +3,10 @@
 #include "sbm/dataset.hpp"
 #include "sbm/types.hpp"
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace sbm {
 
@@ -44,7 +44,11 @@ struct ExperimentResult {
     std::uint64_t dataset_hash{};
     std::uint32_t vector_dim{};
     std::uint32_t token_alphabet{};
-    std::array<std::uint32_t, kAddressChannelCount> address_lags{};
+    std::vector<std::uint32_t> address_lags;
+    std::vector<std::uint32_t> learned_address_lags;
+    std::vector<float> learned_channel_credit;
+    std::vector<std::uint8_t> learned_channel_phase;
+    std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
     float residual_channel_gain{};
     float residual_recency_pseudocount{};
@@ -69,7 +73,11 @@ struct TokenExperimentResult {
     std::uint64_t train_examples{};
     std::uint64_t eval_examples{};
     std::uint64_t sequence_count{};
-    std::array<std::uint32_t, kAddressChannelCount> address_lags{};
+    std::vector<std::uint32_t> address_lags;
+    std::vector<std::uint32_t> learned_address_lags;
+    std::vector<float> learned_channel_credit;
+    std::vector<std::uint8_t> learned_channel_phase;
+    std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
     float edge_score_weight{};
     float softmax_temperature{};

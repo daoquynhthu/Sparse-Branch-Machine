@@ -266,6 +266,10 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
     result.vector_dim = dataset.vector_dim;
     result.token_alphabet = dataset.token_alphabet;
     result.address_lags = config.address_lags;
+    result.learned_address_lags = model.learned_address_lags();
+    result.learned_channel_credit = model.learned_channel_credit();
+    result.learned_channel_phase = model.learned_channel_phase();
+    result.topology_events = model.topology_events();
     result.exact_region_mass = config.exact_region_mass;
     result.residual_channel_gain = config.residual_channel_gain;
     result.residual_recency_pseudocount = config.residual_recency_pseudocount;
@@ -299,8 +303,36 @@ std::string to_json(const ExperimentResult& result) {
         << "  \"steps\": " << result.diagnostics.steps << ",\n"
         << "  \"vector_dim\": " << result.vector_dim << ",\n"
         << "  \"token_alphabet\": " << result.token_alphabet << ",\n"
-        << "  \"address_lags\": [" << result.address_lags[0] << ", "
-        << result.address_lags[1] << ", " << result.address_lags[2] << "],\n"
+        << "  \"address_lags\": [";
+    for (std::size_t i = 0; i < result.address_lags.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << result.address_lags[i];
+    }
+    out << "],\n  \"learned_address_lags\": [";
+    for (std::size_t i = 0; i < result.learned_address_lags.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << result.learned_address_lags[i];
+    }
+    out << "],\n  \"learned_channel_credit\": [";
+    for (std::size_t i = 0; i < result.learned_channel_credit.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << result.learned_channel_credit[i];
+    }
+    out << "],\n  \"learned_channel_phase\": [";
+    for (std::size_t i = 0; i < result.learned_channel_phase.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_channel_phase[i]);
+    }
+    out << "],\n  \"topology_events\": [";
+    for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
+        if (i != 0U) out << ", ";
+        const auto& event = result.topology_events[i];
+        out << "{\"step\":" << event.step
+            << ",\"lag\":" << event.lag
+            << ",\"decision\":" << static_cast<unsigned>(event.decision)
+            << ",\"credit\":" << event.credit << "}";
+    }
+    out << "],\n"
         << "  \"exact_region_mass\": " << result.exact_region_mass << ",\n"
         << "  \"residual_channel_gain\": " << result.residual_channel_gain << ",\n"
         << "  \"residual_recency_pseudocount\": "
@@ -316,6 +348,12 @@ std::string to_json(const ExperimentResult& result) {
         << "  \"anchor_nodes\": " << result.diagnostics.anchor_nodes << ",\n"
         << "  \"residual_nodes\": " << result.diagnostics.residual_nodes << ",\n"
         << "  \"estimated_bytes\": " << result.diagnostics.estimated_bytes << ",\n"
+        << "  \"topology_proposals\": " << result.diagnostics.topology_proposals << ",\n"
+        << "  \"topology_accepted\": " << result.diagnostics.topology_accepted << ",\n"
+        << "  \"topology_rejected\": " << result.diagnostics.topology_rejected << ",\n"
+        << "  \"topology_pruned\": " << result.diagnostics.topology_pruned << ",\n"
+        << "  \"active_channels\": " << result.diagnostics.active_channels << ",\n"
+        << "  \"probe_channels\": " << result.diagnostics.probe_channels << ",\n"
         << "  \"simd_enabled\": " << (result.diagnostics.simd_enabled ? "true" : "false") << ",\n";
     emit_metrics("train", result.train);
     emit_metrics("eval", result.eval);

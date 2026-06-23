@@ -28,7 +28,7 @@ bool SparseBranchMachine::push_candidate(std::vector<CandidateNode>& values,
 
 std::vector<SparseBranchMachine::CandidateNode>
 SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
-    const std::size_t channel_count = config_.address_lags.size();
+    const std::size_t channel_count = topology_.size();
     const std::size_t exact_budget = channel_count * config_.bucket_scan_limit;
     const std::size_t hard_limit = exact_budget +
         static_cast<std::size_t>(config_.beam_width) * config_.edge_scan_limit;
@@ -59,6 +59,7 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
     // Each temporal view receives its own exact-address budget.  A large or
     // noisy view therefore cannot displace the other views.
     for (std::uint8_t channel = 0; channel < channel_count; ++channel) {
+        if (!channel_enabled(channel)) continue;
         const std::size_t target_size = output.size() + config_.bucket_scan_limit;
         const std::size_t index = bucket_index(channel, signatures[channel]);
         append_bucket(hot_buckets_[index], target_size, false);
@@ -94,6 +95,7 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
          output.size() < hard_limit && radius <= 2;
          ++radius) {
         for (std::uint8_t channel = 0; channel < channel_count; ++channel) {
+            if (!channel_enabled(channel)) continue;
             const auto base = static_cast<std::int64_t>(bucket(signatures[channel]));
             for (const auto probe : {base - radius, base + radius}) {
                 if (probe < 0 || probe >= raw_bucket_count) continue;
@@ -153,7 +155,8 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures) {
     std::vector<std::uint8_t> chosen(scored.size(), 0U);
 
     // Guarantee one exact resident from every available temporal view.
-    for (std::uint8_t channel = 0; channel < config_.address_lags.size(); ++channel) {
+    for (std::uint8_t channel = 0; channel < topology_.size(); ++channel) {
+        if (!channel_enabled(channel)) continue;
         std::size_t best = SIZE_MAX;
         for (std::size_t index = 0; index < scored.size(); ++index) {
             if (!scored[index].exact_region || scored[index].channel != channel) continue;
@@ -185,7 +188,8 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures) {
 
 void SparseBranchMachine::assign_responsibilities(std::vector<ScoredNode>& active) const {
     for (auto& node : active) node.responsibility = 0.0F;
-    for (std::uint8_t channel = 0; channel < config_.address_lags.size(); ++channel) {
+    for (std::uint8_t channel = 0; channel < topology_.size(); ++channel) {
+        if (!channel_enabled(channel)) continue;
         const float channel_mass = channel == 0U ? 1.0F : config_.residual_channel_gain;
         bool has_exact = false;
         bool has_non_exact = false;
