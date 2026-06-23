@@ -3,6 +3,7 @@
 #include "sbm/machine.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -148,29 +149,45 @@ void normalize_logits(std::span<float> values) {
 
 } // namespace
 
-static TokenExperimentResult run_token_view(const TokenDataView& dataset,
-                                            std::size_t warmup_examples,
-                                            Config config,
-                                            bool strict_freeze,
-                                            std::size_t prefill,
-                                            std::size_t prune_interval,
-                                            std::size_t merge_interval) {
-    if (dataset.vocab_size < 2U || dataset.sequence_offsets.size() < 2U) {
+static TokenExperimentResult run_token_views(std::span<const TokenDataView> datasets,
+                                             std::size_t warmup_examples,
+                                             Config config,
+                                             bool strict_freeze,
+                                             std::size_t prefill,
+                                             std::size_t prune_interval,
+                                             std::size_t merge_interval,
+                                             const char* task) {
+    if (datasets.empty() || datasets.front().vocab_size < 2U) {
         throw std::invalid_argument("invalid token dataset");
     }
-    const std::size_t total_examples = dataset.example_count();
+    const auto vocabulary = datasets.front().vocab_size;
+    std::size_t total_examples = 0U;
+    std::size_t total_sequences = 0U;
+    std::uint64_t combined_hash = datasets.size() == 1U
+        ? datasets.front().dataset_hash : 0x53424D434F525055ULL;
+    for (std::size_t index = 0U; index < datasets.size(); ++index) {
+        const auto& dataset = datasets[index];
+        if (dataset.vocab_size != vocabulary || dataset.sequence_offsets.size() < 2U) {
+            throw std::invalid_argument("token shards have incompatible vocabularies");
+        }
+        total_examples += dataset.example_count();
+        total_sequences += dataset.sequence_count();
+        if (datasets.size() != 1U) {
+            combined_hash ^= std::rotl(dataset.dataset_hash,
+                static_cast<int>((index * 13U) & 63U));
+        }
+    }
     if (total_examples == 0U || warmup_examples == 0U || warmup_examples >= total_examples) {
         throw std::invalid_argument("warmup must split non-empty token train/eval sets");
     }
 
     config.objective = ObjectiveKind::TokenCrossEntropy;
-    config.token_alphabet = dataset.vocab_size;
-    config.vector_dim = dataset.vocab_size;
+    config.token_alphabet = vocabulary;
+    config.vector_dim = vocabulary;
     config.allow_growth_when_frozen = !strict_freeze;
     SparseBranchMachine model(config);
     if (prefill != 0U) model.prefill_distractors(prefill);
 
-    const auto vocabulary = dataset.vocab_size;
     std::vector<std::uint64_t> unigram_counts(vocabulary, 0U);
     std::uint64_t unigram_total = 0U;
     ConditionalTable current_table(vocabulary);
@@ -179,7 +196,8 @@ static TokenExperimentResult run_token_view(const TokenDataView& dataset,
     ConditionalTable lag4_table(vocabulary);
 
     std::size_t training_index = 0U;
-    for (std::size_t sequence = 0; sequence < dataset.sequence_count(); ++sequence) {
+    for (const auto& dataset : datasets) {
+      for (std::size_t sequence = 0; sequence < dataset.sequence_count(); ++sequence) {
         const auto start = static_cast<std::size_t>(dataset.sequence_offsets[sequence]);
         const auto end = static_cast<std::size_t>(dataset.sequence_offsets[sequence + 1U]);
         for (std::size_t position = start; position + 1U < end; ++position) {
@@ -198,6 +216,8 @@ static TokenExperimentResult run_token_view(const TokenDataView& dataset,
             ++training_index;
         }
         if (training_index >= warmup_examples) break;
+      }
+      if (training_index >= warmup_examples) break;
     }
 
     std::vector<float> unigram(vocabulary, 0.0F);
@@ -227,7 +247,8 @@ static TokenExperimentResult run_token_view(const TokenDataView& dataset,
 
     std::size_t example_index = 0U;
     double model_elapsed = 0.0;
-    for (std::size_t sequence = 0; sequence < dataset.sequence_count(); ++sequence) {
+    for (const auto& dataset : datasets) {
+      for (std::size_t sequence = 0; sequence < dataset.sequence_count(); ++sequence) {
         const auto start = static_cast<std::size_t>(dataset.sequence_offsets[sequence]);
         const auto end = static_cast<std::size_t>(dataset.sequence_offsets[sequence + 1U]);
         model.reset_sequence();
@@ -286,11 +307,12 @@ static TokenExperimentResult run_token_view(const TokenDataView& dataset,
             }
             ++example_index;
         }
+      }
     }
     const double elapsed = std::max(model_elapsed, 1e-12);
 
     TokenExperimentResult result;
-    result.task = dataset.task;
+    result.task = task;
     result.diagnostics = model.diagnostics();
     result.train = finish(train_accumulator);
     result.eval = finish(eval_accumulator);
@@ -307,11 +329,11 @@ static TokenExperimentResult run_token_view(const TokenDataView& dataset,
     result.steps_per_second = static_cast<double>(total_examples) / elapsed;
     result.elapsed_seconds = elapsed;
     result.strict_freeze = strict_freeze;
-    result.dataset_hash = dataset.dataset_hash;
-    result.vocab_size = dataset.vocab_size;
+    result.dataset_hash = combined_hash;
+    result.vocab_size = vocabulary;
     result.train_examples = warmup_examples;
     result.eval_examples = total_examples - warmup_examples;
-    result.sequence_count = dataset.sequence_count();
+    result.sequence_count = total_sequences;
     result.address_lags = config.address_lags;
     result.learned_address_lags = model.learned_address_lags();
     result.learned_address_programs = model.learned_address_programs();
@@ -337,8 +359,9 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
         dataset.vocab_size, dataset.tokens, dataset.sequence_offsets,
         dataset.oracle_nll, hash_dataset(dataset),
         "mathematical_next_token_cross_entropy"};
-    return run_token_view(view, warmup_examples, std::move(config), strict_freeze,
-                          prefill, prune_interval, merge_interval);
+    return run_token_views(std::span<const TokenDataView>(&view, 1U), warmup_examples,
+                           std::move(config), strict_freeze, prefill, prune_interval,
+                           merge_interval, "mathematical_next_token_cross_entropy");
 }
 
 TokenExperimentResult run_token_experiment(const MappedTokenShard& shard,
@@ -351,8 +374,37 @@ TokenExperimentResult run_token_experiment(const MappedTokenShard& shard,
     const TokenDataView view{
         shard.vocab_size(), shard.tokens(), shard.sequence_offsets(), {},
         shard.dataset_hash(), "real_corpus_next_token_cross_entropy"};
-    return run_token_view(view, warmup_examples, std::move(config), strict_freeze,
-                          prefill, prune_interval, merge_interval);
+    return run_token_views(std::span<const TokenDataView>(&view, 1U), warmup_examples,
+                           std::move(config), strict_freeze, prefill, prune_interval,
+                           merge_interval, "real_corpus_next_token_cross_entropy");
+}
+
+TokenExperimentResult run_token_corpus_experiment(
+    std::span<const MappedTokenShard* const> train_shards,
+    std::span<const MappedTokenShard* const> eval_shards,
+    Config config,
+    bool strict_freeze,
+    std::size_t prefill,
+    std::size_t prune_interval,
+    std::size_t merge_interval) {
+    if (train_shards.empty() || eval_shards.empty()) {
+        throw std::invalid_argument("token corpus requires train and eval shards");
+    }
+    std::vector<TokenDataView> views;
+    views.reserve(train_shards.size() + eval_shards.size());
+    std::size_t warmup_examples = 0U;
+    const auto append = [&](const MappedTokenShard* shard, bool training) {
+        if (shard == nullptr) throw std::invalid_argument("null token shard");
+        views.push_back(TokenDataView{
+            shard->vocab_size(), shard->tokens(), shard->sequence_offsets(), {},
+            shard->dataset_hash(), "real_corpus_next_token_cross_entropy"});
+        if (training) warmup_examples += views.back().example_count();
+    };
+    for (const auto* shard : train_shards) append(shard, true);
+    for (const auto* shard : eval_shards) append(shard, false);
+    return run_token_views(views, warmup_examples, std::move(config), strict_freeze,
+                           prefill, prune_interval, merge_interval,
+                           "real_corpus_next_token_cross_entropy");
 }
 
 std::string to_json(const TokenExperimentResult& result) {

@@ -93,6 +93,20 @@ int main() {
         std::string_view::npos);
     sbm_string_free(shard_result);
     sbm_token_shard_destroy(shard);
+
+    sbm_token_corpus_handle* corpus = sbm_token_corpus_create();
+    assert(corpus != nullptr);
+    assert(sbm_token_corpus_add_shard(corpus, shard_path, 0U, 0U, 1) == 0);
+    assert(sbm_token_corpus_add_shard(corpus, shard_path, 1U, 1U, 1) == 0);
+    char* corpus_result = sbm_run_token_corpus_experiment_json(
+        corpus, config, 1, 0U, 0U, 0U);
+    assert(corpus_result != nullptr);
+    assert(std::string_view(corpus_result).find("\"train_examples\": 4") !=
+           std::string_view::npos);
+    assert(std::string_view(corpus_result).find("\"eval_examples\": 4") !=
+           std::string_view::npos);
+    sbm_string_free(corpus_result);
+    sbm_token_corpus_destroy(corpus);
     std::remove(shard_path);
     sbm_dataset_destroy(external);
 

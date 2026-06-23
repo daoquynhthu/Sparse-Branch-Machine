@@ -20,6 +20,7 @@ extern "C" {
 typedef struct sbm_config_handle sbm_config_handle;
 typedef struct sbm_dataset_handle sbm_dataset_handle;
 typedef struct sbm_token_shard_handle sbm_token_shard_handle;
+typedef struct sbm_token_corpus_handle sbm_token_corpus_handle;
 
 typedef struct sbm_token_shard_cursor {
     uint64_t shard_index;
@@ -102,6 +103,22 @@ SBM_API int sbm_token_shard_next(
 SBM_API char* sbm_run_token_shard_experiment_json(
     const sbm_token_shard_handle* shard,
     size_t warmup,
+    const sbm_config_handle* config,
+    int strict_freeze,
+    size_t prefill,
+    size_t prune_interval,
+    size_t merge_interval);
+SBM_API sbm_token_corpus_handle* sbm_token_corpus_create(void);
+SBM_API void sbm_token_corpus_destroy(sbm_token_corpus_handle* corpus);
+/* split_kind: 0=train, 1=evaluation. */
+SBM_API int sbm_token_corpus_add_shard(
+    sbm_token_corpus_handle* corpus,
+    const char* path,
+    uint32_t split_kind,
+    uint64_t shard_index,
+    int verify_payload);
+SBM_API char* sbm_run_token_corpus_experiment_json(
+    const sbm_token_corpus_handle* corpus,
     const sbm_config_handle* config,
     int strict_freeze,
     size_t prefill,

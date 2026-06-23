@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <span>
 #include <vector>
 
 namespace sbm {
@@ -118,6 +119,15 @@ struct TokenExperimentResult {
 [[nodiscard]] TokenExperimentResult run_token_experiment(
     const MappedTokenShard& shard,
     std::size_t warmup_examples,
+    Config config,
+    bool strict_freeze = true,
+    std::size_t prefill = 0,
+    std::size_t prune_interval = 0,
+    std::size_t merge_interval = 0);
+
+[[nodiscard]] TokenExperimentResult run_token_corpus_experiment(
+    std::span<const MappedTokenShard* const> train_shards,
+    std::span<const MappedTokenShard* const> eval_shards,
     Config config,
     bool strict_freeze = true,
     std::size_t prefill = 0,

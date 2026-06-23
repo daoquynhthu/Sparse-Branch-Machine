@@ -34,6 +34,11 @@ struct sbm_token_shard_handle {
     sbm::MappedTokenShard value;
 };
 
+struct sbm_token_corpus_handle {
+    std::vector<std::unique_ptr<sbm::MappedTokenShard>> train;
+    std::vector<std::unique_ptr<sbm::MappedTokenShard>> eval;
+};
+
 namespace {
 thread_local std::string g_last_error;
 
@@ -701,6 +706,61 @@ char* sbm_run_token_shard_experiment_json(const sbm_token_shard_handle* shard,
         resolved.objective = sbm::ObjectiveKind::TokenCrossEntropy;
         const auto result = sbm::run_token_experiment(
             shard->value, warmup, resolved, strict_freeze != 0,
+            prefill, prune_interval, merge_interval);
+        return duplicate_string(sbm::to_json(result));
+    });
+}
+
+sbm_token_corpus_handle* sbm_token_corpus_create(void) {
+    return guarded([] { return new sbm_token_corpus_handle{}; });
+}
+
+void sbm_token_corpus_destroy(sbm_token_corpus_handle* corpus) { delete corpus; }
+
+int sbm_token_corpus_add_shard(sbm_token_corpus_handle* corpus,
+                               const char* path,
+                               uint32_t split_kind,
+                               uint64_t shard_index,
+                               int verify_payload) {
+    clear_error();
+    try {
+        if (corpus == nullptr || path == nullptr) {
+            throw std::invalid_argument("corpus and path must be non-null");
+        }
+        if (split_kind > 1U) throw std::invalid_argument("invalid corpus split kind");
+        auto shard = std::make_unique<sbm::MappedTokenShard>(
+            path, shard_index, verify_payload != 0);
+        (split_kind == 0U ? corpus->train : corpus->eval).push_back(std::move(shard));
+        return 0;
+    } catch (const std::exception& error) {
+        set_error(error.what());
+        return -1;
+    } catch (...) {
+        set_error("unknown C++ exception");
+        return -1;
+    }
+}
+
+char* sbm_run_token_corpus_experiment_json(const sbm_token_corpus_handle* corpus,
+                                           const sbm_config_handle* config,
+                                           int strict_freeze,
+                                           size_t prefill,
+                                           size_t prune_interval,
+                                           size_t merge_interval) {
+    return guarded([&] {
+        if (corpus == nullptr || config == nullptr) {
+            throw std::invalid_argument("corpus and config must be non-null");
+        }
+        std::vector<const sbm::MappedTokenShard*> train;
+        std::vector<const sbm::MappedTokenShard*> eval;
+        train.reserve(corpus->train.size());
+        eval.reserve(corpus->eval.size());
+        for (const auto& shard : corpus->train) train.push_back(shard.get());
+        for (const auto& shard : corpus->eval) eval.push_back(shard.get());
+        auto resolved = config->value;
+        resolved.objective = sbm::ObjectiveKind::TokenCrossEntropy;
+        const auto result = sbm::run_token_corpus_experiment(
+            train, eval, resolved, strict_freeze != 0,
             prefill, prune_interval, merge_interval);
         return duplicate_string(sbm::to_json(result));
     });

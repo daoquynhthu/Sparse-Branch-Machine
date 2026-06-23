@@ -175,6 +175,16 @@ int main() {
         auto replay_cursor = resume_cursor;
         assert(reopened.next(replay_cursor, example));
         assert(example.input == 11U && example.target == 12U);
+        const std::array<const sbm::MappedTokenShard*, 1> train_shards{&shard};
+        const std::array<const sbm::MappedTokenShard*, 1> eval_shards{&reopened};
+        const auto corpus_result = sbm::run_token_corpus_experiment(
+            train_shards, eval_shards, shard_config, true, 0U, 0U, 0U);
+        assert(corpus_result.train_examples == 3U);
+        assert(corpus_result.eval_examples == 3U);
+        assert(corpus_result.sequence_count == 4U);
+        for (const auto& event : corpus_result.topology_events) {
+            assert(event.step <= corpus_result.train_examples);
+        }
     }
     std::remove(shard_path_a);
     std::remove(shard_path_b);

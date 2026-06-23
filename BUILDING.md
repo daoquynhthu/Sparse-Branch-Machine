@@ -136,3 +136,14 @@ and existing shard files are rejected.
 `Runtime.open_token_shard(...).run(...)` is available for a small single-shard
 smoke. It splits that shard by example count and is not the corpus experiment
 interface for separate train and validation manifests.
+
+For a split-correct mapped run:
+
+```python
+with runtime.open_token_corpus("/data/sbm/fineweb_edu_compat/manifest.json") as corpus:
+    with runtime.config({"sparse_token_output": True}) as config:
+        result = corpus.run(config, strict_freeze=True)
+```
+
+The corpus handle consumes all manifest train shards before freezing once and
+evaluating validation shards. Exact model checkpoint/resume is still pending.

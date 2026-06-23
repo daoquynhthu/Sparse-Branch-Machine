@@ -162,5 +162,12 @@ inside that shard and therefore is not a substitute for manifest-defined train
 and validation splits.
 
 Multi-shard training, manifest-owned iteration and model checkpoint state are
-not implemented yet. A shard cursor proves exact data replay but is not a full
-training checkpoint.
+available through `sbm_token_corpus_*` and `Runtime.open_token_corpus()`. Corpus
+handles own their mappings. All train shards are consumed first; the model then
+freezes once and evaluates all validation shards. Sequence state resets at every
+stored block and shard boundary. The Python manifest loader rejects paths that
+escape the manifest directory.
+
+Model checkpoint serialization is not implemented yet. A shard cursor proves
+exact data replay but is not a full training checkpoint, and a corpus run cannot
+yet resume in the middle of a shard without replaying model updates.

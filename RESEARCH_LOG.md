@@ -432,3 +432,18 @@ dense 50,257-way statistical baseline evaluation dominates current end-to-end
 smoke latency and must not be confused with learner throughput. Proper corpus
 experiments still require separate train/validation shard sets and persistent
 multi-shard model state.
+
+A split-correct mapped corpus runner was then added. It accepts non-contiguous
+train and validation mappings, resets state at every stored sequence, trains on
+all train shards, freezes topology once and performs validation without updates.
+C++, C and Python tests cover independent split counts and the freeze boundary.
+
+An actual one-train-shard/one-validation-shard run used 10,240 examples in each
+split. It produced evaluation NLL 10.7673 versus unigram 8.5815, current-token
+9.7295, pair 10.0390 and multiscale 9.8390. The machine retained 676 nodes and
+5,920 edges, averaged 5.99 active nodes and 41.10 candidates, used 1.87 MB
+estimated model state and reported 4,429 model token/s. The command took about
+80 seconds versus 4.62 seconds of measured model time because exact dense
+baseline ranking dominates the 50,257-way validation path. The architecture is
+therefore still substantially behind even trivial language controls at this
+training scale; the run validates split semantics, not model quality.

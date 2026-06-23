@@ -63,5 +63,12 @@ with runtime.token_dataset_from_ids([1, 2, 3, 1, 2, 4], 8, [0, 3, 6]) as externa
         with runtime.open_token_shard(shard_path, shard_index=5) as replay:
             replay.seek(resume)
             assert replay.next_example() == (2, 3)
+        with runtime.token_corpus() as corpus:
+            corpus.add_shard(shard_path, "train", 0)
+            corpus.add_shard(shard_path, "eval", 1)
+            with runtime.config({"bucket_bits": 6}) as corpus_config:
+                corpus_result = corpus.run(corpus_config)
+            assert corpus_result["train_examples"] == 4
+            assert corpus_result["eval_examples"] == 4
 
 print("Python API tests passed")

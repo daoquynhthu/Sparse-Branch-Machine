@@ -203,6 +203,25 @@ class Runtime:
             ctypes.c_size_t,
         ]
         lib.sbm_run_token_shard_experiment_json.restype = ctypes.c_void_p
+        lib.sbm_token_corpus_create.restype = ctypes.c_void_p
+        lib.sbm_token_corpus_destroy.argtypes = [ctypes.c_void_p]
+        lib.sbm_token_corpus_add_shard.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_char_p,
+            ctypes.c_uint32,
+            ctypes.c_uint64,
+            ctypes.c_int,
+        ]
+        lib.sbm_token_corpus_add_shard.restype = ctypes.c_int
+        lib.sbm_run_token_corpus_experiment_json.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+        ]
+        lib.sbm_run_token_corpus_experiment_json.restype = ctypes.c_void_p
 
         lib.sbm_run_experiment_json.argtypes = [
             ctypes.c_void_p,
@@ -327,6 +346,37 @@ class Runtime:
         if not pointer:
             raise self._error("open token shard")
         return TokenShard(self, pointer, shard_index)
+
+    def token_corpus(self) -> "TokenCorpus":
+        return TokenCorpus(self)
+
+    def open_token_corpus(
+        self,
+        manifest_path: str | os.PathLike[str],
+        eval_split: str = "validation",
+        verify_payload: bool = True,
+    ) -> "TokenCorpus":
+        path = Path(manifest_path).resolve()
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        if manifest.get("schema") != "sbm-corpus-manifest":
+            raise ValueError("unsupported corpus manifest schema")
+        corpus = self.token_corpus()
+        try:
+            for split_name, split_kind in (("train", "train"), (eval_split, "eval")):
+                split = manifest.get("splits", {}).get(split_name)
+                if not split or not split.get("shards"):
+                    raise ValueError(f"manifest has no shards for {split_name!r}")
+                for index, shard in enumerate(split["shards"]):
+                    shard_path = (path.parent / shard["path"]).resolve()
+                    if shard_path.parent != path.parent:
+                        raise ValueError("shard path escapes the manifest directory")
+                    corpus.add_shard(
+                        shard_path, split_kind, index, verify_payload=verify_payload
+                    )
+            return corpus
+        except BaseException:
+            corpus.close()
+            raise
 
 
 class Config:
@@ -559,3 +609,65 @@ class TokenShard:
             merge_interval,
         )
         return self.runtime._take_json(pointer, "run token shard experiment")
+
+
+class TokenCorpus:
+    def __init__(self, runtime: Runtime):
+        self.runtime = runtime
+        self.pointer = runtime.lib.sbm_token_corpus_create()
+        if not self.pointer:
+            raise runtime._error("create token corpus")
+
+    def close(self) -> None:
+        if self.pointer:
+            self.runtime.lib.sbm_token_corpus_destroy(self.pointer)
+            self.pointer = None
+
+    def __enter__(self) -> "TokenCorpus":
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass
+
+    def add_shard(
+        self,
+        path: str | os.PathLike[str],
+        split: str,
+        shard_index: int,
+        verify_payload: bool = True,
+    ) -> None:
+        if split not in {"train", "eval"}:
+            raise ValueError("split must be 'train' or 'eval'")
+        status = self.runtime.lib.sbm_token_corpus_add_shard(
+            self.pointer,
+            os.fsencode(path),
+            0 if split == "train" else 1,
+            shard_index,
+            int(verify_payload),
+        )
+        if status != 0:
+            raise self.runtime._error("add token corpus shard")
+
+    def run(
+        self,
+        config: Config,
+        strict_freeze: bool = True,
+        prefill: int = 0,
+        prune_interval: int = 0,
+        merge_interval: int = 0,
+    ) -> Dict[str, Any]:
+        pointer = self.runtime.lib.sbm_run_token_corpus_experiment_json(
+            self.pointer,
+            config.pointer,
+            int(strict_freeze),
+            prefill,
+            prune_interval,
+            merge_interval,
+        )
+        return self.runtime._take_json(pointer, "run token corpus experiment")
