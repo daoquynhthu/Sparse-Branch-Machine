@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
@@ -43,6 +44,41 @@ struct TokenDataset {
     }
 };
 
+struct TokenShardCursor {
+    std::uint64_t shard_index{};
+    std::uint64_t sequence_index{};
+    std::uint64_t token_offset{};
+};
+
+struct TokenExample {
+    std::uint32_t input{};
+    std::uint32_t target{};
+};
+
+// A read-only, independently memory-mapped real-corpus shard.  The cursor is
+// the position of the next within-sequence (input, target) pair.
+class MappedTokenShard {
+public:
+    explicit MappedTokenShard(const std::string& path,
+                              std::uint64_t shard_index = 0U,
+                              bool verify_payload = true);
+    ~MappedTokenShard();
+    MappedTokenShard(MappedTokenShard&&) noexcept;
+    MappedTokenShard& operator=(MappedTokenShard&&) noexcept;
+    MappedTokenShard(const MappedTokenShard&) = delete;
+    MappedTokenShard& operator=(const MappedTokenShard&) = delete;
+
+    [[nodiscard]] std::uint32_t vocab_size() const noexcept;
+    [[nodiscard]] std::uint64_t token_count() const noexcept;
+    [[nodiscard]] std::uint64_t sequence_count() const noexcept;
+    [[nodiscard]] std::uint64_t dataset_hash() const noexcept;
+    [[nodiscard]] bool next(TokenShardCursor& cursor, TokenExample& example) const;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
 [[nodiscard]] std::uint64_t hash_dataset(const VectorDataset& dataset) noexcept;
 [[nodiscard]] std::uint64_t hash_dataset(const TokenDataset& dataset) noexcept;
 
@@ -76,6 +112,7 @@ void save_dataset(const VectorDataset& dataset, const std::string& path);
 [[nodiscard]] VectorDataset load_dataset(const std::string& path);
 void save_token_dataset(const TokenDataset& dataset, const std::string& path);
 [[nodiscard]] TokenDataset load_token_dataset(const std::string& path);
+void write_token_shard(const TokenDataset& dataset, const std::string& path);
 [[nodiscard]] DatasetKind inspect_dataset_kind(const std::string& path);
 
 } // namespace sbm

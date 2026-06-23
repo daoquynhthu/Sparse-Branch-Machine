@@ -4,7 +4,9 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <vector>
 
 namespace {
@@ -114,6 +116,52 @@ int main() {
     auto loaded_tokens = sbm::load_token_dataset(token_path);
     std::remove(token_path);
     assert(sbm::hash_dataset(loaded_tokens) == token_hash);
+
+    // Real-corpus shards are deterministic, memory mapped and preserve
+    // sequence boundaries when producing next-token examples.
+    const std::array<std::uint32_t, 5> shard_tokens{10U, 11U, 12U, 20U, 21U};
+    const std::array<std::uint64_t, 3> shard_offsets{0U, 3U, 5U};
+    const auto shard_dataset = sbm::make_token_dataset(shard_tokens, 32U, shard_offsets);
+    const char* shard_path_a = "sbm_token_shard_a.sbt";
+    const char* shard_path_b = "sbm_token_shard_b.sbt";
+    std::remove(shard_path_a);
+    std::remove(shard_path_b);
+    sbm::write_token_shard(shard_dataset, shard_path_a);
+    sbm::write_token_shard(shard_dataset, shard_path_b);
+    {
+        std::ifstream first(shard_path_a, std::ios::binary);
+        std::ifstream second(shard_path_b, std::ios::binary);
+        const std::vector<char> first_bytes{
+            std::istreambuf_iterator<char>(first), std::istreambuf_iterator<char>()};
+        const std::vector<char> second_bytes{
+            std::istreambuf_iterator<char>(second), std::istreambuf_iterator<char>()};
+        assert(first_bytes == second_bytes);
+    }
+    {
+        sbm::MappedTokenShard shard(shard_path_a, 7U);
+        assert(shard.vocab_size() == 32U);
+        assert(shard.token_count() == shard_tokens.size());
+        assert(shard.sequence_count() == 2U);
+        assert(shard.dataset_hash() == sbm::hash_dataset(shard_dataset));
+
+        sbm::TokenShardCursor cursor{7U, 0U, 0U};
+        sbm::TokenExample example{};
+        assert(shard.next(cursor, example));
+        assert(example.input == 10U && example.target == 11U);
+        const auto resume_cursor = cursor;
+        assert(shard.next(cursor, example));
+        assert(example.input == 11U && example.target == 12U);
+        assert(shard.next(cursor, example));
+        assert(example.input == 20U && example.target == 21U);
+        assert(!shard.next(cursor, example));
+
+        sbm::MappedTokenShard reopened(shard_path_a, 7U);
+        auto replay_cursor = resume_cursor;
+        assert(reopened.next(replay_cursor, example));
+        assert(example.input == 11U && example.target == 12U);
+    }
+    std::remove(shard_path_a);
+    std::remove(shard_path_b);
 
     sbm::Config token_config;
     token_config.objective = sbm::ObjectiveKind::TokenCrossEntropy;

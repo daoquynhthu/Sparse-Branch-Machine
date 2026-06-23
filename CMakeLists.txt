@@ -48,6 +48,7 @@ target_link_libraries(sbm_machine PUBLIC sbm_core)
 
 add_library(sbm_dataset SHARED
   src/modules/dataset.cpp
+  src/modules/token_shard.cpp
 )
 sbm_configure_target(sbm_dataset)
 target_link_libraries(sbm_dataset PUBLIC sbm_core)
