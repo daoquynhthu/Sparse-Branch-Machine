@@ -68,6 +68,32 @@ def find_library(explicit: Optional[str] = None) -> Path:
 class Runtime:
     def __init__(self, library: Optional[str] = None):
         self.path = find_library(library)
+        self._dll_directories = []
+        if platform.system() == "Windows" and hasattr(os, "add_dll_directory"):
+            search_directories = [self.path.parent]
+            for entry in os.environ.get("PATH", "").split(os.pathsep):
+                directory = Path(entry) if entry else None
+                if directory is None or not directory.is_dir():
+                    continue
+                has_libstdcpp = (directory / "libstdc++-6.dll").is_file()
+                has_libgcc = any(directory.glob("libgcc_s_*-1.dll"))
+                if has_libstdcpp and has_libgcc:
+                    search_directories.append(directory)
+                    break
+            seen = set()
+            for directory in search_directories:
+                try:
+                    resolved = directory.expanduser().resolve()
+                except OSError:
+                    continue
+                key = os.path.normcase(str(resolved))
+                if key in seen or not resolved.is_dir():
+                    continue
+                seen.add(key)
+                try:
+                    self._dll_directories.append(os.add_dll_directory(str(resolved)))
+                except OSError:
+                    continue
         self.lib = ctypes.CDLL(str(self.path))
         self._bind()
 
