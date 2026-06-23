@@ -161,3 +161,18 @@ Seeds 7, 11 and 19, each with 40k learning and 80k strict-freeze steps:
 The accepted interpretation is limited: v5 repairs several invalidating defects
 and shows useful sparse historical correction, but it has not yet exceeded a full
 pair lookup baseline or demonstrated compositional abstraction.
+
+## 2026-06-23 — modular-build-v5
+
+The v5 implementation was split into independently compiled targets without
+changing model semantics. The previous single translation unit was divided into
+SIMD/signature core, machine storage, routing, learning, maintenance, dataset and
+experiment modules. Public declarations were also split under `include/sbm/`,
+while `sparse_branch_machine.hpp` remains a compatibility umbrella.
+
+A fixed 20,000-step, seed-7 equivalence run produced zero differences in all JSON
+fields except wall-clock timing. Unit tests passed before and after the refactor.
+Touching only `machine_learning.cpp` rebuilt one translation unit plus archive and
+executable relinks; dataset, SIMD, signatures and experiment sources were not
+recompiled. On the current workspace this incremental build completed in about
+3.6 seconds, well below the 120-second execution ceiling.
