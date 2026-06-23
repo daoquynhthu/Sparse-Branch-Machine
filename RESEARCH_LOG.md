@@ -492,3 +492,12 @@ wall time 0.990 seconds and measured model throughput 22,172 token/s. This
 removes the previous 80-second baseline bottleneck. Evaluation NLL remained
 poor at 10.8682 versus unigram 8.5815; the performance repair is not evidence of
 predictive quality.
+
+The experiment tuner now defaults to isolated worker processes governed by
+simultaneous live CPU and available-memory limits. At 0.9/0.9 on the local
+32-logical-CPU host, a 24-candidate synthetic stress run launched 24 workers,
+completed without failure in 15.2 seconds, reached 1.17 GiB peak aggregate
+worker RSS and averaged 63.5% whole-system CPU. The 28-slot CPU ceiling was not
+reached because only 24 candidates existed. Automatic and fixed one-worker
+execution produced identical candidate ordering and per-candidate NLL in the
+integration fixture.

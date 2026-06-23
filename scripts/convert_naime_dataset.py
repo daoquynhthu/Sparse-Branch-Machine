@@ -173,6 +173,14 @@ def convert_split(
     return shards
 
 
+def split_token_limit(args: argparse.Namespace, split_name: str) -> int | None:
+    if split_name == "train" and args.max_train_tokens is not None:
+        return args.max_train_tokens
+    if split_name == "validation" and args.max_validation_tokens is not None:
+        return args.max_validation_tokens
+    return args.max_tokens_per_split
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=Path, required=True)
@@ -181,6 +189,8 @@ def main() -> int:
     parser.add_argument("--vocab-size", type=int, default=50257)
     parser.add_argument("--shard-tokens", type=int, default=16_000_000)
     parser.add_argument("--max-tokens-per-split", type=int)
+    parser.add_argument("--max-train-tokens", type=int)
+    parser.add_argument("--max-validation-tokens", type=int)
     parser.add_argument("--provenance-log", type=Path)
     args = parser.parse_args()
     if args.output.exists() and any(args.output.iterdir()):
@@ -235,7 +245,7 @@ def main() -> int:
         }
         shards = convert_split(
             _iter_rows(split), args.output, name, args.vocab_size,
-            args.shard_tokens, args.max_tokens_per_split,
+            args.shard_tokens, split_token_limit(args, name),
         )
         manifest["splits"][name] = {
             "shards": shards,

@@ -187,3 +187,8 @@ table backs off through the current-token and unigram distributions. The legacy
 longer denotes the old vocabulary-wide geometric product. Results separately
 report `elapsed_seconds` for model work and `baseline_elapsed_seconds` for
 baseline construction and evaluation.
+
+The Python hardware scheduler is tooling above the stable C ABI. Resource
+fractions apply to the current hardware snapshot, not theoretical installed
+capacity. Worker processes remain isolated and do not share model or runtime
+handles, so scheduling does not change a run's learning semantics.

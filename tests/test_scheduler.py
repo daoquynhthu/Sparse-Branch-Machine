@@ -37,6 +37,14 @@ def test_policy_budgets() -> None:
         minimum_free_memory_bytes=10,
     )
     assert fraction_limited.dispatchable_memory(snapshot) == 300
+    for fraction, expected_cpu, expected_memory in (
+        (0.5, 10, 300),
+        (0.9, 18, 500),
+        (1.0, 20, 500),
+    ):
+        boundary = ResourcePolicy(fraction, fraction, 100)
+        assert boundary.cpu_budget(snapshot) == expected_cpu
+        assert boundary.dispatchable_memory(snapshot) == expected_memory
 
 
 def test_snapshot_injection() -> None:

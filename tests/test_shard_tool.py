@@ -1,3 +1,4 @@
+import argparse
 import importlib.util
 import tempfile
 from pathlib import Path
@@ -36,6 +37,15 @@ def main():
         assert len(shards) == 2
         assert sum(item["tokens"] for item in shards) == 10
         assert sum(item["sequences"] for item in shards) == 4
+
+    limits = argparse.Namespace(
+        max_tokens_per_split=10,
+        max_train_tokens=20,
+        max_validation_tokens=30,
+    )
+    assert MODULE.split_token_limit(limits, "train") == 20
+    assert MODULE.split_token_limit(limits, "validation") == 30
+    assert MODULE.split_token_limit(limits, "test") == 10
 
 
 if __name__ == "__main__":

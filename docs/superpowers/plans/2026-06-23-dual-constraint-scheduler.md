@@ -65,8 +65,8 @@ an optional calibration run; apply a conservative margin before reservation.
 - Modify: `API.md`
 - Modify: `RESEARCH_LOG.md`
 
-- [ ] Run fake-provider boundary tests at 0.5, 0.9 and 1.0 fractions.
-- [ ] Run a real local multi-seed smoke with both fractions at 0.9; record peak
+- [x] Run fake-provider boundary tests at 0.5, 0.9 and 1.0 fractions.
+- [x] Run a real local multi-seed smoke with both fractions at 0.9; record peak
 committed memory, average CPU, worker count and failure cleanup.
-- [ ] Run full CTest and Python compile/tests.
-- [ ] Document behavior and commit `docs: record dual-constraint scheduler results`.
+- [x] Run full CTest and Python compile/tests.
+- [x] Document behavior and commit `docs: record dual-constraint scheduler results`.

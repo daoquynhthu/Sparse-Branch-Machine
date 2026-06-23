@@ -84,7 +84,9 @@ python scripts/tune.py \
   --trials 27 \
   --seeds 7,11,19 \
   --eta 3 \
-  --jobs 3 \
+  --cpu-fraction 0.9 \
+  --memory-fraction 0.9 \
+  --minimum-free-memory-mib 1024 \
   --output tuning_token.json \
   --best-config best_token.json
 ```
@@ -98,6 +100,13 @@ The tuner:
 - maximizes frozen R2 for vector tasks;
 - uses multi-seed successive halving;
 - writes checkpoints without recompilation.
+
+Automatic mode runs every candidate in an isolated process. It admits one
+worker at a time after refreshing current available memory and checks both the
+CPU-slot and memory budgets. The reservation combines dataset bytes, model
+state, fixed process overhead and a configurable growth margin; observed
+`estimated_bytes` raises the estimate for later halving stages. Use
+`--fixed-jobs N` only to request the legacy in-process thread executor.
 
 ## Install
 
@@ -128,7 +137,9 @@ python scripts/convert_naime_dataset.py \
   --shard-tokens 16000000
 ```
 
-Use `--max-tokens-per-split` for a deterministic smoke subset. The command emits
+Use `--max-tokens-per-split` for a deterministic smoke subset, or
+`--max-train-tokens` and `--max-validation-tokens` when split budgets differ.
+The command emits
 one compact JSON status line; detailed provenance, hashes, counts and known data
 limitations are stored in `manifest.json`. Existing non-empty output directories
 and existing shard files are rejected.
@@ -147,3 +158,18 @@ with runtime.open_token_corpus("/data/sbm/fineweb_edu_compat/manifest.json") as 
 
 The corpus handle consumes all manifest train shards before freezing once and
 evaluating validation shards. Exact model checkpoint/resume is still pending.
+
+Multi-seed corpus runs use the same dual-constraint scheduler:
+
+```bash
+python scripts/run_corpus_batch.py \
+  --library build/libsbm_api.so \
+  --manifest /data/sbm/fineweb_edu_compat/manifest.json \
+  --seeds 7,11,19 \
+  --output-dir /data/sbm/runs/medium \
+  --cpu-fraction 0.9 \
+  --memory-fraction 0.9
+```
+
+Console output is limited to scheduler state transitions and one final compact
+summary. Full per-seed metrics are written under the output directory.
