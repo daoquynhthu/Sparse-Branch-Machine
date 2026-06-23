@@ -13,10 +13,6 @@ bool SparseBranchMachine::uses_sparse_token_output() const noexcept {
 SparseBranchMachine::SparseBranchMachine(Config config)
     : config_(config),
       rng_state_(config.seed),
-      buckets_(static_cast<std::size_t>(config.max_address_channels) * (std::size_t{1} << config.bucket_bits)),
-      hot_buckets_(static_cast<std::size_t>(config.max_address_channels) * (std::size_t{1} << config.bucket_bits)),
-      bucket_last_split_step_(static_cast<std::size_t>(config.max_address_channels) *
-                              (std::size_t{1} << config.bucket_bits), 0),
       prediction_buffer_(config.objective == ObjectiveKind::TokenCrossEntropy &&
                                  config.sparse_token_output ? 0U : config.vector_dim,
                              0.0F),
@@ -92,6 +88,7 @@ SparseBranchMachine::SparseBranchMachine(Config config)
     selected_scratch_.reserve(config.beam_width);
     chosen_scratch_.reserve(candidate_capacity);
     order_scratch_.reserve(candidate_capacity);
+    bucket_node_scratch_.reserve(config.bucket_scan_limit);
     topology_.reserve(config.max_address_channels);
     proposed_program_keys_.reserve(config.max_address_channels * 4U);
     for (std::size_t index = 0; index < config.address_lags.size(); ++index) {
@@ -125,6 +122,88 @@ std::size_t SparseBranchMachine::bucket_index(std::uint8_t channel,
                                               std::uint64_t signature) const noexcept {
     const std::size_t bucket_count = std::size_t{1} << config_.bucket_bits;
     return static_cast<std::size_t>(channel) * bucket_count + bucket(signature);
+}
+
+const SparseBranchMachine::BucketState*
+SparseBranchMachine::find_bucket(std::size_t index) const noexcept {
+    const auto found = bucket_directory_.find(index);
+    return found == bucket_directory_.end() ? nullptr : &found->second;
+}
+
+SparseBranchMachine::BucketState& SparseBranchMachine::ensure_bucket(std::size_t index) {
+    return bucket_directory_.try_emplace(index).first->second;
+}
+
+std::span<const NodeId> SparseBranchMachine::bounded_bucket_nodes(
+    std::size_t index, std::size_t limit) {
+    bucket_node_scratch_.clear();
+    limit = std::min<std::size_t>(limit, config_.bucket_scan_limit);
+    auto found = bucket_directory_.find(index);
+    if (found == bucket_directory_.end() || limit == 0U) return {};
+    auto& state = found->second;
+    std::size_t inspected = 0U;
+    const auto append = [&](NodeId id) {
+        if (!contains(id)) {
+            ++stale_bucket_refs_skipped_;
+            return;
+        }
+        if (std::find(bucket_node_scratch_.begin(), bucket_node_scratch_.end(), id) !=
+                bucket_node_scratch_.end()) {
+            return;
+        }
+        bucket_node_scratch_.push_back(id);
+    };
+    for (const auto id : state.hot) {
+        if (inspected >= limit) break;
+        ++inspected;
+        append(id);
+    }
+    if (inspected < limit) {
+        const auto attempts = std::min<std::size_t>(
+            state.cold.size(), limit - inspected);
+        for (std::size_t offset = 0U; offset < attempts; ++offset) {
+            append(state.cold[offset]);
+        }
+        inspected += attempts;
+    }
+    max_bucket_candidates_inspected_ = std::max<std::uint64_t>(
+        max_bucket_candidates_inspected_, inspected);
+    return {bucket_node_scratch_.data(), bucket_node_scratch_.size()};
+}
+
+void SparseBranchMachine::mark_hot(NodeId id) {
+    const auto slot = slot_of(id);
+    if (slot == SIZE_MAX) return;
+    auto& state = ensure_bucket(bucket_index(channels_[slot], prototypes_[slot]));
+    if (std::find(state.hot.begin(), state.hot.end(), id) != state.hot.end()) {
+        hot_indexed_[slot] = 1U;
+        return;
+    }
+    const auto limit = static_cast<std::size_t>(config_.bucket_scan_limit);
+    if (state.hot.size() < limit) {
+        state.hot.push_back(id);
+        hot_indexed_[slot] = 1U;
+        return;
+    }
+    const auto weaker = [&](NodeId left, NodeId right) {
+        const auto left_slot = slot_of(left);
+        const auto right_slot = slot_of(right);
+        if (left_slot == SIZE_MAX) return true;
+        if (right_slot == SIZE_MAX) return false;
+        if (utility_ema_[left_slot] != utility_ema_[right_slot]) {
+            return utility_ema_[left_slot] < utility_ema_[right_slot];
+        }
+        if (visits_[left_slot] != visits_[right_slot]) {
+            return visits_[left_slot] < visits_[right_slot];
+        }
+        return left > right;
+    };
+    const auto victim = std::min_element(state.hot.begin(), state.hot.end(), weaker);
+    if (victim == state.hot.end() || !weaker(*victim, id)) return;
+    const auto victim_slot = slot_of(*victim);
+    if (victim_slot != SIZE_MAX) hot_indexed_[victim_slot] = 0U;
+    *victim = id;
+    hot_indexed_[slot] = 1U;
 }
 
 std::size_t SparseBranchMachine::slot_of(NodeId id) const noexcept {
@@ -168,7 +247,11 @@ NodeId SparseBranchMachine::new_node(std::uint64_t signature,
     sparse_outputs_.emplace_back();
     edges_.emplace_back();
     edges_.back().reserve(config_.max_edges_per_node);
-    buckets_[bucket_index(channel, signature)].push_back(id);
+    auto& bucket_state = ensure_bucket(bucket_index(channel, signature));
+    bucket_state.residents.push_back(id);
+    if (bucket_state.cold.size() < config_.bucket_scan_limit) {
+        bucket_state.cold.push_back(id);
+    }
     ++total_created_;
     return id;
 }

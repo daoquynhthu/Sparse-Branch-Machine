@@ -118,6 +118,7 @@ if(SBM_BUILD_TESTS)
   target_link_libraries(sbm_scaling_tests PRIVATE sbm)
   sbm_enable_test_assertions(sbm_scaling_tests)
   add_test(NAME sbm_scaling_report COMMAND sbm_scaling_tests report)
+  add_test(NAME sbm_scaling_address COMMAND sbm_scaling_tests address)
 
   if(SBM_BUILD_PYTHON_SMOKE_TEST)
     find_package(Python3 COMPONENTS Interpreter)

@@ -169,17 +169,17 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         if (!channel_enabled(channel)) continue;
         const auto signature = signatures[channel];
         const auto exact_bucket = bucket_index(channel, signature);
-        std::size_t exact_count = 0U;
+        const auto* bucket_state = find_bucket(exact_bucket);
+        const std::size_t exact_count = bucket_state == nullptr
+            ? 0U : bucket_state->residents.size();
         NodeId nearest_exact = kInvalidNode;
         double nearest_similarity = -1.0;
         float nearest_persistent_loss = std::numeric_limits<float>::infinity();
         std::uint32_t nearest_visits = 0U;
-        std::uint64_t bucket_candidates = 0U;
-        for (const NodeId id : buckets_[exact_bucket]) {
-            ++bucket_candidates;
+        for (const NodeId id : bounded_bucket_nodes(
+                 exact_bucket, config_.bucket_scan_limit)) {
             const auto slot = slot_of(id);
             if (slot == SIZE_MAX || channels_[slot] != channel) continue;
-            ++exact_count;
             const double similarity = hamming_similarity(prototypes_[slot], signature);
             if (similarity > nearest_similarity) {
                 nearest_similarity = similarity;
@@ -188,10 +188,9 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 nearest_persistent_loss = address_loss_ema_[slot];
             }
         }
-        max_bucket_candidates_inspected_ = std::max(
-            max_bucket_candidates_inspected_, bucket_candidates);
         const bool cooldown_ready = total_steps_ >=
-            bucket_last_split_step_[exact_bucket] + config_.split_cooldown;
+            (bucket_state == nullptr ? 0U : bucket_state->last_split_step) +
+                config_.split_cooldown;
         const bool persistent_conflict = nearest_exact != kInvalidNode &&
             nearest_visits >= config_.split_min_visits &&
             exact_count < config_.max_specializations_per_bucket &&
@@ -205,10 +204,9 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 loss_ema_[slot] = 1.0F;
                 address_loss_ema_[slot] = 1.0F;
                 utility_ema_[slot] = 0.0F;
-                hot_buckets_[exact_bucket].push_back(id);
-                hot_indexed_[slot] = 1U;
+                mark_hot(id);
             }
-            bucket_last_split_step_[exact_bucket] = total_steps_;
+            ensure_bucket(exact_bucket).last_split_step = total_steps_;
             ++created;
         }
     }
@@ -354,9 +352,7 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             const auto slot = slot_of(node.id);
             if (slot == SIZE_MAX || !channel_learning_enabled(node.channel)) continue;
             if (visits_[slot] == 0U && !hot_indexed_[slot]) {
-                hot_buckets_[bucket_index(channels_[slot], prototypes_[slot])]
-                    .push_back(ids_[slot]);
-                hot_indexed_[slot] = 1U;
+                mark_hot(ids_[slot]);
             }
             ++visits_[slot];
             ++address_visits_[slot];

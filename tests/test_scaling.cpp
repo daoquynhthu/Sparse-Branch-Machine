@@ -1,9 +1,12 @@
 #include "sparse_branch_machine.hpp"
 
 #include <cassert>
+#include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
 #include <string_view>
+#include <vector>
 
 namespace {
 
@@ -31,10 +34,48 @@ std::uint64_t output_bytes(std::uint32_t vocabulary) {
     return machine.diagnostics().output_structure_bytes;
 }
 
+double address_p95_microseconds(std::size_t nodes) {
+    auto config = sparse_config(10U, 128U);
+    config.bucket_scan_limit = 16U;
+    config.max_edges_per_node = 1U;
+    config.edge_scan_limit = 1U;
+    sbm::SparseBranchMachine machine(config);
+    machine.prefill_distractors(nodes);
+    machine.reset_sequence();
+    for (std::uint32_t index = 0U; index < 64U; ++index) {
+        (void)machine.step_token(index % 128U, (index + 1U) % 128U, false);
+    }
+    constexpr std::uint32_t batch_steps = 256U;
+    std::vector<double> samples;
+    samples.reserve(64U);
+    std::uint32_t token_index = 0U;
+    for (std::uint32_t batch = 0U; batch < 64U; ++batch) {
+        const auto start = std::chrono::steady_clock::now();
+        for (std::uint32_t index = 0U; index < batch_steps; ++index, ++token_index) {
+            (void)machine.step_token(
+                token_index % 128U, (token_index + 1U) % 128U, false);
+        }
+        const auto elapsed = std::chrono::duration<double, std::micro>(
+            std::chrono::steady_clock::now() - start).count() /
+            static_cast<double>(batch_steps);
+        samples.push_back(elapsed);
+    }
+    std::sort(samples.begin(), samples.end());
+    return samples[static_cast<std::size_t>(samples.size() * 95U / 100U)];
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
     const std::string_view mode = argc > 1 ? argv[1] : "all";
+    if (mode == "latency") {
+        const auto p95_100k = address_p95_microseconds(100000U);
+        const auto p95_1m = address_p95_microseconds(1000000U);
+        std::cout << "address_p95_us_100k=" << p95_100k
+                  << " address_p95_us_1m=" << p95_1m
+                  << " ratio=" << p95_1m / p95_100k << '\n';
+        return 0;
+    }
     const auto address_10 = address_bytes(10U);
     const auto address_16 = address_bytes(16U);
     const auto address_20 = address_bytes(20U);
@@ -47,9 +88,14 @@ int main(int argc, char** argv) {
     auto collision_config = sparse_config(1U, 128U);
     collision_config.bucket_scan_limit = 16U;
     sbm::SparseBranchMachine collision_machine(collision_config);
+    sbm::SparseBranchMachine collision_control(collision_config);
     collision_machine.prefill_distractors(20000U);
+    collision_control.prefill_distractors(20000U);
     collision_machine.reset_sequence();
-    (void)collision_machine.step_token(7U, 11U, true);
+    collision_control.reset_sequence();
+    const auto collision_step = collision_machine.step_token(7U, 11U, true);
+    const auto control_step = collision_control.step_token(7U, 11U, true);
+    assert(collision_step.route == control_step.route);
     const auto collision = collision_machine.diagnostics();
     std::cerr << "max_bucket_scan="
               << collision.max_bucket_candidates_inspected << '\n';
@@ -58,6 +104,14 @@ int main(int argc, char** argv) {
         assert(address_16 <= address_10 * 105U / 100U + 4096U);
         assert(address_20 <= address_10 * 105U / 100U + 4096U);
         assert(collision.max_bucket_candidates_inspected <=
+               collision_config.bucket_scan_limit);
+        const auto live_before_prune = collision_machine.live_nodes();
+        const auto pruned = collision_machine.prune(UINT32_MAX, 1.0F);
+        assert(pruned == live_before_prune);
+        assert(collision_machine.live_nodes() == 0U);
+        collision_machine.prefill_distractors(1024U);
+        (void)collision_machine.step_token(7U, 11U, false);
+        assert(collision_machine.diagnostics().max_bucket_candidates_inspected <=
                collision_config.bucket_scan_limit);
     }
     if (mode == "output" || mode == "all") {

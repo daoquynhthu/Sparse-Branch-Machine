@@ -1,6 +1,5 @@
 #include "sbm/machine.hpp"
 
-#include "sbm/detail/random.hpp"
 #include "sbm/detail/vector_ops.hpp"
 #include "sbm/math.hpp"
 
@@ -35,23 +34,11 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
     auto& output = candidate_scratch_;
     output.clear();
 
-    auto append_bucket = [&](const std::vector<NodeId>& source,
-                             std::size_t target_size,
-                             bool randomize) {
-        if (source.empty() || output.size() >= target_size) return;
-        const std::size_t start = randomize
-            ? static_cast<std::size_t>(detail::next_random(rng_state_) % source.size())
-            : 0U;
-        const std::size_t attempts = std::min<std::size_t>(
-            source.size(), (target_size - output.size()) * 4U + 1U);
-        for (std::size_t offset = 0;
-             offset < attempts && output.size() < target_size;
-             ++offset) {
-            const NodeId id = source[(start + offset) % source.size()];
-            if (!contains(id)) {
-                ++stale_bucket_refs_skipped_;
-                continue;
-            }
+    auto append_bucket = [&](std::size_t bucket_id, std::size_t target_size) {
+        if (output.size() >= target_size) return;
+        const auto candidates = bounded_bucket_nodes(
+            bucket_id, target_size - output.size());
+        for (const NodeId id : candidates) {
             (void)push_candidate(output, id, 0.0F);
         }
     };
@@ -62,8 +49,7 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
         if (!channel_enabled(channel)) continue;
         const std::size_t target_size = output.size() + config_.bucket_scan_limit;
         const std::size_t index = bucket_index(channel, signatures[channel]);
-        append_bucket(hot_buckets_[index], target_size, false);
-        append_bucket(buckets_[index], target_size, true);
+        append_bucket(index, target_size);
     }
 
     // Learned control-flow edges add alternatives after all exact views have
@@ -103,8 +89,7 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
                     static_cast<std::size_t>(channel) *
                     static_cast<std::size_t>(raw_bucket_count) +
                     static_cast<std::size_t>(probe);
-                append_bucket(hot_buckets_[flattened], hard_limit, false);
-                append_bucket(buckets_[flattened], hard_limit, true);
+                append_bucket(flattened, hard_limit);
                 if (output.size() >= hard_limit) break;
             }
         }

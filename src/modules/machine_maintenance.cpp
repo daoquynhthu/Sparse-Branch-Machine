@@ -163,12 +163,26 @@ std::size_t SparseBranchMachine::merge_redundant(std::size_t max_merges) {
 }
 
 void SparseBranchMachine::rebuild_indexes() {
-    for (auto& entries : buckets_) entries.clear();
-    for (auto& entries : hot_buckets_) entries.clear();
+    auto previous = std::move(bucket_directory_);
+    bucket_directory_.clear();
     for (std::size_t slot = 0; slot < ids_.size(); ++slot) {
         const auto index = bucket_index(channels_[slot], prototypes_[slot]);
-        buckets_[index].push_back(ids_[slot]);
-        if (hot_indexed_[slot]) hot_buckets_[index].push_back(ids_[slot]);
+        auto& state = ensure_bucket(index);
+        if (state.residents.empty()) {
+            const auto found = previous.find(index);
+            if (found != previous.end()) {
+                state.last_split_step = found->second.last_split_step;
+            }
+        }
+        state.residents.push_back(ids_[slot]);
+        if (state.cold.size() < config_.bucket_scan_limit) {
+            state.cold.push_back(ids_[slot]);
+        }
+    }
+    for (std::size_t slot = 0; slot < ids_.size(); ++slot) {
+        const bool was_hot = hot_indexed_[slot] != 0U;
+        hot_indexed_[slot] = 0U;
+        if (was_hot) mark_hot(ids_[slot]);
     }
     for (auto& list : edges_) {
         list.erase(std::remove_if(list.begin(), list.end(), [&](const Edge& edge) {
@@ -209,8 +223,12 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         edge_count += list.size();
         edge_capacity += list.capacity();
     }
-    for (const auto& entries : buckets_) bucket_capacity += entries.capacity();
-    for (const auto& entries : hot_buckets_) bucket_capacity += entries.capacity();
+    for (const auto& [key, state] : bucket_directory_) {
+        (void)key;
+        bucket_capacity += state.residents.capacity();
+        bucket_capacity += state.hot.capacity();
+        bucket_capacity += state.cold.capacity();
+    }
     for (std::size_t slot = 0; slot < ids_.size(); ++slot) {
         switch (phase_of_slot(slot)) {
             case NodePhase::Cold: ++cold; break;
@@ -230,9 +248,9 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         max_sparse_entries = std::max<std::uint64_t>(max_sparse_entries, entries.size());
     }
     const std::uint64_t address_index_bytes =
-        buckets_.capacity() * sizeof(std::vector<NodeId>) +
-        hot_buckets_.capacity() * sizeof(std::vector<NodeId>) +
-        bucket_last_split_step_.capacity() * sizeof(std::uint64_t) +
+        bucket_directory_.bucket_count() * sizeof(void*) +
+        bucket_directory_.size() *
+            (sizeof(std::pair<const std::size_t, BucketState>) + 2U * sizeof(void*)) +
         bucket_capacity * sizeof(NodeId);
     const std::uint64_t output_structure_bytes =
         output_tree_.capacity() * sizeof(OutputTreeNode) +

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <deque>
 #include <span>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -82,6 +83,12 @@ private:
         std::vector<float> contribution;
         float loss{};
     };
+    struct BucketState {
+        std::vector<NodeId> residents;
+        std::vector<NodeId> hot;
+        std::vector<NodeId> cold;
+        std::uint64_t last_split_step{};
+    };
 
     [[nodiscard]] std::uint32_t bucket(std::uint64_t signature) const noexcept;
     [[nodiscard]] bool uses_sparse_token_output() const noexcept;
@@ -106,6 +113,11 @@ private:
     void retire_channel(std::size_t channel);
     [[nodiscard]] std::size_t bucket_index(std::uint8_t channel,
                                            std::uint64_t signature) const noexcept;
+    [[nodiscard]] const BucketState* find_bucket(std::size_t index) const noexcept;
+    [[nodiscard]] BucketState& ensure_bucket(std::size_t index);
+    [[nodiscard]] std::span<const NodeId> bounded_bucket_nodes(
+        std::size_t index, std::size_t limit);
+    void mark_hot(NodeId id);
     [[nodiscard]] NodeId new_node(std::uint64_t signature, std::span<const float> initial,
                                   NodeId parent = kInvalidNode,
                                   std::uint8_t channel = 0U);
@@ -169,9 +181,7 @@ private:
     std::vector<std::uint32_t> id_to_slot_;
     NodeId next_id_{};
 
-    std::vector<std::vector<NodeId>> buckets_;
-    std::vector<std::vector<NodeId>> hot_buckets_;
-    std::vector<std::uint64_t> bucket_last_split_step_;
+    std::unordered_map<std::size_t, BucketState> bucket_directory_;
     std::vector<NodeId> previous_route_;
     std::vector<float> previous_responsibilities_;
     std::deque<TraceFrame> trace_;
@@ -187,6 +197,7 @@ private:
     std::vector<ScoredNode> selected_scratch_;
     std::vector<std::uint8_t> chosen_scratch_;
     std::vector<std::size_t> order_scratch_;
+    std::vector<NodeId> bucket_node_scratch_;
 
     std::uint64_t total_steps_{};
     std::uint64_t total_candidates_{};
