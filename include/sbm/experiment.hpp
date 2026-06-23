@@ -24,6 +24,7 @@ struct TokenMetrics {
     double top1_accuracy{};
     double top5_accuracy{};
     double mean_target_probability{};
+    bool ranking_available{true};
 };
 
 struct ExperimentResult {
@@ -66,10 +67,12 @@ struct TokenExperimentResult {
     TokenMetrics current_token_baseline_eval;
     TokenMetrics pair_context_baseline_eval;
     TokenMetrics multiscale_baseline_eval;
+    TokenMetrics interpolated_multiscale_baseline_eval;
     double oracle_cross_entropy{};
     double excess_cross_entropy{};
     double steps_per_second{};
     double elapsed_seconds{};
+    double baseline_elapsed_seconds{};
     bool strict_freeze{};
     std::uint64_t dataset_hash{};
     std::uint32_t vocab_size{};

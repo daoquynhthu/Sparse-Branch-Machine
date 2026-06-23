@@ -22,26 +22,8 @@ struct TokenAccumulator {
     std::uint64_t top1{};
     std::uint64_t top5{};
     std::uint64_t examples{};
+    bool ranking_available{true};
 };
-
-void add_distribution(TokenAccumulator& accumulator,
-                      std::span<const float> probabilities,
-                      std::uint32_t target) {
-    const float target_probability = std::max(probabilities[target], 1e-12F);
-    accumulator.cross_entropy -= std::log(target_probability);
-    accumulator.target_probability += target_probability;
-    const auto maximum = static_cast<std::uint32_t>(std::distance(
-        probabilities.begin(),
-        std::max_element(probabilities.begin(), probabilities.end())));
-    accumulator.top1 += maximum == target ? 1U : 0U;
-
-    std::size_t better = 0U;
-    for (std::size_t index = 0; index < probabilities.size(); ++index) {
-        if (index != target && probabilities[index] > target_probability) ++better;
-    }
-    accumulator.top5 += better < std::min<std::size_t>(5U, probabilities.size()) ? 1U : 0U;
-    ++accumulator.examples;
-}
 
 void add_step(TokenAccumulator& accumulator, const StepStats& stats) {
     accumulator.cross_entropy += static_cast<double>(stats.cross_entropy);
@@ -49,6 +31,14 @@ void add_step(TokenAccumulator& accumulator, const StepStats& stats) {
     accumulator.top1 += stats.top1_correct ? 1U : 0U;
     accumulator.top5 += stats.top5_correct ? 1U : 0U;
     ++accumulator.examples;
+}
+
+void add_target_probability(TokenAccumulator& accumulator, double probability) {
+    const double bounded = std::max(probability, 1e-12);
+    accumulator.cross_entropy -= std::log(bounded);
+    accumulator.target_probability += bounded;
+    ++accumulator.examples;
+    accumulator.ranking_available = false;
 }
 
 TokenMetrics finish(const TokenAccumulator& accumulator) {
@@ -61,6 +51,7 @@ TokenMetrics finish(const TokenAccumulator& accumulator) {
     result.top1_accuracy = static_cast<double>(accumulator.top1) * inverse;
     result.top5_accuracy = static_cast<double>(accumulator.top5) * inverse;
     result.mean_target_probability = accumulator.target_probability * inverse;
+    result.ranking_available = accumulator.ranking_available;
     return result;
 }
 
@@ -71,8 +62,6 @@ struct CountRow {
 
 class ConditionalTable {
 public:
-    explicit ConditionalTable(std::uint32_t vocabulary) : vocabulary_(vocabulary) {}
-
     void observe(std::uint64_t key, std::uint32_t target) {
         auto [iterator, inserted] = rows_.try_emplace(key);
         (void)inserted;
@@ -80,30 +69,20 @@ public:
         ++iterator->second.counts[target];
     }
 
-    [[nodiscard]] bool distribution(std::uint64_t key,
-                                    std::span<const float> fallback,
-                                    std::span<float> output,
-                                    float smoothing = 0.5F) const {
+    [[nodiscard]] double target_probability(std::uint64_t key,
+                                            std::uint32_t target,
+                                            double fallback,
+                                            double smoothing = 0.5) const {
         const auto iterator = rows_.find(key);
-        if (iterator == rows_.end()) {
-            std::copy(fallback.begin(), fallback.end(), output.begin());
-            return false;
-        }
+        if (iterator == rows_.end()) return fallback;
         const auto& row = iterator->second;
         const double denominator = static_cast<double>(row.total) + smoothing;
-        for (std::uint32_t token = 0; token < vocabulary_; ++token) {
-            const auto count = row.counts.find(token);
-            const auto observed = count == row.counts.end() ? 0U : count->second;
-            output[token] = static_cast<float>(
-                (static_cast<double>(observed) +
-                 smoothing * static_cast<double>(fallback[token])) /
-                denominator);
-        }
-        return true;
+        const auto count = row.counts.find(target);
+        const auto observed = count == row.counts.end() ? 0U : count->second;
+        return (static_cast<double>(observed) + smoothing * fallback) / denominator;
     }
 
 private:
-    std::uint32_t vocabulary_{};
     std::unordered_map<std::uint64_t, CountRow> rows_;
 };
 
@@ -134,17 +113,6 @@ std::uint32_t token_at_lag(const TokenDataView& dataset,
     return position >= sequence_start + lag
         ? dataset.tokens[position - lag]
         : dataset.tokens[sequence_start];
-}
-
-void normalize_logits(std::span<float> values) {
-    const float maximum = *std::max_element(values.begin(), values.end());
-    double sum = 0.0;
-    for (auto& value : values) {
-        value = std::exp(value - maximum);
-        sum += value;
-    }
-    const float inverse = static_cast<float>(1.0 / std::max(sum, 1e-30));
-    for (auto& value : values) value *= inverse;
 }
 
 } // namespace
@@ -190,11 +158,12 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
 
     std::vector<std::uint64_t> unigram_counts(vocabulary, 0U);
     std::uint64_t unigram_total = 0U;
-    ConditionalTable current_table(vocabulary);
-    ConditionalTable pair_table(vocabulary);
-    ConditionalTable lag2_table(vocabulary);
-    ConditionalTable lag4_table(vocabulary);
+    ConditionalTable current_table;
+    ConditionalTable pair_table;
+    ConditionalTable lag2_table;
+    ConditionalTable lag4_table;
 
+    const auto baseline_training_start = std::chrono::steady_clock::now();
     std::size_t training_index = 0U;
     for (const auto& dataset : datasets) {
       for (std::size_t sequence = 0; sequence < dataset.sequence_count(); ++sequence) {
@@ -219,6 +188,8 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
       }
       if (training_index >= warmup_examples) break;
     }
+    double baseline_elapsed = std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - baseline_training_start).count();
 
     std::vector<float> unigram(vocabulary, 0.0F);
     constexpr double prior = 0.5;
@@ -235,15 +206,9 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     TokenAccumulator unigram_accumulator;
     TokenAccumulator current_accumulator;
     TokenAccumulator pair_accumulator;
-    TokenAccumulator multiscale_accumulator;
+    TokenAccumulator interpolated_multiscale_accumulator;
     double oracle_total = 0.0;
     std::uint64_t oracle_examples = 0U;
-
-    std::vector<float> current_probability(vocabulary, 0.0F);
-    std::vector<float> pair_probability(vocabulary, 0.0F);
-    std::vector<float> lag2_probability(vocabulary, 0.0F);
-    std::vector<float> lag4_probability(vocabulary, 0.0F);
-    std::vector<float> multiscale_probability(vocabulary, 0.0F);
 
     std::size_t example_index = 0U;
     double model_elapsed = 0.0;
@@ -266,30 +231,28 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
             add_step(learn ? train_accumulator : eval_accumulator, stats);
 
             if (!learn) {
-                add_distribution(unigram_accumulator, unigram, target);
-                (void)current_table.distribution(current, unigram, current_probability);
-                add_distribution(current_accumulator, current_probability, target);
+                const auto baseline_start = std::chrono::steady_clock::now();
+                const double unigram_probability = unigram[target];
+                add_target_probability(unigram_accumulator, unigram_probability);
+                const double current_probability = current_table.target_probability(
+                    current, target, unigram_probability);
+                add_target_probability(current_accumulator, current_probability);
 
                 const auto lag1 = token_at_lag(dataset, start, position, 1U);
                 const auto lag2 = token_at_lag(dataset, start, position, 2U);
                 const auto lag4 = token_at_lag(dataset, start, position, 4U);
-                (void)pair_table.distribution(pair_key(lag1, current),
-                                        current_probability, pair_probability);
-                (void)lag2_table.distribution(pair_key(lag2, current),
-                                        current_probability, lag2_probability);
-                (void)lag4_table.distribution(pair_key(lag4, current),
-                                        current_probability, lag4_probability);
-                add_distribution(pair_accumulator, pair_probability, target);
-
-                for (std::uint32_t candidate = 0; candidate < vocabulary; ++candidate) {
-                    multiscale_probability[candidate] =
-                        (std::log(std::max(pair_probability[candidate], 1e-12F)) +
-                         std::log(std::max(lag2_probability[candidate], 1e-12F)) +
-                         std::log(std::max(lag4_probability[candidate], 1e-12F))) /
-                        3.0F;
-                }
-                normalize_logits(multiscale_probability);
-                add_distribution(multiscale_accumulator, multiscale_probability, target);
+                const double pair_probability = pair_table.target_probability(
+                    pair_key(lag1, current), target, current_probability);
+                const double lag2_probability = lag2_table.target_probability(
+                    pair_key(lag2, current), target, current_probability);
+                const double lag4_probability = lag4_table.target_probability(
+                    pair_key(lag4, current), target, current_probability);
+                add_target_probability(pair_accumulator, pair_probability);
+                add_target_probability(
+                    interpolated_multiscale_accumulator,
+                    (pair_probability + lag2_probability + lag4_probability) / 3.0);
+                baseline_elapsed += std::chrono::duration<double>(
+                    std::chrono::steady_clock::now() - baseline_start).count();
 
                 if (!dataset.oracle_nll.empty()) {
                     oracle_total += dataset.oracle_nll[position + 1U];
@@ -319,7 +282,9 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.unigram_baseline_eval = finish(unigram_accumulator);
     result.current_token_baseline_eval = finish(current_accumulator);
     result.pair_context_baseline_eval = finish(pair_accumulator);
-    result.multiscale_baseline_eval = finish(multiscale_accumulator);
+    result.interpolated_multiscale_baseline_eval =
+        finish(interpolated_multiscale_accumulator);
+    result.multiscale_baseline_eval = result.interpolated_multiscale_baseline_eval;
     result.oracle_cross_entropy = oracle_examples == 0U
         ? std::numeric_limits<double>::quiet_NaN()
         : oracle_total / static_cast<double>(oracle_examples);
@@ -328,6 +293,7 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         : result.eval.cross_entropy - result.oracle_cross_entropy;
     result.steps_per_second = static_cast<double>(total_examples) / elapsed;
     result.elapsed_seconds = elapsed;
+    result.baseline_elapsed_seconds = baseline_elapsed;
     result.strict_freeze = strict_freeze;
     result.dataset_hash = combined_hash;
     result.vocab_size = vocabulary;
@@ -416,8 +382,13 @@ std::string to_json(const TokenExperimentResult& result) {
         out << "  \"" << prefix << "_cross_entropy\": " << metrics.cross_entropy << ",\n"
             << "  \"" << prefix << "_bits_per_token\": " << metrics.bits_per_token << ",\n"
             << "  \"" << prefix << "_perplexity\": " << metrics.perplexity << ",\n"
-            << "  \"" << prefix << "_top1_accuracy\": " << metrics.top1_accuracy << ",\n"
-            << "  \"" << prefix << "_top5_accuracy\": " << metrics.top5_accuracy << ",\n"
+            << "  \"" << prefix << "_top1_accuracy\": ";
+        if (metrics.ranking_available) out << metrics.top1_accuracy;
+        else out << "null";
+        out << ",\n  \"" << prefix << "_top5_accuracy\": ";
+        if (metrics.ranking_available) out << metrics.top5_accuracy;
+        else out << "null";
+        out << ",\n"
             << "  \"" << prefix << "_mean_target_probability\": "
             << metrics.mean_target_probability;
         if (trailing) out << ',';
@@ -515,6 +486,8 @@ std::string to_json(const TokenExperimentResult& result) {
     emit_metrics("current_token_baseline_eval", result.current_token_baseline_eval);
     emit_metrics("pair_context_baseline_eval", result.pair_context_baseline_eval);
     emit_metrics("multiscale_baseline_eval", result.multiscale_baseline_eval);
+    emit_metrics("interpolated_multiscale_baseline_eval",
+                 result.interpolated_multiscale_baseline_eval);
     if (std::isfinite(result.oracle_cross_entropy)) {
         out << "  \"oracle_cross_entropy\": " << result.oracle_cross_entropy << ",\n"
             << "  \"excess_cross_entropy\": " << result.excess_cross_entropy << ",\n";
@@ -524,6 +497,8 @@ std::string to_json(const TokenExperimentResult& result) {
     }
     out << "  \"steps_per_second\": " << result.steps_per_second << ",\n"
         << "  \"elapsed_seconds\": " << result.elapsed_seconds << ",\n"
+        << "  \"baseline_elapsed_seconds\": "
+        << result.baseline_elapsed_seconds << ",\n"
         << "  \"strict_freeze\": " << (result.strict_freeze ? "true" : "false") << ",\n"
         << "  \"dataset_hash\": " << result.dataset_hash << "\n"
         << "}\n";

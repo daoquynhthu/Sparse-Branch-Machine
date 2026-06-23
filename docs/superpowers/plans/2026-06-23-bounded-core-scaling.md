@@ -263,32 +263,32 @@ git commit -m "perf: bound local sparse output state"
 - Test: `tests/test_sbm.cpp`
 - Test: `tests/test_scaling.cpp`
 
-- [ ] **Step 1: Write formula-equivalence RED tests**
+- [x] **Step 1: Write formula-equivalence RED tests**
 
 On a fixed small corpus, capture old unigram/current/pair NLL and require the
 new direct target-probability accumulators to match within `1e-7`. Add a 50,257
 vocabulary test asserting synchronous baseline candidate work is independent of
 `V`.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Expected: baseline work diagnostic scales with vocabulary.
 
-- [ ] **Step 3: Implement sparse target-probability queries**
+- [x] **Step 3: Implement sparse target-probability queries**
 
 Add `ConditionalTable::target_probability(key,target,fallback_probability)` and
 an accumulator that accepts one probability without materializing a vector.
 Retain exact NLL/bits/perplexity. Mark baseline ranking metrics unavailable in
 the synchronous result rather than fabricating zero accuracy.
 
-- [ ] **Step 4: Add named interpolated multiscale baseline**
+- [x] **Step 4: Add named interpolated multiscale baseline**
 
 Compute a normalized convex interpolation of current/pair/lag2/lag4 target
 probabilities with fixed documented weights. Emit it under a new JSON name and
 retain the old geometric control only in an offline comparison script until its
 quality relation is recorded.
 
-- [ ] **Step 5: Verify real-corpus wall time**
+- [x] **Step 5: Verify real-corpus wall time**
 
 Run the existing 10,240/10,240 FineWeb-Edu compatibility smoke. Require
 synchronous baseline time no greater than twice measured model time and record

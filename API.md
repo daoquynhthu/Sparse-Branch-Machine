@@ -171,3 +171,19 @@ escape the manifest directory.
 Model checkpoint serialization is not implemented yet. A shard cursor proves
 exact data replay but is not a full training checkpoint, and a corpus run cannot
 yet resume in the middle of a shard without replaying model updates.
+
+## Token baseline metrics
+
+Synchronous corpus evaluation computes unigram and sparse conditional baseline
+NLL by querying only the observed target probability. It does not scan or rank
+the full vocabulary. Consequently, baseline cross-entropy, bits/token,
+perplexity and mean target probability are defined, while baseline top-1 and
+top-5 fields are JSON `null`.
+
+`interpolated_multiscale_baseline_eval_*` is the arithmetic mean of the target
+probabilities from the lag-1 pair, lag-2 and lag-4 conditional tables. Each
+table backs off through the current-token and unigram distributions. The legacy
+`multiscale_baseline_eval_*` key is currently an alias for compatibility; it no
+longer denotes the old vocabulary-wide geometric product. Results separately
+report `elapsed_seconds` for model work and `baseline_elapsed_seconds` for
+baseline construction and evaluation.

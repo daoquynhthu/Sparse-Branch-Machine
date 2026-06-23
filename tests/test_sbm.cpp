@@ -209,8 +209,21 @@ int main() {
         token_dataset, 2500, token_config, true, 0, 0, 0);
     assert(std::isfinite(token_result.eval.cross_entropy));
     assert(std::isfinite(token_result.eval.perplexity));
+    assert(std::isfinite(
+        token_result.interpolated_multiscale_baseline_eval.cross_entropy));
+    assert(!token_result.unigram_baseline_eval.ranking_available);
+    assert(token_result.baseline_elapsed_seconds >= 0.0);
     assert(token_result.eval_examples == token_dataset.example_count() - 2500);
     assert(token_result.oracle_cross_entropy > 0.0);
+
+    const auto balanced_dataset = sbm::make_token_dataset(
+        std::vector<std::uint32_t>{0, 1, 0, 1, 0, 1, 0, 1},
+        2U,
+        std::vector<std::uint64_t>{0, 8});
+    const auto balanced_result = sbm::run_token_experiment(
+        balanced_dataset, 4, token_config, true, 0, 0, 0);
+    assert(std::abs(
+        balanced_result.unigram_baseline_eval.cross_entropy - std::log(2.0)) < 1e-6);
 
 
     // Strict evaluation freeze must reject an unfinished probe at the train

@@ -42,6 +42,9 @@ with runtime.generate_math_token_dataset(8, 512, 16, 13, 0.8, 0.2) as dataset:
         token_result = dataset.run(config, warmup=2500)
 assert math.isfinite(token_result["eval_cross_entropy"])
 assert token_result["objective"] == "token_cross_entropy"
+assert token_result["unigram_baseline_eval_top1_accuracy"] is None
+assert math.isfinite(token_result["interpolated_multiscale_baseline_eval_cross_entropy"])
+assert token_result["baseline_elapsed_seconds"] >= 0.0
 
 with runtime.token_dataset_from_ids([1, 2, 3, 1, 2, 4], 8, [0, 3, 6]) as external:
     assert external.sequence_count == 2

@@ -476,3 +476,19 @@ decisions per node and used 450–478 KB. Capacities 64, 128 and 256 were tested
 seeds 7, 11 and 19. Capacity 64 used 92–93 KB, approximately doubled measured
 model throughput from 12k to 25k token/s, and did not worsen NLL on any seed, so
 64 became the default hard bound.
+
+The synchronous statistical baselines now query only the target probability;
+they no longer allocate, normalize or rank 50,257-way distributions per
+validation token. Small-corpus direct-query NLL matched the previous unigram,
+current-token and pair controls within `4e-8`. The former geometric multiscale
+control was replaced by the explicitly named arithmetic interpolation of the
+lag-1, lag-2 and lag-4 target probabilities; on that comparison fixture its NLL
+was 7.8259 versus 7.7703 for the old, different estimator. Ranking fields are
+therefore reported as unavailable rather than zero.
+
+On the existing 10,240-train/10,240-validation FineWeb-Edu compatibility smoke,
+model work took 0.924 seconds and baseline work 0.016 seconds, with end-to-end
+wall time 0.990 seconds and measured model throughput 22,172 token/s. This
+removes the previous 80-second baseline bottleneck. Evaluation NLL remained
+poor at 10.8682 versus unigram 8.5815; the performance repair is not evidence of
+predictive quality.
