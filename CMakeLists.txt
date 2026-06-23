@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(sparse_branch_machine VERSION 3.0.0 LANGUAGES CXX)
+project(sparse_branch_machine VERSION 3.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -81,8 +81,10 @@ if(SBM_BUILD_CLI)
   set_target_properties(sbm_cli PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
   target_include_directories(sbm_cli PRIVATE include)
   target_link_libraries(sbm_cli PRIVATE sbm_api)
-  if(SBM_ENABLE_NATIVE AND NOT MSVC)
-    target_compile_options(sbm_cli PRIVATE -O3 -march=native)
+  if(NOT MSVC)
+    # The CLI is a thin argument parser.  Optimizing it at -O3 materially
+    # increases build latency without affecting model throughput.
+    target_compile_options(sbm_cli PRIVATE -O1)
   endif()
   # Preserve the historical build target name without producing another exe.
   add_executable(sbm_benchmark ALIAS sbm_cli)
@@ -122,4 +124,4 @@ if(SBM_BUILD_CLI)
 endif()
 install(DIRECTORY include/ DESTINATION include)
 install(FILES python/sbm_runtime.py DESTINATION python)
-install(PROGRAMS scripts/tune.py scripts/run_python_api.py DESTINATION bin)
+install(PROGRAMS scripts/tune.py scripts/run_python_api.py scripts/theory_ablation.py DESTINATION bin)

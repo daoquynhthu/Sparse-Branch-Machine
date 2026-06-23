@@ -4,9 +4,33 @@
 
 #include <algorithm>
 #include <cmath>
-#include <stdexcept>
+#include <optional>
 
 namespace sbm {
+namespace {
+
+std::optional<AddressProgram> proposal_at(std::uint64_t ordinal,
+                                          std::uint32_t max_lag,
+                                          std::uint32_t max_arity) {
+    for (std::uint32_t outer = 2U; outer <= max_lag; ++outer) {
+        if (ordinal == 0U) return singleton_address_program(outer);
+        --ordinal;
+        if (max_arity < 2U) continue;
+        for (std::uint32_t inner = 1U; inner < outer; ++inner) {
+            if (ordinal == 0U) {
+                AddressProgram program;
+                program.lags[0] = inner;
+                program.lags[1] = outer;
+                program.arity = 2U;
+                return program;
+            }
+            --ordinal;
+        }
+    }
+    return std::nullopt;
+}
+
+} // namespace
 
 bool SparseBranchMachine::channel_enabled(std::size_t channel) const noexcept {
     if (channel >= topology_.size()) return false;
@@ -25,16 +49,19 @@ bool SparseBranchMachine::channel_learning_enabled(std::size_t channel) const no
     return age + validation < config_.topology_probe_steps;
 }
 
-std::vector<std::uint64_t> SparseBranchMachine::make_signatures(
-    std::span<const std::uint32_t> window) const {
-    std::vector<std::uint64_t> signatures(topology_.size(), 0U);
+std::span<const std::uint64_t> SparseBranchMachine::make_signatures(
+    std::span<const std::uint32_t> window) {
+    std::fill(signature_buffer_.begin(), signature_buffer_.end(), 0U);
     for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
         if (!channel_enabled(channel)) continue;
-        signatures[channel] = lagged_token_signature(
-            window, config_.token_alphabet, topology_[channel].lag,
-            config_.seed ^ mix64(static_cast<std::uint64_t>(channel) + 0x9E3779B97F4A7C15ULL));
+        const auto& program = topology_[channel].program;
+        signature_buffer_[channel] = address_program_signature(
+            window, config_.token_alphabet,
+            std::span<const std::uint32_t>(program.lags.data(), program.arity),
+            config_.seed ^ mix64(address_program_key(program) +
+                                 0x9E3779B97F4A7C15ULL));
     }
-    return signatures;
+    return std::span<const std::uint64_t>(signature_buffer_.data(), topology_.size());
 }
 
 void SparseBranchMachine::retire_channel(std::size_t channel) {
@@ -74,7 +101,7 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         const double mean_credit = state.credit_sum /
             static_cast<double>(std::max<std::uint64_t>(1U, state.observations));
         if (mean_credit >= static_cast<double>(config_.topology_accept_credit)) {
-            topology_events_.push_back({total_steps_, state.lag,
+            topology_events_.push_back({total_steps_, state.program,
                                         TopologyDecision::Accepted,
                                         static_cast<float>(mean_credit)});
             state.phase = ChannelPhase::Active;
@@ -83,7 +110,7 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
             state.credit_sum = 0.0;
             ++topology_accepted_;
         } else {
-            topology_events_.push_back({total_steps_, state.lag,
+            topology_events_.push_back({total_steps_, state.program,
                                         TopologyDecision::Rejected,
                                         static_cast<float>(mean_credit)});
             retire_channel(channel);
@@ -101,7 +128,7 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
             state.credit_ema >= config_.topology_prune_credit) {
             continue;
         }
-        topology_events_.push_back({total_steps_, state.lag,
+        topology_events_.push_back({total_steps_, state.program,
                                     TopologyDecision::Pruned,
                                     state.credit_ema});
         retire_channel(channel);
@@ -111,9 +138,26 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
     }
 }
 
+
+void SparseBranchMachine::freeze_topology() {
+    for (std::size_t channel = 1U; channel < topology_.size(); ++channel) {
+        auto& state = topology_[channel];
+        if (state.phase != ChannelPhase::Probe) continue;
+        const double mean_credit = state.observations == 0U
+            ? 0.0
+            : state.credit_sum / static_cast<double>(state.observations);
+        topology_events_.push_back({total_steps_, state.program,
+                                    TopologyDecision::Rejected,
+                                    static_cast<float>(mean_credit)});
+        retire_channel(channel);
+        ++topology_rejected_;
+    }
+}
+
 void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
+    if (!learn) return;
     maybe_finalize_topology_probe();
-    if (!learn || !config_.adaptive_topology || total_steps_ < next_probe_step_) return;
+    if (!config_.adaptive_topology || total_steps_ < next_probe_step_) return;
 
     for (const auto& state : topology_) {
         if (state.phase == ChannelPhase::Probe) return;
@@ -128,22 +172,20 @@ void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
     }
     if (enabled >= config_.max_address_channels) return;
 
-    auto lag_in_use = [&](std::uint32_t lag) {
-        return std::any_of(topology_.begin(), topology_.end(), [&](const auto& state) {
-            return state.phase != ChannelPhase::Retired && state.lag == lag;
-        });
-    };
-
-    std::uint32_t proposal = 0U;
-    for (std::uint32_t attempts = 0U; attempts < config_.topology_max_lag; ++attempts) {
-        if (next_lag_candidate_ > config_.topology_max_lag) next_lag_candidate_ = 2U;
-        const auto candidate = next_lag_candidate_++;
-        if (candidate != 0U && !lag_in_use(candidate)) {
+    std::optional<AddressProgram> proposal;
+    while (true) {
+        const auto candidate = proposal_at(proposal_cursor_++, config_.topology_max_lag,
+                                           config_.topology_max_arity);
+        if (!candidate.has_value()) break;
+        const auto key = address_program_key(*candidate);
+        if (std::find(proposed_program_keys_.begin(), proposed_program_keys_.end(), key) ==
+            proposed_program_keys_.end()) {
             proposal = candidate;
+            proposed_program_keys_.push_back(key);
             break;
         }
     }
-    if (proposal == 0U) return;
+    if (!proposal.has_value()) return;
 
     std::size_t slot = topology_.size();
     for (std::size_t index = 1U; index < topology_.size(); ++index) {
@@ -157,8 +199,8 @@ void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
         topology_.push_back({});
     }
 
-    topology_[slot] = {proposal, ChannelPhase::Probe, 0.0F, 0.0, 0U, total_steps_};
-    topology_events_.push_back({total_steps_, proposal,
+    topology_[slot] = {*proposal, ChannelPhase::Probe, 0.0F, 0.0, 0U, total_steps_};
+    topology_events_.push_back({total_steps_, *proposal,
                                 TopologyDecision::Proposed, 0.0F});
     ++topology_proposals_;
     next_probe_step_ = total_steps_ + config_.topology_probe_steps;
@@ -179,8 +221,7 @@ void SparseBranchMachine::observe_topology_credit(
             const auto validation = std::min(config_.topology_validation_steps,
                                              config_.topology_probe_steps);
             const auto validation_start = config_.topology_probe_steps - validation;
-            if (age >= validation_start &&
-                age >= config_.topology_probe_warmup) {
+            if (age >= validation_start && age >= config_.topology_probe_warmup) {
                 state.credit_sum += static_cast<double>(credit);
                 ++state.observations;
             }
@@ -191,9 +232,20 @@ void SparseBranchMachine::observe_topology_credit(
 std::vector<std::uint32_t> SparseBranchMachine::learned_address_lags() const {
     std::vector<std::uint32_t> result;
     for (const auto& state : topology_) {
+        if ((state.phase == ChannelPhase::Seed || state.phase == ChannelPhase::Probe ||
+             state.phase == ChannelPhase::Active) && state.program.arity == 1U) {
+            result.push_back(state.program.lags[0]);
+        }
+    }
+    return result;
+}
+
+std::vector<AddressProgram> SparseBranchMachine::learned_address_programs() const {
+    std::vector<AddressProgram> result;
+    for (const auto& state : topology_) {
         if (state.phase == ChannelPhase::Seed || state.phase == ChannelPhase::Probe ||
             state.phase == ChannelPhase::Active) {
-            result.push_back(state.lag);
+            result.push_back(state.program);
         }
     }
     return result;

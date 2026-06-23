@@ -1,0 +1,3351 @@
+{
+  "api_version": "3.1.0",
+  "base_config": {},
+  "best": {
+    "config": {},
+    "id": "44136fa355b3678a",
+    "mean_eval_cross_entropy": 3.366424836666667,
+    "mean_eval_r2": null
+  },
+  "candidates": [
+    {
+      "config": {},
+      "id": "44136fa355b3678a",
+      "mean_eval_cross_entropy": 3.366424836666667,
+      "mean_score": -3.366424836666667,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 4,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.91503572,
+            "avg_candidates": 32.61815309,
+            "created_total": 35153,
+            "current_token_baseline_eval_bits_per_token": 5.00582835,
+            "current_token_baseline_eval_cross_entropy": 3.4697758,
+            "current_token_baseline_eval_mean_target_probability": 0.03136805,
+            "current_token_baseline_eval_perplexity": 32.12953833,
+            "current_token_baseline_eval_top1_accuracy": 0.03258312,
+            "current_token_baseline_eval_top5_accuracy": 0.16050423,
+            "dataset_hash": 148259111409531357,
+            "edge_score_weight": 0.31999999,
+            "edges": 50738,
+            "elapsed_seconds": 1.94724184,
+            "estimated_bytes": 13794176,
+            "eval_bits_per_token": 4.85874804,
+            "eval_cross_entropy": 3.3678275,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.03699286,
+            "eval_perplexity": 29.01542261,
+            "eval_top1_accuracy": 0.0703223,
+            "eval_top5_accuracy": 0.30065872,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.45025853,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                2,
+                4
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                4
+              ]
+            ],
+            "learned_channel_credit": [
+              0.02810326,
+              0.00608219,
+              0.02339482,
+              0.01960723,
+              -0.00358878,
+              0.01310212
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              2,
+              2,
+              3,
+              2
+            ],
+            "live_nodes": 20477,
+            "multiscale_baseline_eval_bits_per_token": 4.89193262,
+            "multiscale_baseline_eval_cross_entropy": 3.3908293,
+            "multiscale_baseline_eval_mean_target_probability": 0.04512322,
+            "multiscale_baseline_eval_perplexity": 29.6905645,
+            "multiscale_baseline_eval_top1_accuracy": 0.07638018,
+            "multiscale_baseline_eval_top5_accuracy": 0.3232042,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91756897,
+            "pair_context_baseline_eval_bits_per_token": 5.24857041,
+            "pair_context_baseline_eval_cross_entropy": 3.63803178,
+            "pair_context_baseline_eval_mean_target_probability": 0.05048167,
+            "pair_context_baseline_eval_perplexity": 38.01693745,
+            "pair_context_baseline_eval_top1_accuracy": 0.07487061,
+            "pair_context_baseline_eval_top5_accuracy": 0.33865276,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 67278.75170817,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 6,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": 0.00087382,
+                "decision": 1,
+                "lags": [
+                  2
+                ],
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "step": 8192
+              },
+              {
+                "credit": 0.00488878,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 14336
+              },
+              {
+                "credit": -0.00174099,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 18432
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  3
+                ],
+                "step": 20480
+              },
+              {
+                "credit": 0.00484978,
+                "decision": 1,
+                "lags": [
+                  1,
+                  3
+                ],
+                "step": 24576
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 26624
+              },
+              {
+                "credit": 0.00190562,
+                "decision": 1,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 30720
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 32768
+              },
+              {
+                "credit": -0.0034706,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 36864
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  4
+                ],
+                "step": 38912
+              },
+              {
+                "credit": 0.0023298,
+                "decision": 1,
+                "lags": [
+                  1,
+                  4
+                ],
+                "step": 43008
+              },
+              {
+                "credit": -0.01002982,
+                "decision": 3,
+                "lags": [
+                  2
+                ],
+                "step": 44515
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  4
+                ],
+                "step": 46563
+              },
+              {
+                "credit": 0.00126673,
+                "decision": 1,
+                "lags": [
+                  2,
+                  4
+                ],
+                "step": 50659
+              },
+              {
+                "credit": -0.01008472,
+                "decision": 3,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 73537
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3,
+                  4
+                ],
+                "step": 75585
+              },
+              {
+                "credit": -0.00411125,
+                "decision": 2,
+                "lags": [
+                  3,
+                  4
+                ],
+                "step": 79681
+              }
+            ],
+            "topology_proposals": 9,
+            "topology_pruned": 2,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.92157933,
+            "train_cross_entropy": 3.41137884,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03442508,
+            "train_perplexity": 30.30700386,
+            "train_top1_accuracy": 0.059675,
+            "train_top5_accuracy": 0.2875125,
+            "unigram_baseline_eval_bits_per_token": 5.00018255,
+            "unigram_baseline_eval_cross_entropy": 3.46586244,
+            "unigram_baseline_eval_mean_target_probability": 0.03126201,
+            "unigram_baseline_eval_perplexity": 32.00404934,
+            "unigram_baseline_eval_top1_accuracy": 0.03125,
+            "unigram_baseline_eval_top5_accuracy": 0.18828419,
+            "vocab_size": 32
+          }
+        },
+        "19": {
+          "error": null,
+          "result": {
+            "active_channels": 4,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.91603566,
+            "avg_candidates": 35.77679989,
+            "created_total": 39996,
+            "current_token_baseline_eval_bits_per_token": 5.00713607,
+            "current_token_baseline_eval_cross_entropy": 3.47068225,
+            "current_token_baseline_eval_mean_target_probability": 0.03136241,
+            "current_token_baseline_eval_perplexity": 32.1586753,
+            "current_token_baseline_eval_top1_accuracy": 0.03138723,
+            "current_token_baseline_eval_top5_accuracy": 0.16236669,
+            "dataset_hash": 18033101719306103290,
+            "edge_score_weight": 0.31999999,
+            "edges": 89211,
+            "elapsed_seconds": 1.52781106,
+            "estimated_bytes": 13794928,
+            "eval_bits_per_token": 4.8484698,
+            "eval_cross_entropy": 3.36070317,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.0372458,
+            "eval_perplexity": 28.80944176,
+            "eval_top1_accuracy": 0.07061637,
+            "eval_top5_accuracy": 0.30438363,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.45495942,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1,
+              2
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                2
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                4
+              ]
+            ],
+            "learned_channel_credit": [
+              0.01757116,
+              0.0128592,
+              0.01737236,
+              0.0137442,
+              0.00942045,
+              0.00188167
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              2,
+              2,
+              2,
+              3
+            ],
+            "live_nodes": 20480,
+            "multiscale_baseline_eval_bits_per_token": 4.88489286,
+            "multiscale_baseline_eval_cross_entropy": 3.38594971,
+            "multiscale_baseline_eval_mean_target_probability": 0.04528461,
+            "multiscale_baseline_eval_perplexity": 29.54603957,
+            "multiscale_baseline_eval_top1_accuracy": 0.07585085,
+            "multiscale_baseline_eval_top5_accuracy": 0.3264978,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.90574375,
+            "pair_context_baseline_eval_bits_per_token": 5.23323954,
+            "pair_context_baseline_eval_cross_entropy": 3.62740523,
+            "pair_context_baseline_eval_mean_target_probability": 0.05075728,
+            "pair_context_baseline_eval_perplexity": 37.61508745,
+            "pair_context_baseline_eval_top1_accuracy": 0.07351788,
+            "pair_context_baseline_eval_top5_accuracy": 0.33843711,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 85748.82289437,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 4,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": 0.00235648,
+                "decision": 1,
+                "lags": [
+                  2
+                ],
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "step": 8192
+              },
+              {
+                "credit": 0.00476891,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 14336
+              },
+              {
+                "credit": -0.00268046,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 18432
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  3
+                ],
+                "step": 20480
+              },
+              {
+                "credit": 0.00075702,
+                "decision": 1,
+                "lags": [
+                  1,
+                  3
+                ],
+                "step": 24576
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 26624
+              },
+              {
+                "credit": -0.00110851,
+                "decision": 2,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 30720
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 32768
+              },
+              {
+                "credit": -9.319e-05,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 36864
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  4
+                ],
+                "step": 38912
+              },
+              {
+                "credit": 0.00262686,
+                "decision": 1,
+                "lags": [
+                  1,
+                  4
+                ],
+                "step": 43008
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  4
+                ],
+                "step": 45056
+              },
+              {
+                "credit": -8.011e-05,
+                "decision": 2,
+                "lags": [
+                  2,
+                  4
+                ],
+                "step": 49152
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3,
+                  4
+                ],
+                "step": 51200
+              },
+              {
+                "credit": -0.00203057,
+                "decision": 2,
+                "lags": [
+                  3,
+                  4
+                ],
+                "step": 55296
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 57344
+              },
+              {
+                "credit": 0.00021563,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 61440
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  5
+                ],
+                "step": 63488
+              },
+              {
+                "credit": -0.00059143,
+                "decision": 2,
+                "lags": [
+                  1,
+                  5
+                ],
+                "step": 67584
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  5
+                ],
+                "step": 69632
+              },
+              {
+                "credit": -0.0022693,
+                "decision": 2,
+                "lags": [
+                  2,
+                  5
+                ],
+                "step": 73728
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3,
+                  5
+                ],
+                "step": 75776
+              },
+              {
+                "credit": -0.00144647,
+                "decision": 2,
+                "lags": [
+                  3,
+                  5
+                ],
+                "step": 79872
+              }
+            ],
+            "topology_proposals": 13,
+            "topology_pruned": 0,
+            "topology_rejected": 9,
+            "train_bits_per_token": 4.9215361,
+            "train_cross_entropy": 3.41134887,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03433474,
+            "train_perplexity": 30.30609572,
+            "train_top1_accuracy": 0.0599625,
+            "train_top5_accuracy": 0.28765,
+            "unigram_baseline_eval_bits_per_token": 4.99996246,
+            "unigram_baseline_eval_cross_entropy": 3.46570988,
+            "unigram_baseline_eval_mean_target_probability": 0.03127013,
+            "unigram_baseline_eval_perplexity": 31.99916738,
+            "unigram_baseline_eval_top1_accuracy": 0.03107356,
+            "unigram_baseline_eval_top5_accuracy": 0.15889664,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 4,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.89882297,
+            "avg_candidates": 33.58016304,
+            "created_total": 35385,
+            "current_token_baseline_eval_bits_per_token": 5.00679025,
+            "current_token_baseline_eval_cross_entropy": 3.47044255,
+            "current_token_baseline_eval_mean_target_probability": 0.03135428,
+            "current_token_baseline_eval_perplexity": 32.15096758,
+            "current_token_baseline_eval_top1_accuracy": 0.03189696,
+            "current_token_baseline_eval_top5_accuracy": 0.16128843,
+            "dataset_hash": 2195559232913211147,
+            "edge_score_weight": 0.31999999,
+            "edges": 85875,
+            "elapsed_seconds": 2.2147496,
+            "estimated_bytes": 13795328,
+            "eval_bits_per_token": 4.86295542,
+            "eval_cross_entropy": 3.37074384,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.03673932,
+            "eval_perplexity": 29.10016485,
+            "eval_top1_accuracy": 0.06834222,
+            "eval_top5_accuracy": 0.29693381,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.45110895,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                4
+              ],
+              [
+                2,
+                4
+              ]
+            ],
+            "learned_channel_credit": [
+              0.01801545,
+              0.01715168,
+              0.00558546,
+              -0.0057436,
+              0.00901716,
+              -0.00201804
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              2,
+              3,
+              2,
+              2
+            ],
+            "live_nodes": 20480,
+            "multiscale_baseline_eval_bits_per_token": 4.9039759,
+            "multiscale_baseline_eval_cross_entropy": 3.39917707,
+            "multiscale_baseline_eval_mean_target_probability": 0.04495078,
+            "multiscale_baseline_eval_perplexity": 29.93945171,
+            "multiscale_baseline_eval_top1_accuracy": 0.07449812,
+            "multiscale_baseline_eval_top5_accuracy": 0.31920483,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91963489,
+            "pair_context_baseline_eval_bits_per_token": 5.25270027,
+            "pair_context_baseline_eval_cross_entropy": 3.64089438,
+            "pair_context_baseline_eval_mean_target_probability": 0.05034082,
+            "pair_context_baseline_eval_perplexity": 38.12592068,
+            "pair_context_baseline_eval_top1_accuracy": 0.07273369,
+            "pair_context_baseline_eval_top5_accuracy": 0.33416327,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 59152.51107241,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 5,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": -8.687e-05,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "step": 8192
+              },
+              {
+                "credit": 0.00369806,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 14336
+              },
+              {
+                "credit": -0.00337277,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 18432
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  3
+                ],
+                "step": 20480
+              },
+              {
+                "credit": 0.00255642,
+                "decision": 1,
+                "lags": [
+                  1,
+                  3
+                ],
+                "step": 24576
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 26624
+              },
+              {
+                "credit": 0.00055088,
+                "decision": 1,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 30720
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 32768
+              },
+              {
+                "credit": -0.0005573,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 36864
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  4
+                ],
+                "step": 38912
+              },
+              {
+                "credit": 0.00313999,
+                "decision": 1,
+                "lags": [
+                  1,
+                  4
+                ],
+                "step": 43008
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  4
+                ],
+                "step": 45056
+              },
+              {
+                "credit": 0.00394004,
+                "decision": 1,
+                "lags": [
+                  2,
+                  4
+                ],
+                "step": 49152
+              },
+              {
+                "credit": -0.01001878,
+                "decision": 3,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 65941
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3,
+                  4
+                ],
+                "step": 67989
+              },
+              {
+                "credit": -0.00259873,
+                "decision": 2,
+                "lags": [
+                  3,
+                  4
+                ],
+                "step": 72085
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 74133
+              },
+              {
+                "credit": -0.00219042,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 78229
+              }
+            ],
+            "topology_proposals": 10,
+            "topology_pruned": 1,
+            "topology_rejected": 5,
+            "train_bits_per_token": 4.92559868,
+            "train_cross_entropy": 3.41416484,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03421011,
+            "train_perplexity": 30.39155691,
+            "train_top1_accuracy": 0.0608,
+            "train_top5_accuracy": 0.2872125,
+            "unigram_baseline_eval_bits_per_token": 5.00009816,
+            "unigram_baseline_eval_cross_entropy": 3.46580394,
+            "unigram_baseline_eval_mean_target_probability": 0.03126063,
+            "unigram_baseline_eval_perplexity": 32.00217738,
+            "unigram_baseline_eval_top1_accuracy": 0.0320538,
+            "unigram_baseline_eval_top5_accuracy": 0.1574851,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "best"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.01724778445074279,
+        "topology_max_arity": 1,
+        "topology_probe_steps": 17237,
+        "topology_prune_credit": -0.0006968829132401183,
+        "topology_validation_steps": 5684
+      },
+      "id": "774b95e24823bff8",
+      "mean_eval_cross_entropy": 3.43260354,
+      "mean_score": -3.43260354,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.91586773,
+            "avg_candidates": 31.06031693,
+            "created_total": 20237,
+            "current_token_baseline_eval_bits_per_token": 5.00582835,
+            "current_token_baseline_eval_cross_entropy": 3.4697758,
+            "current_token_baseline_eval_mean_target_probability": 0.03136805,
+            "current_token_baseline_eval_perplexity": 32.12953833,
+            "current_token_baseline_eval_top1_accuracy": 0.03258312,
+            "current_token_baseline_eval_top5_accuracy": 0.16050423,
+            "dataset_hash": 148259111409531357,
+            "edge_score_weight": 0.31999999,
+            "edges": 29606,
+            "elapsed_seconds": 1.02284509,
+            "estimated_bytes": 3137536,
+            "eval_bits_per_token": 4.9521305,
+            "eval_cross_entropy": 3.43255529,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.03254353,
+            "eval_perplexity": 30.95564253,
+            "eval_top1_accuracy": 0.06122569,
+            "eval_top5_accuracy": 0.27299639,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.51498632,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.03913524,
+              -0.00022646
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4096,
+            "multiscale_baseline_eval_bits_per_token": 4.89193262,
+            "multiscale_baseline_eval_cross_entropy": 3.3908293,
+            "multiscale_baseline_eval_mean_target_probability": 0.04512322,
+            "multiscale_baseline_eval_perplexity": 29.6905645,
+            "multiscale_baseline_eval_top1_accuracy": 0.07638018,
+            "multiscale_baseline_eval_top5_accuracy": 0.3232042,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91756897,
+            "pair_context_baseline_eval_bits_per_token": 5.24857041,
+            "pair_context_baseline_eval_cross_entropy": 3.63803178,
+            "pair_context_baseline_eval_mean_target_probability": 0.05048167,
+            "pair_context_baseline_eval_perplexity": 38.01693745,
+            "pair_context_baseline_eval_top1_accuracy": 0.07487061,
+            "pair_context_baseline_eval_top5_accuracy": 0.33865276,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 128081.95643405,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": 0.00146377,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "step": 19285
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 21333
+              },
+              {
+                "credit": -0.00120154,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 38570
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 40618
+              },
+              {
+                "credit": 0.00134119,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 57855
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 59903
+              },
+              {
+                "credit": -0.0024117,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 77140
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  6
+                ],
+                "step": 79188
+              },
+              {
+                "credit": 0.0,
+                "decision": 2,
+                "lags": [
+                  6
+                ],
+                "step": 80000
+              }
+            ],
+            "topology_proposals": 5,
+            "topology_pruned": 0,
+            "topology_rejected": 5,
+            "train_bits_per_token": 4.97027288,
+            "train_cross_entropy": 3.44513063,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03212496,
+            "train_perplexity": 31.34737812,
+            "train_top1_accuracy": 0.0511125,
+            "train_top5_accuracy": 0.2624125,
+            "unigram_baseline_eval_bits_per_token": 5.00018255,
+            "unigram_baseline_eval_cross_entropy": 3.46586244,
+            "unigram_baseline_eval_mean_target_probability": 0.03126201,
+            "unigram_baseline_eval_perplexity": 32.00404934,
+            "unigram_baseline_eval_top1_accuracy": 0.03125,
+            "unigram_baseline_eval_top5_accuracy": 0.18828419,
+            "vocab_size": 32
+          }
+        },
+        "19": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.91660051,
+            "avg_candidates": 30.8821446,
+            "created_total": 20208,
+            "current_token_baseline_eval_bits_per_token": 5.00713607,
+            "current_token_baseline_eval_cross_entropy": 3.47068225,
+            "current_token_baseline_eval_mean_target_probability": 0.03136241,
+            "current_token_baseline_eval_perplexity": 32.1586753,
+            "current_token_baseline_eval_top1_accuracy": 0.03138723,
+            "current_token_baseline_eval_top5_accuracy": 0.16236669,
+            "dataset_hash": 18033101719306103290,
+            "edge_score_weight": 0.31999999,
+            "edges": 29422,
+            "elapsed_seconds": 0.97707151,
+            "estimated_bytes": 3137536,
+            "eval_bits_per_token": 4.95171618,
+            "eval_cross_entropy": 3.43226811,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.03255548,
+            "eval_perplexity": 30.94675385,
+            "eval_top1_accuracy": 0.0625,
+            "eval_top5_accuracy": 0.27495687,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.52652436,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.03020743,
+              -0.00023618
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4096,
+            "multiscale_baseline_eval_bits_per_token": 4.88489286,
+            "multiscale_baseline_eval_cross_entropy": 3.38594971,
+            "multiscale_baseline_eval_mean_target_probability": 0.04528461,
+            "multiscale_baseline_eval_perplexity": 29.54603957,
+            "multiscale_baseline_eval_top1_accuracy": 0.07585085,
+            "multiscale_baseline_eval_top5_accuracy": 0.3264978,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.90574375,
+            "pair_context_baseline_eval_bits_per_token": 5.23323954,
+            "pair_context_baseline_eval_cross_entropy": 3.62740523,
+            "pair_context_baseline_eval_mean_target_probability": 0.05075728,
+            "pair_context_baseline_eval_perplexity": 37.61508745,
+            "pair_context_baseline_eval_top1_accuracy": 0.07351788,
+            "pair_context_baseline_eval_top5_accuracy": 0.33843711,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 134082.30533334,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": 0.0017284,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "step": 19285
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 21333
+              },
+              {
+                "credit": -0.00180984,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 38570
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 40618
+              },
+              {
+                "credit": -0.00039169,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 57855
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 59903
+              },
+              {
+                "credit": -0.0015904,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 77140
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  6
+                ],
+                "step": 79188
+              },
+              {
+                "credit": 0.0,
+                "decision": 2,
+                "lags": [
+                  6
+                ],
+                "step": 80000
+              }
+            ],
+            "topology_proposals": 5,
+            "topology_pruned": 0,
+            "topology_rejected": 5,
+            "train_bits_per_token": 4.97112935,
+            "train_cross_entropy": 3.44572429,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03210636,
+            "train_perplexity": 31.36599333,
+            "train_top1_accuracy": 0.0513125,
+            "train_top5_accuracy": 0.2604375,
+            "unigram_baseline_eval_bits_per_token": 4.99996246,
+            "unigram_baseline_eval_cross_entropy": 3.46570988,
+            "unigram_baseline_eval_mean_target_probability": 0.03127013,
+            "unigram_baseline_eval_perplexity": 31.99916738,
+            "unigram_baseline_eval_top1_accuracy": 0.03107356,
+            "unigram_baseline_eval_top5_accuracy": 0.15889664,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.91521128,
+            "avg_candidates": 30.86707682,
+            "created_total": 20256,
+            "current_token_baseline_eval_bits_per_token": 5.00679025,
+            "current_token_baseline_eval_cross_entropy": 3.47044255,
+            "current_token_baseline_eval_mean_target_probability": 0.03135428,
+            "current_token_baseline_eval_perplexity": 32.15096758,
+            "current_token_baseline_eval_top1_accuracy": 0.03189696,
+            "current_token_baseline_eval_top5_accuracy": 0.16128843,
+            "dataset_hash": 2195559232913211147,
+            "edge_score_weight": 0.31999999,
+            "edges": 29438,
+            "elapsed_seconds": 1.07572639,
+            "estimated_bytes": 3137536,
+            "eval_bits_per_token": 4.95275363,
+            "eval_cross_entropy": 3.43298722,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.03253322,
+            "eval_perplexity": 30.96901591,
+            "eval_top1_accuracy": 0.06234316,
+            "eval_top5_accuracy": 0.26885979,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.51335233,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.02870394,
+              0.00085106
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4096,
+            "multiscale_baseline_eval_bits_per_token": 4.9039759,
+            "multiscale_baseline_eval_cross_entropy": 3.39917707,
+            "multiscale_baseline_eval_mean_target_probability": 0.04495078,
+            "multiscale_baseline_eval_perplexity": 29.93945171,
+            "multiscale_baseline_eval_top1_accuracy": 0.07449812,
+            "multiscale_baseline_eval_top5_accuracy": 0.31920483,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91963489,
+            "pair_context_baseline_eval_bits_per_token": 5.25270027,
+            "pair_context_baseline_eval_cross_entropy": 3.64089438,
+            "pair_context_baseline_eval_mean_target_probability": 0.05034082,
+            "pair_context_baseline_eval_perplexity": 38.12592068,
+            "pair_context_baseline_eval_top1_accuracy": 0.07273369,
+            "pair_context_baseline_eval_top5_accuracy": 0.33416327,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 121785.61479414,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": 0.0027885,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "step": 19285
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 21333
+              },
+              {
+                "credit": -0.00284827,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 38570
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 40618
+              },
+              {
+                "credit": -0.00114249,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 57855
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 59903
+              },
+              {
+                "credit": -0.00269195,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 77140
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  6
+                ],
+                "step": 79188
+              },
+              {
+                "credit": 0.0,
+                "decision": 2,
+                "lags": [
+                  6
+                ],
+                "step": 80000
+              }
+            ],
+            "topology_proposals": 5,
+            "topology_pruned": 0,
+            "topology_rejected": 5,
+            "train_bits_per_token": 4.9713387,
+            "train_cross_entropy": 3.4458694,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03210211,
+            "train_perplexity": 31.37054521,
+            "train_top1_accuracy": 0.0515375,
+            "train_top5_accuracy": 0.2586625,
+            "unigram_baseline_eval_bits_per_token": 5.00009816,
+            "unigram_baseline_eval_cross_entropy": 3.46580394,
+            "unigram_baseline_eval_mean_target_probability": 0.03126063,
+            "unigram_baseline_eval_perplexity": 32.00217738,
+            "unigram_baseline_eval_top1_accuracy": 0.0320538,
+            "unigram_baseline_eval_top5_accuracy": 0.1574851,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "active"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.0458452254606783,
+        "topology_max_arity": 1,
+        "topology_probe_steps": 2639,
+        "topology_prune_credit": -0.04755835992319615,
+        "topology_validation_steps": 642
+      },
+      "id": "05d14b059ce92ab8",
+      "mean_eval_cross_entropy": 3.4327739,
+      "mean_score": -3.4327739,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.88787708,
+            "avg_candidates": 35.20182737,
+            "created_total": 27761,
+            "current_token_baseline_eval_bits_per_token": 5.00582835,
+            "current_token_baseline_eval_cross_entropy": 3.4697758,
+            "current_token_baseline_eval_mean_target_probability": 0.03136805,
+            "current_token_baseline_eval_perplexity": 32.12953833,
+            "current_token_baseline_eval_top1_accuracy": 0.03258312,
+            "current_token_baseline_eval_top5_accuracy": 0.16050423,
+            "dataset_hash": 148259111409531357,
+            "edge_score_weight": 0.31999999,
+            "edges": 43641,
+            "elapsed_seconds": 1.04468908,
+            "estimated_bytes": 3142888,
+            "eval_bits_per_token": 4.95213296,
+            "eval_cross_entropy": 3.432557,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.03254311,
+            "eval_perplexity": 30.95569533,
+            "eval_top1_accuracy": 0.06132371,
+            "eval_top5_accuracy": 0.27352572,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.51498802,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.03891324,
+              -0.00159144
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4096,
+            "multiscale_baseline_eval_bits_per_token": 4.89193262,
+            "multiscale_baseline_eval_cross_entropy": 3.3908293,
+            "multiscale_baseline_eval_mean_target_probability": 0.04512322,
+            "multiscale_baseline_eval_perplexity": 29.6905645,
+            "multiscale_baseline_eval_top1_accuracy": 0.07638018,
+            "multiscale_baseline_eval_top5_accuracy": 0.3232042,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91756897,
+            "pair_context_baseline_eval_bits_per_token": 5.24857041,
+            "pair_context_baseline_eval_cross_entropy": 3.63803178,
+            "pair_context_baseline_eval_mean_target_probability": 0.05048167,
+            "pair_context_baseline_eval_perplexity": 38.01693745,
+            "pair_context_baseline_eval_top1_accuracy": 0.07487061,
+            "pair_context_baseline_eval_top5_accuracy": 0.33865276,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 125403.8189533,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": -0.00017443,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "step": 4687
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 6735
+              },
+              {
+                "credit": -0.00164296,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 9374
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 11422
+              },
+              {
+                "credit": 0.00304323,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 14061
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 16109
+              },
+              {
+                "credit": -0.00240003,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 18748
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  6
+                ],
+                "step": 20796
+              },
+              {
+                "credit": 0.00031364,
+                "decision": 2,
+                "lags": [
+                  6
+                ],
+                "step": 23435
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  7
+                ],
+                "step": 25483
+              },
+              {
+                "credit": -0.0012206,
+                "decision": 2,
+                "lags": [
+                  7
+                ],
+                "step": 28122
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  8
+                ],
+                "step": 30170
+              },
+              {
+                "credit": -0.00055177,
+                "decision": 2,
+                "lags": [
+                  8
+                ],
+                "step": 32809
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  9
+                ],
+                "step": 34857
+              },
+              {
+                "credit": -0.00115914,
+                "decision": 2,
+                "lags": [
+                  9
+                ],
+                "step": 37496
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  10
+                ],
+                "step": 39544
+              },
+              {
+                "credit": -0.00434303,
+                "decision": 2,
+                "lags": [
+                  10
+                ],
+                "step": 42183
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  11
+                ],
+                "step": 44231
+              },
+              {
+                "credit": -0.00537753,
+                "decision": 2,
+                "lags": [
+                  11
+                ],
+                "step": 46870
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  12
+                ],
+                "step": 48918
+              },
+              {
+                "credit": -0.00169672,
+                "decision": 2,
+                "lags": [
+                  12
+                ],
+                "step": 51557
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  13
+                ],
+                "step": 53605
+              },
+              {
+                "credit": -0.00401552,
+                "decision": 2,
+                "lags": [
+                  13
+                ],
+                "step": 56244
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  14
+                ],
+                "step": 58292
+              },
+              {
+                "credit": -0.00351261,
+                "decision": 2,
+                "lags": [
+                  14
+                ],
+                "step": 60931
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  15
+                ],
+                "step": 62979
+              },
+              {
+                "credit": -0.00187825,
+                "decision": 2,
+                "lags": [
+                  15
+                ],
+                "step": 65618
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  16
+                ],
+                "step": 67666
+              },
+              {
+                "credit": -0.00217516,
+                "decision": 2,
+                "lags": [
+                  16
+                ],
+                "step": 70305
+              }
+            ],
+            "topology_proposals": 15,
+            "topology_pruned": 0,
+            "topology_rejected": 15,
+            "train_bits_per_token": 4.97017206,
+            "train_cross_entropy": 3.44506075,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03208355,
+            "train_perplexity": 31.34518763,
+            "train_top1_accuracy": 0.053875,
+            "train_top5_accuracy": 0.276275,
+            "unigram_baseline_eval_bits_per_token": 5.00018255,
+            "unigram_baseline_eval_cross_entropy": 3.46586244,
+            "unigram_baseline_eval_mean_target_probability": 0.03126201,
+            "unigram_baseline_eval_perplexity": 32.00404934,
+            "unigram_baseline_eval_top1_accuracy": 0.03125,
+            "unigram_baseline_eval_top5_accuracy": 0.18828419,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.88529708,
+            "avg_candidates": 35.15808195,
+            "created_total": 27727,
+            "current_token_baseline_eval_bits_per_token": 5.00679025,
+            "current_token_baseline_eval_cross_entropy": 3.47044255,
+            "current_token_baseline_eval_mean_target_probability": 0.03135428,
+            "current_token_baseline_eval_perplexity": 32.15096758,
+            "current_token_baseline_eval_top1_accuracy": 0.03189696,
+            "current_token_baseline_eval_top5_accuracy": 0.16128843,
+            "dataset_hash": 2195559232913211147,
+            "edge_score_weight": 0.31999999,
+            "edges": 43540,
+            "elapsed_seconds": 1.20859675,
+            "estimated_bytes": 3140952,
+            "eval_bits_per_token": 4.9527588,
+            "eval_cross_entropy": 3.4329908,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.032533,
+            "eval_perplexity": 30.96912679,
+            "eval_top1_accuracy": 0.06255881,
+            "eval_top5_accuracy": 0.26903623,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.51335591,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.02840343,
+              0.00437793
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4096,
+            "multiscale_baseline_eval_bits_per_token": 4.9039759,
+            "multiscale_baseline_eval_cross_entropy": 3.39917707,
+            "multiscale_baseline_eval_mean_target_probability": 0.04495078,
+            "multiscale_baseline_eval_perplexity": 29.93945171,
+            "multiscale_baseline_eval_top1_accuracy": 0.07449812,
+            "multiscale_baseline_eval_top5_accuracy": 0.31920483,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91963489,
+            "pair_context_baseline_eval_bits_per_token": 5.25270027,
+            "pair_context_baseline_eval_cross_entropy": 3.64089438,
+            "pair_context_baseline_eval_mean_target_probability": 0.05034082,
+            "pair_context_baseline_eval_perplexity": 38.12592068,
+            "pair_context_baseline_eval_top1_accuracy": 0.07273369,
+            "pair_context_baseline_eval_top5_accuracy": 0.33416327,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 108396.78311497,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": 0.00349137,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "step": 4687
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 6735
+              },
+              {
+                "credit": -0.00187058,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 9374
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 11422
+              },
+              {
+                "credit": -0.00314052,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 14061
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 16109
+              },
+              {
+                "credit": -0.00149969,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 18748
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  6
+                ],
+                "step": 20796
+              },
+              {
+                "credit": -0.00122918,
+                "decision": 2,
+                "lags": [
+                  6
+                ],
+                "step": 23435
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  7
+                ],
+                "step": 25483
+              },
+              {
+                "credit": -0.00443126,
+                "decision": 2,
+                "lags": [
+                  7
+                ],
+                "step": 28122
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  8
+                ],
+                "step": 30170
+              },
+              {
+                "credit": -1.446e-05,
+                "decision": 2,
+                "lags": [
+                  8
+                ],
+                "step": 32809
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  9
+                ],
+                "step": 34857
+              },
+              {
+                "credit": -0.0009809,
+                "decision": 2,
+                "lags": [
+                  9
+                ],
+                "step": 37496
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  10
+                ],
+                "step": 39544
+              },
+              {
+                "credit": 0.00199544,
+                "decision": 2,
+                "lags": [
+                  10
+                ],
+                "step": 42183
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  11
+                ],
+                "step": 44231
+              },
+              {
+                "credit": -0.00247869,
+                "decision": 2,
+                "lags": [
+                  11
+                ],
+                "step": 46870
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  12
+                ],
+                "step": 48918
+              },
+              {
+                "credit": -0.00171533,
+                "decision": 2,
+                "lags": [
+                  12
+                ],
+                "step": 51557
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  13
+                ],
+                "step": 53605
+              },
+              {
+                "credit": -0.00161905,
+                "decision": 2,
+                "lags": [
+                  13
+                ],
+                "step": 56244
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  14
+                ],
+                "step": 58292
+              },
+              {
+                "credit": -0.00238557,
+                "decision": 2,
+                "lags": [
+                  14
+                ],
+                "step": 60931
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  15
+                ],
+                "step": 62979
+              },
+              {
+                "credit": -0.00110969,
+                "decision": 2,
+                "lags": [
+                  15
+                ],
+                "step": 65618
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  16
+                ],
+                "step": 67666
+              },
+              {
+                "credit": 0.00141279,
+                "decision": 2,
+                "lags": [
+                  16
+                ],
+                "step": 70305
+              }
+            ],
+            "topology_proposals": 15,
+            "topology_pruned": 0,
+            "topology_rejected": 15,
+            "train_bits_per_token": 4.97048032,
+            "train_cross_entropy": 3.44527442,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03207955,
+            "train_perplexity": 31.35188575,
+            "train_top1_accuracy": 0.0553125,
+            "train_top5_accuracy": 0.2731625,
+            "unigram_baseline_eval_bits_per_token": 5.00009816,
+            "unigram_baseline_eval_cross_entropy": 3.46580394,
+            "unigram_baseline_eval_mean_target_probability": 0.03126063,
+            "unigram_baseline_eval_perplexity": 32.00217738,
+            "unigram_baseline_eval_top1_accuracy": 0.0320538,
+            "unigram_baseline_eval_top5_accuracy": 0.1574851,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_2"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.003796830728589379,
+        "topology_max_arity": 1,
+        "topology_probe_steps": 3439,
+        "topology_prune_credit": -0.006195047793334976,
+        "topology_validation_steps": 875
+      },
+      "id": "b963dabb96fba89e",
+      "mean_eval_cross_entropy": 3.432780065,
+      "mean_score": -3.432780065,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.89446446,
+            "avg_candidates": 34.26375489,
+            "created_total": 31796,
+            "current_token_baseline_eval_bits_per_token": 5.00582835,
+            "current_token_baseline_eval_cross_entropy": 3.4697758,
+            "current_token_baseline_eval_mean_target_probability": 0.03136805,
+            "current_token_baseline_eval_perplexity": 32.12953833,
+            "current_token_baseline_eval_top1_accuracy": 0.03258312,
+            "current_token_baseline_eval_top5_accuracy": 0.16050423,
+            "dataset_hash": 148259111409531357,
+            "edge_score_weight": 0.31999999,
+            "edges": 39470,
+            "elapsed_seconds": 1.03828738,
+            "estimated_bytes": 3138296,
+            "eval_bits_per_token": 4.95213583,
+            "eval_cross_entropy": 3.43255899,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.03254295,
+            "eval_perplexity": 30.95575686,
+            "eval_top1_accuracy": 0.06114727,
+            "eval_top5_accuracy": 0.27311402,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.51499001,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.03891354,
+              0.00069154
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4096,
+            "multiscale_baseline_eval_bits_per_token": 4.89193262,
+            "multiscale_baseline_eval_cross_entropy": 3.3908293,
+            "multiscale_baseline_eval_mean_target_probability": 0.04512322,
+            "multiscale_baseline_eval_perplexity": 29.6905645,
+            "multiscale_baseline_eval_top1_accuracy": 0.07638018,
+            "multiscale_baseline_eval_top5_accuracy": 0.3232042,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91756897,
+            "pair_context_baseline_eval_bits_per_token": 5.24857041,
+            "pair_context_baseline_eval_cross_entropy": 3.63803178,
+            "pair_context_baseline_eval_mean_target_probability": 0.05048167,
+            "pair_context_baseline_eval_perplexity": 38.01693745,
+            "pair_context_baseline_eval_top1_accuracy": 0.07487061,
+            "pair_context_baseline_eval_top5_accuracy": 0.33865276,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 126177.01300805,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": -0.0023792,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "step": 5487
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 7535
+              },
+              {
+                "credit": -0.00091061,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 10974
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 13022
+              },
+              {
+                "credit": -0.00106585,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 16461
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 18509
+              },
+              {
+                "credit": -0.00377837,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 21948
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  6
+                ],
+                "step": 23996
+              },
+              {
+                "credit": -0.00200752,
+                "decision": 2,
+                "lags": [
+                  6
+                ],
+                "step": 27435
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  7
+                ],
+                "step": 29483
+              },
+              {
+                "credit": -0.00143633,
+                "decision": 2,
+                "lags": [
+                  7
+                ],
+                "step": 32922
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  8
+                ],
+                "step": 34970
+              },
+              {
+                "credit": -0.0049547,
+                "decision": 2,
+                "lags": [
+                  8
+                ],
+                "step": 38409
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  9
+                ],
+                "step": 40457
+              },
+              {
+                "credit": -0.00170313,
+                "decision": 2,
+                "lags": [
+                  9
+                ],
+                "step": 43896
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  10
+                ],
+                "step": 45944
+              },
+              {
+                "credit": -0.00109329,
+                "decision": 2,
+                "lags": [
+                  10
+                ],
+                "step": 49383
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  11
+                ],
+                "step": 51431
+              },
+              {
+                "credit": -0.00427022,
+                "decision": 2,
+                "lags": [
+                  11
+                ],
+                "step": 54870
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  12
+                ],
+                "step": 56918
+              },
+              {
+                "credit": -0.00016696,
+                "decision": 2,
+                "lags": [
+                  12
+                ],
+                "step": 60357
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  13
+                ],
+                "step": 62405
+              },
+              {
+                "credit": -0.00367044,
+                "decision": 2,
+                "lags": [
+                  13
+                ],
+                "step": 65844
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  14
+                ],
+                "step": 67892
+              },
+              {
+                "credit": -0.00277641,
+                "decision": 2,
+                "lags": [
+                  14
+                ],
+                "step": 71331
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  15
+                ],
+                "step": 73379
+              },
+              {
+                "credit": -0.00181098,
+                "decision": 2,
+                "lags": [
+                  15
+                ],
+                "step": 76818
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  16
+                ],
+                "step": 78866
+              },
+              {
+                "credit": 0.0,
+                "decision": 2,
+                "lags": [
+                  16
+                ],
+                "step": 80000
+              }
+            ],
+            "topology_proposals": 15,
+            "topology_pruned": 0,
+            "topology_rejected": 15,
+            "train_bits_per_token": 4.97031612,
+            "train_cross_entropy": 3.44516061,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03208551,
+            "train_perplexity": 31.34831785,
+            "train_top1_accuracy": 0.0537375,
+            "train_top5_accuracy": 0.273775,
+            "unigram_baseline_eval_bits_per_token": 5.00018255,
+            "unigram_baseline_eval_cross_entropy": 3.46586244,
+            "unigram_baseline_eval_mean_target_probability": 0.03126201,
+            "unigram_baseline_eval_perplexity": 32.00404934,
+            "unigram_baseline_eval_top1_accuracy": 0.03125,
+            "unigram_baseline_eval_top5_accuracy": 0.18828419,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.89270121,
+            "avg_candidates": 34.13593063,
+            "created_total": 31765,
+            "current_token_baseline_eval_bits_per_token": 5.00679025,
+            "current_token_baseline_eval_cross_entropy": 3.47044255,
+            "current_token_baseline_eval_mean_target_probability": 0.03135428,
+            "current_token_baseline_eval_perplexity": 32.15096758,
+            "current_token_baseline_eval_top1_accuracy": 0.03189696,
+            "current_token_baseline_eval_top5_accuracy": 0.16128843,
+            "dataset_hash": 2195559232913211147,
+            "edge_score_weight": 0.31999999,
+            "edges": 39343,
+            "elapsed_seconds": 0.99564833,
+            "estimated_bytes": 3139056,
+            "eval_bits_per_token": 4.95277372,
+            "eval_cross_entropy": 3.43300114,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.03253247,
+            "eval_perplexity": 30.96944707,
+            "eval_top1_accuracy": 0.06214711,
+            "eval_top5_accuracy": 0.26905583,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.51336625,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.02809163,
+              -0.00167108
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4096,
+            "multiscale_baseline_eval_bits_per_token": 4.9039759,
+            "multiscale_baseline_eval_cross_entropy": 3.39917707,
+            "multiscale_baseline_eval_mean_target_probability": 0.04495078,
+            "multiscale_baseline_eval_perplexity": 29.93945171,
+            "multiscale_baseline_eval_top1_accuracy": 0.07449812,
+            "multiscale_baseline_eval_top5_accuracy": 0.31920483,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91963489,
+            "pair_context_baseline_eval_bits_per_token": 5.25270027,
+            "pair_context_baseline_eval_cross_entropy": 3.64089438,
+            "pair_context_baseline_eval_mean_target_probability": 0.05034082,
+            "pair_context_baseline_eval_perplexity": 38.12592068,
+            "pair_context_baseline_eval_top1_accuracy": 0.07273369,
+            "pair_context_baseline_eval_top5_accuracy": 0.33416327,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 131580.59480065,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": 0.00350214,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "step": 5487
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 7535
+              },
+              {
+                "credit": 0.00072334,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 10974
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 13022
+              },
+              {
+                "credit": -0.00030913,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 16461
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 18509
+              },
+              {
+                "credit": -0.00450662,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 21948
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  6
+                ],
+                "step": 23996
+              },
+              {
+                "credit": -0.00272402,
+                "decision": 2,
+                "lags": [
+                  6
+                ],
+                "step": 27435
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  7
+                ],
+                "step": 29483
+              },
+              {
+                "credit": 0.00042396,
+                "decision": 2,
+                "lags": [
+                  7
+                ],
+                "step": 32922
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  8
+                ],
+                "step": 34970
+              },
+              {
+                "credit": -0.00325638,
+                "decision": 2,
+                "lags": [
+                  8
+                ],
+                "step": 38409
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  9
+                ],
+                "step": 40457
+              },
+              {
+                "credit": -0.0003883,
+                "decision": 2,
+                "lags": [
+                  9
+                ],
+                "step": 43896
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  10
+                ],
+                "step": 45944
+              },
+              {
+                "credit": -0.00143693,
+                "decision": 2,
+                "lags": [
+                  10
+                ],
+                "step": 49383
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  11
+                ],
+                "step": 51431
+              },
+              {
+                "credit": -0.00173117,
+                "decision": 2,
+                "lags": [
+                  11
+                ],
+                "step": 54870
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  12
+                ],
+                "step": 56918
+              },
+              {
+                "credit": 0.00033913,
+                "decision": 2,
+                "lags": [
+                  12
+                ],
+                "step": 60357
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  13
+                ],
+                "step": 62405
+              },
+              {
+                "credit": -0.00228566,
+                "decision": 2,
+                "lags": [
+                  13
+                ],
+                "step": 65844
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  14
+                ],
+                "step": 67892
+              },
+              {
+                "credit": 0.00123846,
+                "decision": 2,
+                "lags": [
+                  14
+                ],
+                "step": 71331
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  15
+                ],
+                "step": 73379
+              },
+              {
+                "credit": -0.00024938,
+                "decision": 2,
+                "lags": [
+                  15
+                ],
+                "step": 76818
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  16
+                ],
+                "step": 78866
+              },
+              {
+                "credit": 0.0,
+                "decision": 2,
+                "lags": [
+                  16
+                ],
+                "step": 80000
+              }
+            ],
+            "topology_proposals": 15,
+            "topology_pruned": 0,
+            "topology_rejected": 15,
+            "train_bits_per_token": 4.97044423,
+            "train_cross_entropy": 3.44524941,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03208538,
+            "train_perplexity": 31.35110164,
+            "train_top1_accuracy": 0.05385,
+            "train_top5_accuracy": 0.2723875,
+            "unigram_baseline_eval_bits_per_token": 5.00009816,
+            "unigram_baseline_eval_cross_entropy": 3.46580394,
+            "unigram_baseline_eval_mean_target_probability": 0.03126063,
+            "unigram_baseline_eval_perplexity": 32.00217738,
+            "unigram_baseline_eval_top1_accuracy": 0.0320538,
+            "unigram_baseline_eval_top5_accuracy": 0.1574851,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_2"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.03111882994354921,
+        "topology_max_arity": 2,
+        "topology_probe_steps": 3950,
+        "topology_prune_credit": -0.016217643744755345,
+        "topology_validation_steps": 3138
+      },
+      "id": "ccaad979f547bbb8",
+      "mean_eval_cross_entropy": 3.4330253,
+      "mean_score": -3.4330253,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.88006076,
+            "avg_candidates": 36.84405532,
+            "created_total": 13646,
+            "current_token_baseline_eval_bits_per_token": 5.00679025,
+            "current_token_baseline_eval_cross_entropy": 3.47044255,
+            "current_token_baseline_eval_mean_target_probability": 0.03135428,
+            "current_token_baseline_eval_perplexity": 32.15096758,
+            "current_token_baseline_eval_top1_accuracy": 0.03189696,
+            "current_token_baseline_eval_top5_accuracy": 0.16128843,
+            "dataset_hash": 2195559232913211147,
+            "edge_score_weight": 0.31999999,
+            "edges": 48603,
+            "elapsed_seconds": 1.00410264,
+            "estimated_bytes": 3077840,
+            "eval_bits_per_token": 4.95280858,
+            "eval_cross_entropy": 3.4330253,
+            "eval_examples": 51008,
+            "eval_mean_target_probability": 0.03253148,
+            "eval_perplexity": 30.97019545,
+            "eval_top1_accuracy": 0.06269605,
+            "eval_top5_accuracy": 0.26907544,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.51339041,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.02815624,
+              -0.00058596
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4096,
+            "multiscale_baseline_eval_bits_per_token": 4.9039759,
+            "multiscale_baseline_eval_cross_entropy": 3.39917707,
+            "multiscale_baseline_eval_mean_target_probability": 0.04495078,
+            "multiscale_baseline_eval_perplexity": 29.93945171,
+            "multiscale_baseline_eval_top1_accuracy": 0.07449812,
+            "multiscale_baseline_eval_top5_accuracy": 0.31920483,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91963489,
+            "pair_context_baseline_eval_bits_per_token": 5.25270027,
+            "pair_context_baseline_eval_cross_entropy": 3.64089438,
+            "pair_context_baseline_eval_mean_target_probability": 0.05034082,
+            "pair_context_baseline_eval_perplexity": 38.12592068,
+            "pair_context_baseline_eval_top1_accuracy": 0.07273369,
+            "pair_context_baseline_eval_top5_accuracy": 0.33416327,
+            "probe_channels": 0,
+            "sequence_count": 64,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "steps_per_second": 130472.71702082,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "step": 2048
+              },
+              {
+                "credit": 0.00040165,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "step": 5998
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "step": 8046
+              },
+              {
+                "credit": 0.00094713,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "step": 11996
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "step": 14044
+              },
+              {
+                "credit": -0.0019899,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "step": 17994
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  3
+                ],
+                "step": 20042
+              },
+              {
+                "credit": 0.00111131,
+                "decision": 2,
+                "lags": [
+                  1,
+                  3
+                ],
+                "step": 23992
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 26040
+              },
+              {
+                "credit": -0.0004341,
+                "decision": 2,
+                "lags": [
+                  2,
+                  3
+                ],
+                "step": 29990
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  4
+                ],
+                "step": 32038
+              },
+              {
+                "credit": 0.00124262,
+                "decision": 2,
+                "lags": [
+                  4
+                ],
+                "step": 35988
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  4
+                ],
+                "step": 38036
+              },
+              {
+                "credit": 0.00216814,
+                "decision": 2,
+                "lags": [
+                  1,
+                  4
+                ],
+                "step": 41986
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  4
+                ],
+                "step": 44034
+              },
+              {
+                "credit": 0.00069968,
+                "decision": 2,
+                "lags": [
+                  2,
+                  4
+                ],
+                "step": 47984
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3,
+                  4
+                ],
+                "step": 50032
+              },
+              {
+                "credit": -0.0005968,
+                "decision": 2,
+                "lags": [
+                  3,
+                  4
+                ],
+                "step": 53982
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  5
+                ],
+                "step": 56030
+              },
+              {
+                "credit": -0.00078346,
+                "decision": 2,
+                "lags": [
+                  5
+                ],
+                "step": 59980
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  5
+                ],
+                "step": 62028
+              },
+              {
+                "credit": 0.00156637,
+                "decision": 2,
+                "lags": [
+                  1,
+                  5
+                ],
+                "step": 65978
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2,
+                  5
+                ],
+                "step": 68026
+              },
+              {
+                "credit": -7.647e-05,
+                "decision": 2,
+                "lags": [
+                  2,
+                  5
+                ],
+                "step": 71976
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3,
+                  5
+                ],
+                "step": 74024
+              },
+              {
+                "credit": 0.00014304,
+                "decision": 2,
+                "lags": [
+                  3,
+                  5
+                ],
+                "step": 77974
+              }
+            ],
+            "topology_proposals": 13,
+            "topology_pruned": 0,
+            "topology_rejected": 13,
+            "train_bits_per_token": 4.9699694,
+            "train_cross_entropy": 3.44492028,
+            "train_examples": 80000,
+            "train_mean_target_probability": 0.03209906,
+            "train_perplexity": 31.34078477,
+            "train_top1_accuracy": 0.0548375,
+            "train_top5_accuracy": 0.2744875,
+            "unigram_baseline_eval_bits_per_token": 5.00009816,
+            "unigram_baseline_eval_cross_entropy": 3.46580394,
+            "unigram_baseline_eval_mean_target_probability": 0.03126063,
+            "unigram_baseline_eval_perplexity": 32.00217738,
+            "unigram_baseline_eval_top1_accuracy": 0.0320538,
+            "unigram_baseline_eval_top5_accuracy": 0.1574851,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.0069884160637889055,
+        "topology_max_arity": 2,
+        "topology_probe_steps": 10827,
+        "topology_prune_credit": -0.011092933935704728,
+        "topology_validation_steps": 352
+      },
+      "id": "854a0d19daa8d924",
+      "mean_eval_r2": null,
+      "mean_score": null,
+      "runs": {
+        "7": {
+          "error": "run experiment: invalid mixture or residual configuration",
+          "result": null
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.012295826391866127,
+        "topology_max_arity": 1,
+        "topology_probe_steps": 6000,
+        "topology_prune_credit": -0.04088308237559412,
+        "topology_validation_steps": 145
+      },
+      "id": "077f33b3647bb7ef",
+      "mean_eval_r2": null,
+      "mean_score": null,
+      "runs": {
+        "7": {
+          "error": "run experiment: invalid mixture or residual configuration",
+          "result": null
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.0026705846985782046,
+        "topology_max_arity": 2,
+        "topology_probe_steps": 4212,
+        "topology_prune_credit": -0.024588167488791085,
+        "topology_validation_steps": 499
+      },
+      "id": "1a3863656a86babb",
+      "mean_eval_r2": null,
+      "mean_score": null,
+      "runs": {
+        "7": {
+          "error": "run experiment: invalid mixture or residual configuration",
+          "result": null
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.043248310894125404,
+        "topology_max_arity": 2,
+        "topology_probe_steps": 14473,
+        "topology_prune_credit": -0.023312746197473047,
+        "topology_validation_steps": 299
+      },
+      "id": "b92e52550909e593",
+      "mean_eval_r2": null,
+      "mean_score": null,
+      "runs": {
+        "7": {
+          "error": "run experiment: invalid mixture or residual configuration",
+          "result": null
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.027435107162906425,
+        "topology_max_arity": 1,
+        "topology_probe_steps": 713,
+        "topology_prune_credit": -0.04960857379974318,
+        "topology_validation_steps": 174
+      },
+      "id": "f08456f4de144fc8",
+      "mean_eval_r2": null,
+      "mean_score": null,
+      "runs": {
+        "7": {
+          "error": "run experiment: invalid mixture or residual configuration",
+          "result": null
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.046651620200357596,
+        "topology_max_arity": 2,
+        "topology_probe_steps": 2716,
+        "topology_prune_credit": -0.02561932286199613,
+        "topology_validation_steps": 153
+      },
+      "id": "03ba08b93896534a",
+      "mean_eval_r2": null,
+      "mean_score": null,
+      "runs": {
+        "7": {
+          "error": "run experiment: invalid mixture or residual configuration",
+          "result": null
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "topology_accept_credit": 0.019661413194139717,
+        "topology_max_arity": 1,
+        "topology_probe_steps": 8931,
+        "topology_prune_credit": -0.028588965018288604,
+        "topology_validation_steps": 154
+      },
+      "id": "e7bc2918a850245b",
+      "mean_eval_r2": null,
+      "mean_score": null,
+      "runs": {
+        "7": {
+          "error": "run experiment: invalid mixture or residual configuration",
+          "result": null
+        }
+      },
+      "status": "eliminated_stage_1"
+    }
+  ],
+  "dataset": {
+    "alphabet": null,
+    "hidden_dim": null,
+    "interaction_strength": 0.2,
+    "length": null,
+    "math_temperature": 0.8,
+    "noise_std": null,
+    "seeds": [
+      7,
+      11,
+      19
+    ],
+    "sequence_length": 2048,
+    "sequences": 64,
+    "task": "token-ce",
+    "vector_dim": null,
+    "vocab_size": 32,
+    "warmup": 80000
+  },
+  "objective": "minimize mean eval_cross_entropy",
+  "search_parameters": [
+    "topology_max_arity",
+    "topology_accept_credit",
+    "topology_probe_steps",
+    "topology_validation_steps",
+    "topology_prune_credit"
+  ],
+  "stages": [
+    {
+      "evaluated": 12,
+      "seed": 7,
+      "stage": 1,
+      "survivors": [
+        "44136fa355b3678a",
+        "774b95e24823bff8",
+        "05d14b059ce92ab8",
+        "b963dabb96fba89e"
+      ]
+    },
+    {
+      "evaluated": 4,
+      "seed": 11,
+      "stage": 2,
+      "survivors": [
+        "44136fa355b3678a",
+        "774b95e24823bff8"
+      ]
+    },
+    {
+      "evaluated": 2,
+      "seed": 19,
+      "stage": 3,
+      "survivors": [
+        "44136fa355b3678a",
+        "774b95e24823bff8"
+      ]
+    }
+  ]
+}

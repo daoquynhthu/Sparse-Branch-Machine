@@ -1,0 +1,32 @@
+[
+  {
+    "vocab_size": 32,
+    "eval_cross_entropy": 3.44214023,
+    "steps_per_second": 151212.80582895,
+    "elapsed_seconds": 0.2164896,
+    "live_nodes": 7787,
+    "estimated_bytes": 5872968,
+    "avg_active": 5.58849585,
+    "avg_candidates": 10.72360704
+  },
+  {
+    "vocab_size": 128,
+    "eval_cross_entropy": 4.84849284,
+    "steps_per_second": 89916.44181742,
+    "elapsed_seconds": 0.36407135,
+    "live_nodes": 4060,
+    "estimated_bytes": 6200224,
+    "avg_active": 5.37933773,
+    "avg_candidates": 6.20372067
+  },
+  {
+    "vocab_size": 512,
+    "eval_cross_entropy": 6.23791719,
+    "steps_per_second": 29372.10382609,
+    "elapsed_seconds": 1.11452691,
+    "live_nodes": 4061,
+    "estimated_bytes": 18783656,
+    "avg_active": 5.07526882,
+    "avg_candidates": 5.46749756
+  }
+]

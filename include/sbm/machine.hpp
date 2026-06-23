@@ -21,6 +21,7 @@ public:
                                        std::uint32_t target_token,
                                        bool learn = true);
     void reset_sequence();
+    void freeze_topology();
     [[nodiscard]] std::size_t prune(std::uint32_t min_visits = 8,
                                     float utility_threshold = -0.05F);
     [[nodiscard]] std::size_t merge_redundant(std::size_t max_merges = 64);
@@ -36,6 +37,7 @@ public:
         return prediction_buffer_;
     }
     [[nodiscard]] std::vector<std::uint32_t> learned_address_lags() const;
+    [[nodiscard]] std::vector<AddressProgram> learned_address_programs() const;
     [[nodiscard]] std::vector<float> learned_channel_credit() const;
     [[nodiscard]] std::vector<std::uint8_t> learned_channel_phase() const;
     [[nodiscard]] const std::vector<TopologyEvent>& topology_events() const noexcept {
@@ -56,7 +58,7 @@ private:
         std::uint8_t channel{};
     };
     struct AddressChannelState {
-        std::uint32_t lag{};
+        AddressProgram program{};
         ChannelPhase phase{ChannelPhase::Retired};
         float credit_ema{};
         double credit_sum{};
@@ -72,8 +74,8 @@ private:
     [[nodiscard]] std::uint32_t bucket(std::uint64_t signature) const noexcept;
     [[nodiscard]] bool channel_enabled(std::size_t channel) const noexcept;
     [[nodiscard]] bool channel_learning_enabled(std::size_t channel) const noexcept;
-    [[nodiscard]] std::vector<std::uint64_t> make_signatures(
-        std::span<const std::uint32_t> window) const;
+    [[nodiscard]] std::span<const std::uint64_t> make_signatures(
+        std::span<const std::uint32_t> window);
     void maybe_begin_topology_probe(bool learn);
     void maybe_finalize_topology_probe();
     void observe_topology_credit(std::span<const float> channel_credit);
@@ -84,16 +86,16 @@ private:
                                   NodeId parent = kInvalidNode,
                                   std::uint8_t channel = 0U);
     [[nodiscard]] std::size_t slot_of(NodeId id) const noexcept;
-    [[nodiscard]] std::vector<CandidateNode> candidate_ids(
+    [[nodiscard]] std::span<const CandidateNode> candidate_ids(
         std::span<const std::uint64_t> signatures);
     [[nodiscard]] double score(std::size_t slot,
                                std::span<const std::uint64_t> signatures,
                                float edge_prior) const noexcept;
-    [[nodiscard]] std::pair<std::vector<ScoredNode>, std::uint32_t>
+    [[nodiscard]] std::pair<std::span<ScoredNode>, std::uint32_t>
         select_route(std::span<const std::uint64_t> signatures);
-    void assign_responsibilities(std::vector<ScoredNode>& active) const;
-    void aggregate(const std::vector<ScoredNode>& active, std::span<float> output) const;
-    void compute_counterfactual_contributions(std::vector<ScoredNode>& active,
+    void assign_responsibilities(std::span<ScoredNode> active) const;
+    void aggregate(std::span<const ScoredNode> active, std::span<float> output) const;
+    void compute_counterfactual_contributions(std::span<ScoredNode> active,
                                               std::span<const float> target,
                                               float target_energy,
                                               float full_loss) const;
@@ -111,7 +113,8 @@ private:
 
     Config config_;
     std::vector<AddressChannelState> topology_;
-    std::uint32_t next_lag_candidate_{2U};
+    std::uint64_t proposal_cursor_{};
+    std::vector<std::uint64_t> proposed_program_keys_;
     std::uint64_t next_probe_step_{};
     std::uint64_t topology_proposals_{};
     std::uint64_t topology_accepted_{};
@@ -143,9 +146,18 @@ private:
     std::vector<NodeId> previous_route_;
     std::vector<float> previous_responsibilities_;
     std::deque<TraceFrame> trace_;
-    std::deque<std::uint32_t> history_;
+    std::vector<std::uint32_t> history_;
     std::vector<float> prediction_buffer_;
     std::vector<float> logit_buffer_;
+    std::vector<float> zero_output_buffer_;
+    std::vector<float> channel_output_buffer_;
+    std::vector<float> channel_credit_buffer_;
+    std::vector<std::uint64_t> signature_buffer_;
+    std::vector<CandidateNode> candidate_scratch_;
+    std::vector<ScoredNode> scored_scratch_;
+    std::vector<ScoredNode> selected_scratch_;
+    std::vector<std::uint8_t> chosen_scratch_;
+    std::vector<std::size_t> order_scratch_;
 
     std::uint64_t total_steps_{};
     std::uint64_t total_candidates_{};

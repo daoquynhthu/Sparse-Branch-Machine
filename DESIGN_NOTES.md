@@ -130,3 +130,20 @@ The current full-vocabulary local logit vector is intentionally a correctness
 implementation.  It must not be mistaken for a final large-vocabulary output
 architecture.  Hierarchical, adaptive or sampled normalization will be required
 before 30k+ vocabularies are memory-efficient.
+
+## Sparse address programs
+
+The adaptive topology object is an `AddressProgram`, not a task-specific lag
+channel. A program contains one or two sorted positive history offsets; current
+token inclusion is implicit. Proposal order expands by temporal radius and then
+arity. The acceptance rule is unchanged: local adaptation, frozen validation,
+exact whole-program ablation, then accept or erase.
+
+The two-offset address uses coarse-to-fine storage. The current token and first
+offset define the coarse region; the second offset and longer context refine the
+full prototype inside that region. A fully joint top-level hash was tested and
+rejected because it produced sample-starved addresses.
+
+Evaluation is strictly read-only. `freeze_topology()` rejects incomplete probes
+at the training boundary, and counterfactual credit is not accumulated on
+evaluation examples.

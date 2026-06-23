@@ -1,104 +1,188 @@
-# Theory alignment branch
+# Theory alignment: validated sparse address programs
 
-This branch starts from commit `b47713b` and changes the address topology from a
-fixed list of temporal views into a learned structural object.  It is the first
-branch whose purpose is not merely better task fit or engineering hygiene, but
-alignment with the original hypothesis:
+This branch began at the tokenizer-aligned baseline `b47713b`.  Version 9 made
+address topology mutable, but its proposal space still consisted only of
+single temporal lags.  The current version replaces that task-shaped object
+with a minimal address-program language.
+
+The intended learning loop is now:
 
 ```text
-prediction pressure -> sparse structural proposal -> local adaptation
-                    -> counterfactual validation -> accept or erase
+prediction error
+    -> propose a sparse address program
+    -> adapt only its local nodes
+    -> freeze the candidate
+    -> measure exact counterfactual loss
+    -> accept, reject, or later retire it
 ```
 
-## What is now learned
+## Minimal address-program language
 
-The model begins with one seed address channel, normally lag 1.  A minimal
-meta-rule proposes one unused temporal lag at a time.  A proposal is a real
-address channel with its own nodes, buckets and local logits, but its lifecycle
-is explicit:
+An address program is an ordered, duplicate-free set of one or two positive
+history offsets.  The current token is implicit.  Examples are:
 
-1. **Probe adaptation** — the candidate learns locally for a bounded interval.
-2. **Frozen validation** — candidate parameters stop changing during the final
-   part of the interval.
-3. **Channel ablation** — the model computes the exact loss difference between
-   the full route and the same route with the entire candidate channel removed.
-4. **Selection** — only positive mean validation credit can retain the channel.
-5. **Mature audit** — accepted non-seed channels continue to receive
-   counterfactual credit and can later be retired if their sustained contribution
+```text
+[1]       current token + token at lag 1
+[1, 4]    current token + tokens at lags 1 and 4
+[2, 4]    current token + tokens at lags 2 and 4
+```
+
+The language deliberately contains no arithmetic operators, semantic labels,
+task-specific lag list, learned matrix, or nested program tree.  Its only
+meta-rule is sparse selection of historical positions.
+
+Programs are proposed in increasing temporal/structural complexity:
+
+```text
+[2], [1,2], [3], [1,3], [2,3], [4], [1,4], ...
+```
+
+The order does not encode the mathematical generator's known dependencies.
+Every program must survive the same predictive-credit lifecycle.
+
+## Coarse-to-fine addressing
+
+For a two-offset program, the current token and earlier program operand form
+the coarse address region; the remaining selected history and longer context
+remain in the full prototype used for bucket-local discrimination.  This is a
+bounded hierarchy rather than a flat joint table.
+
+An attempted alternative hashed every operand directly into the top-level
+bucket.  Across seeds 7, 11 and 19 it worsened mean frozen NLL from 3.3664 to
+3.4277.  The joint address became too sparse for the available sample count.
+That version was rejected rather than retained as a superficially cleaner
+implementation.
+
+## Structural lifecycle
+
+Every proposed program passes through the same six stages:
+
+1. **Proposal** — allocate a real channel, address namespace and local nodes.
+2. **Adaptation** — update only candidate-local parameters.
+3. **Frozen validation** — stop candidate learning during the validation tail.
+4. **Exact channel ablation** — remove the complete channel contribution and
+   recompute loss.
+5. **Selection** — retain only positive mean validation credit.
+6. **Mature audit** — retire an accepted non-seed program if sustained credit
    becomes sufficiently negative.
-6. **Physical reclamation** — rejection or retirement deletes all channel nodes,
-   rebuilds indexes and removes stale route state while preserving other logical
-   node IDs.
 
-The fixed `address_lags` parameter still exists, but it now means **seed
-structure**, not immutable final topology.  Setting `adaptive_topology=false`
-recovers the previous fixed-channel behavior for controls and regression tests.
-
-## Structural credit
-
-For token cross-entropy, channel credit is computed by exact channel-level
-ablation:
+For token cross-entropy, credit is
 
 \[
-C_c = L(z - z_c, y) - L(z, y),
+C_c=L(z-z_c,y)-L(z,y),
 \]
 
-where \(z_c\) is the sum of all active logits contributed by channel \(c\).
-This avoids approximating a channel by the sum of independent node ablations.
+where \(z_c\) is the complete active logit contribution of program \(c\).
+For vector regression, the corresponding normalized-MSE difference is used.
 
-For vector regression the same idea is used with normalized MSE:
+Rejected or retired programs are physically reclaimed: their nodes are
+removed, indexes rebuilt, stale route state cleared, and unrelated logical node
+IDs remain stable.
 
-\[
-C_c = \operatorname{NMSE}(\hat y-\hat y_c,y)
-      -\operatorname{NMSE}(\hat y,y).
-\]
+## Strict freeze semantics
 
-A positive value means that removing the channel makes the current prediction
-worse.
+The training/evaluation boundary now explicitly freezes topology.  An unfinished
+probe is rejected using training observations only.  During evaluation the
+system no longer:
 
-## Auditability
+- proposes, accepts, rejects or retires programs;
+- updates topology credit;
+- computes node counterfactual credit used only for learning.
 
-Every structural decision is recorded as a `TopologyEvent` containing:
+Thus frozen evaluation is both structurally and statistically read-only.
 
-- global training step;
-- proposed lag;
-- decision (`Proposed`, `Accepted`, `Rejected`, `Pruned`);
-- validation or mature credit at the decision.
+## Main result
 
-The event list is included in experiment JSON.  This makes topology evolution a
-replayable research object rather than hidden mutable state.
+Default task: 32-token mathematical next-token prediction, 64 independent
+sequences of length 2,048, 80,000 training examples, then strict evaluation.
 
-## Current result
-
-On the default mathematical token task, three seeds produce:
-
-| topology | mean frozen NLL |
+| model/control | mean frozen NLL, seeds 7/11/19 |
 |---|---:|
-| adaptive from seed `[1]` | 3.41847 |
-| fixed `[1,2,4]` | 3.41132 |
+| adaptive sparse programs, arity <= 2 | **3.36642** |
+| fixed multiscale conditional-table baseline | 3.39199 |
+| fixed singleton channels `[1,2,4]` | 3.41819 |
+| adaptive singleton-only topology | 3.42692 |
+| previous v9 lag-only adaptive topology | 3.41847 |
 | unigram baseline | about 3.4658 |
-| generator oracle | about 2.9143 |
+| mathematical generator oracle | about 2.9143 |
 
-All three adaptive runs finish with `[1,2]`.  The system proposes lag 4 but
-rejects it under its current local learner and validation criterion.  This is a
-real remaining failure, not hidden by forcing the known generator structure into
-the model.
+The adaptive program model improves over the strong fixed multiscale table by
+about 0.0256 nats/token and over the previous lag-only topology by about 0.0520
+nats/token.
 
-The branch therefore demonstrates **learned topology lifecycle**, but not yet
-successful recovery of all useful mathematical dependencies.
+Learned final programs are not identical across seeds, but all three runs retain
+interaction programs involving recent history.  Common retained structures are
+`[1,2]`, `[1,3]` and `[1,4]`; additional accepted programs differ by seed and
+remain subject to mature auditing.
 
-## What remains outside the theory target
+This is the first experiment in the project where learned topology outperforms
+a hand-constructed statistical control that knows the generator's three stated
+time scales.
 
-- Proposal generation still enumerates bounded temporal lags; it does not yet
-  synthesize arbitrary address programs.
-- Nodes still store dense local logits or vectors rather than learned executable
-  operators.
-- Structural credit is local to one channel and does not yet compare multi-step
-  topology edits.
-- Accepted channels use the same residual-composition semantics; the role of a
-  channel is not yet learned.
-- Control edges select nodes but do not transform or bind values.
+## Performance work that preserves semantics
 
-The next theoretical step should be a small address-program language whose
-primitive selectors and compositions can be proposed and validated by the same
-lifecycle, rather than adding more hand-written lag types.
+The following optimizations were accepted only after result equality checks:
+
+- reusable signature, channel-credit and zero-output buffers;
+- contiguous fixed-capacity token history instead of allocating a window each
+  step;
+- direct log-sum-exp counterfactual loss without materializing a probability
+  vector for every ablation;
+- reuse of channel ablation when a channel has one active node;
+- AVX2/FMA dense logit update in the softmax null-space;
+- periodic rather than per-update logit recentering;
+- no counterfactual work during frozen evaluation;
+- thin CLI compiled at low optimization because it is not on the model path.
+
+On seed 7, removing frozen-evaluation credit work raised observed throughput
+from roughly 68k to roughly 89k steps/s in the direct before/after run, with
+identical train/evaluation NLL, graph size and routes.  Repeated runs remain
+noisy; the three-seed full-task mean for the adaptive-program model is about
+71.8k steps/s because learned topology and graph size vary by seed.
+
+## Vocabulary scaling
+
+A short 32-sequence scaling probe produced:
+
+| vocabulary | steps/s | estimated model bytes |
+|---:|---:|---:|
+| 32 | 151k | 5.9 MB |
+| 128 | 89.9k | 6.2 MB |
+| 512 | 29.4k | 18.8 MB |
+
+The dense local-logit representation therefore remains the next major scaling
+limit.  Replacing it requires a separate output-addressing design; sampled or
+hierarchical normalization has not been added merely to improve this benchmark.
+
+## Automated calibration
+
+A 12-candidate, three-seed successive-halving search covered program arity,
+probe duration, validation duration, acceptance threshold and retirement
+threshold.  The unmodified default configuration was selected as best.  No
+manually chosen parameter override was accepted.
+
+
+## Retained vector-objective limitation
+
+The topology lifecycle is currently calibrated on token cross-entropy.  On the
+retained vector benchmark, adaptive sparse programs keep only `[1]` and reach
+approximately `R2=0.528`, while the fixed singleton control `[1,2,4]` remains
+approximately `R2=0.805`.  The token result therefore does not yet establish a
+task-independent topology criterion.  No vector-specific acceptance threshold
+or hand-written proposal order was introduced to conceal this gap.
+
+## Remaining theoretical gap
+
+The model now learns *which sparse history selections exist*, but not yet:
+
+- transformations over selected values;
+- variable binding or reusable operators;
+- program calls and returns;
+- learned proposal distributions;
+- sparse large-vocabulary output normalization;
+- a task-independent criterion for when address-program arity should exceed two.
+
+The next step should not add a library of hand-written operators.  A defensible
+extension would allow one additional generic operation only if it can be
+proposed, validated and erased by the same lifecycle and if a simpler address
+program cannot explain the gain.

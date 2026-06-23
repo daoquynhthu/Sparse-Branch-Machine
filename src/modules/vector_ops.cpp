@@ -30,6 +30,13 @@ void axpy_scalar(float* destination, const float* source, float alpha, std::size
     for (std::size_t i = 0; i < n; ++i) destination[i] += alpha * source[i];
 }
 
+void scale_axpy_scalar(float* destination, const float* source, float scale,
+                       float alpha, std::size_t n) noexcept {
+    for (std::size_t i = 0; i < n; ++i) {
+        destination[i] = scale * destination[i] + alpha * source[i];
+    }
+}
+
 void lerp_scalar(float* destination, const float* target, float rate, std::size_t n) noexcept {
     for (std::size_t i = 0; i < n; ++i) destination[i] += rate * (target[i] - destination[i]);
 }
@@ -90,6 +97,26 @@ void axpy_avx2(float* destination, const float* source, float alpha, std::size_t
 #if defined(__GNUC__) || defined(__clang__)
 __attribute__((target("avx2,fma")))
 #endif
+void scale_axpy_avx2(float* destination, const float* source, float scale_value,
+                     float alpha, std::size_t n) noexcept {
+    const __m256 scale = _mm256_set1_ps(scale_value);
+    const __m256 source_scale = _mm256_set1_ps(alpha);
+    std::size_t i = 0;
+    for (; i + 8 <= n; i += 8) {
+        const __m256 current = _mm256_loadu_ps(destination + i);
+        const __m256 value = _mm256_loadu_ps(source + i);
+        _mm256_storeu_ps(destination + i,
+                         _mm256_fmadd_ps(source_scale, value,
+                                         _mm256_mul_ps(scale, current)));
+    }
+    for (; i < n; ++i) {
+        destination[i] = scale_value * destination[i] + alpha * source[i];
+    }
+}
+
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((target("avx2,fma")))
+#endif
 void lerp_avx2(float* destination, const float* target, float rate, std::size_t n) noexcept {
     const __m256 scale = _mm256_set1_ps(rate);
     std::size_t i = 0;
@@ -139,6 +166,18 @@ void axpy(float* destination, const float* source, float alpha, std::size_t n) n
     }
 #endif
     axpy_scalar(destination, source, alpha, n);
+}
+
+
+void scale_axpy(float* destination, const float* source, float scale, float alpha,
+                std::size_t n) noexcept {
+#if defined(__x86_64__) || defined(_M_X64)
+    if (has_avx2_fma()) {
+        scale_axpy_avx2(destination, source, scale, alpha, n);
+        return;
+    }
+#endif
+    scale_axpy_scalar(destination, source, scale, alpha, n);
 }
 
 void lerp(float* destination, const float* target, float rate, std::size_t n) noexcept {

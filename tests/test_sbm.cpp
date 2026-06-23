@@ -30,6 +30,15 @@ int main() {
     const auto lag_two = sbm::lagged_token_signature(lag_context, 64, 2);
     assert((lag_one >> 52U) != (lag_two >> 52U));
 
+    const std::array<std::uint32_t, 2> program_lags{1U, 4U};
+    const std::array<std::uint32_t, 5> program_context_a{3, 9, 17, 25, 31};
+    const std::array<std::uint32_t, 5> program_context_b{7, 9, 17, 25, 31};
+    const auto program_signature_a = sbm::address_program_signature(
+        program_context_a, 64, program_lags);
+    const auto program_signature_b = sbm::address_program_signature(
+        program_context_b, 64, program_lags);
+    assert(program_signature_a != program_signature_b);
+
     auto dataset = sbm::generate_vector_process(8000, 32, 16, 20, 9);
     assert(dataset.tokens.size() == 8000);
     assert(dataset.targets.size() == 8000 * 16);
@@ -130,6 +139,23 @@ int main() {
     assert(token_result.eval_examples == token_dataset.example_count() - 2500);
     assert(token_result.oracle_cross_entropy > 0.0);
 
+
+    // Strict evaluation freeze must reject an unfinished probe at the train
+    // boundary and must never mutate topology using evaluation examples.
+    sbm::Config freeze_config = token_config;
+    freeze_config.adaptive_topology = true;
+    freeze_config.max_address_channels = 3U;
+    freeze_config.beam_width = 3U;
+    freeze_config.topology_probe_interval = 2480U;
+    freeze_config.topology_probe_steps = 128U;
+    freeze_config.topology_validation_steps = 32U;
+    freeze_config.topology_min_observations = 16U;
+    const auto freeze_result = sbm::run_token_experiment(
+        token_dataset, 2500, freeze_config, true, 0, 0, 0);
+    for (const auto& event : freeze_result.topology_events) {
+        assert(event.step <= 2500U);
+    }
+
     // Adaptive topology must propose, validate and safely reject an unhelpful
     // channel without disturbing the seed channel.
     sbm::Config topology_config = token_config;
@@ -154,6 +180,13 @@ int main() {
     assert(topology_diag.topology_rejected > 0U);
     const auto learned_lags = topology_machine.learned_address_lags();
     assert(!learned_lags.empty() && learned_lags.front() == 1U);
+
+    const auto learned_programs = topology_machine.learned_address_programs();
+    assert(!learned_programs.empty());
+    for (const auto& program : learned_programs) {
+        assert(program.arity >= 1U &&
+               program.arity <= topology_config.topology_max_arity);
+    }
 
     sbm::Config fixed_topology_config = token_config;
     fixed_topology_config.adaptive_topology = false;

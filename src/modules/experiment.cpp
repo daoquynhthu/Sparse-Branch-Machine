@@ -188,6 +188,7 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
     std::vector<float> fixed_prediction(dim, 0.0F);
     for (std::size_t t = 0; t < dataset.tokens.size(); ++t) {
         const bool learn = t < warmup;
+        if (strict && t == warmup) model.freeze_topology();
         const auto target = dataset.target(t);
         const auto stats = model.step(dataset.tokens[t], target, learn);
         (void)stats;
@@ -267,6 +268,7 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
     result.token_alphabet = dataset.token_alphabet;
     result.address_lags = config.address_lags;
     result.learned_address_lags = model.learned_address_lags();
+    result.learned_address_programs = model.learned_address_programs();
     result.learned_channel_credit = model.learned_channel_credit();
     result.learned_channel_phase = model.learned_channel_phase();
     result.topology_events = model.topology_events();
@@ -313,6 +315,17 @@ std::string to_json(const ExperimentResult& result) {
         if (i != 0U) out << ", ";
         out << result.learned_address_lags[i];
     }
+    out << "],\n  \"learned_address_programs\": [";
+    for (std::size_t i = 0; i < result.learned_address_programs.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << '[';
+        const auto& program = result.learned_address_programs[i];
+        for (std::size_t j = 0; j < program.arity; ++j) {
+            if (j != 0U) out << ", ";
+            out << program.lags[j];
+        }
+        out << ']';
+    }
     out << "],\n  \"learned_channel_credit\": [";
     for (std::size_t i = 0; i < result.learned_channel_credit.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -327,9 +340,12 @@ std::string to_json(const ExperimentResult& result) {
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
         if (i != 0U) out << ", ";
         const auto& event = result.topology_events[i];
-        out << "{\"step\":" << event.step
-            << ",\"lag\":" << event.lag
-            << ",\"decision\":" << static_cast<unsigned>(event.decision)
+        out << "{\"step\":" << event.step << ",\"lags\":[";
+        for (std::size_t j = 0; j < event.program.arity; ++j) {
+            if (j != 0U) out << ',';
+            out << event.program.lags[j];
+        }
+        out << "],\"decision\":" << static_cast<unsigned>(event.decision)
             << ",\"credit\":" << event.credit << "}";
     }
     out << "],\n"

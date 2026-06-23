@@ -322,3 +322,51 @@ accepts lag 5 and lag 6, then mature auditing retires both after their credit
 falls below the conservative negative threshold.  This demonstrates a complete
 and auditable structural lifecycle, while also showing that the current local
 learner does not yet assign positive reusable value to the known lag-4 factor.
+
+## 2026-06-23 — theory alignment v10: sparse address programs
+
+Work continued on the existing `theory-alignment-v9` branch. No new branch was
+created.
+
+The lag-only topology object was generalized to an `AddressProgram`: a sparse
+set of at most two history offsets with the current token implicit. Programs are
+enumerated by increasing maximum lag and arity, then passed through the existing
+adapt/freeze/ablate/accept/retire lifecycle. The proposal mechanism contains no
+knowledge that the generator uses lags 1, 2 and 4.
+
+Three full seeds produced frozen NLL 3.37074, 3.36783 and 3.36070, mean 3.36642.
+The fixed multiscale conditional-table control averaged 3.39199; fixed singleton
+channels `[1,2,4]` averaged 3.41819; adaptive singleton-only topology averaged
+3.42692. This is the first learned-topology result that beats the strong fixed
+statistical control.
+
+A proposed address rewrite that hashed all program operands into the top-level
+bucket was rejected. It increased sparsity and worsened mean NLL to 3.42766.
+The accepted implementation preserves a coarse-to-fine address hierarchy.
+
+Strict-freeze auditing found two leaks. Program retirement could occur after the
+training boundary, and evaluation examples continued to update credit EMAs.
+Both were fixed: unfinished probes are resolved at the boundary, all structural
+and credit mutation stops during evaluation, and no learning-only
+counterfactuals are computed there.
+
+Performance changes were semantics-preserving: reusable buffers, contiguous
+history, direct ablation log-sum-exp, channel/node credit reuse, SIMD logit
+updates and skipped evaluation credit. A direct seed-7 before/after comparison
+raised throughput from about 68k to about 89k steps/s with identical predictive
+and graph metrics. Full-run throughput remains topology-dependent.
+
+A 12-candidate three-seed automated search over topology lifecycle parameters
+and maximum program arity retained the default configuration. No manual override
+was adopted.
+
+The retained vector objective exposes an unresolved transfer problem. With the
+token-calibrated structural lifecycle, adaptive discovery keeps only `[1]` and
+reaches about `R2=0.528`, whereas fixed `[1,2,4]` remains about `R2=0.805`. This
+was not patched with objective-specific proposal priors or manually lowered
+thresholds. The result is retained as evidence that topology credit is not yet
+task-independent.
+
+A deterministic `scripts/theory_ablation.py` runner now reproduces the three
+accepted architecture controls through the shared C API, so future comparisons
+do not depend on manually assembled CLI commands.

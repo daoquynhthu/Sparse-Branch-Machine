@@ -26,6 +26,30 @@ void softmax(std::span<const float> logits, std::span<float> probabilities,
     for (auto& value : probabilities) value *= inverse;
 }
 
+float ablated_cross_entropy(std::span<const float> logits,
+                            const float* removed,
+                            float removed_scale,
+                            std::uint32_t target,
+                            float temperature) {
+    const float inverse_temperature = 1.0F / temperature;
+    float maximum = -std::numeric_limits<float>::infinity();
+    for (std::size_t index = 0; index < logits.size(); ++index) {
+        const float value = (logits[index] - removed_scale * removed[index]) *
+                            inverse_temperature;
+        maximum = std::max(maximum, value);
+    }
+    double normalizer = 0.0;
+    for (std::size_t index = 0; index < logits.size(); ++index) {
+        const float value = (logits[index] - removed_scale * removed[index]) *
+                            inverse_temperature;
+        normalizer += std::exp(value - maximum);
+    }
+    const float target_logit =
+        (logits[target] - removed_scale * removed[target]) * inverse_temperature;
+    return maximum + static_cast<float>(std::log(std::max(normalizer, 1e-30))) -
+           target_logit;
+}
+
 float centered_logit_mean(std::span<const float> logits) {
     double total = 0.0;
     for (const float value : logits) total += value;
@@ -44,15 +68,19 @@ StepStats SparseBranchMachine::step_token(std::uint32_t token,
         throw std::out_of_range("invalid input or target token");
     }
 
-    history_.push_back(token);
-    if (history_.size() > config_.context_width) history_.pop_front();
-    const std::vector<std::uint32_t> window(history_.begin(), history_.end());
+    if (history_.size() == config_.context_width) {
+        std::move(history_.begin() + 1, history_.end(), history_.begin());
+        history_.back() = token;
+    } else {
+        history_.push_back(token);
+    }
     maybe_begin_topology_probe(learn);
-    const auto signatures = make_signatures(window);
+    const auto signatures = make_signatures(history_);
 
     const bool can_grow = learn || config_.allow_growth_when_frozen;
     std::uint32_t created = 0U;
-    std::vector<float> zero_logits(config_.vector_dim, 0.0F);
+    const std::span<const float> zero_logits(zero_output_buffer_.data(),
+                                             config_.vector_dim);
 
     // Address allocation depends only on the observed context, never on the
     // target token.  New residents therefore make a uniform prediction on
@@ -115,48 +143,62 @@ StepStats SparseBranchMachine::step_token(std::uint32_t token,
         prediction_buffer_.begin(),
         std::max_element(prediction_buffer_.begin(), prediction_buffer_.end())));
 
-    // Counterfactual contribution is the increase in cross-entropy when a
-    // node's logit contribution is removed from the active route.
-    std::vector<float> without_logits(logit_buffer_.size(), 0.0F);
-    std::vector<float> without_probabilities(prediction_buffer_.size(), 0.0F);
-    for (auto& node : active) {
-        const auto slot = slot_of(node.id);
-        if (slot == SIZE_MAX || std::abs(node.responsibility) < 1e-7F) {
-            node.contribution = 0.0F;
-            continue;
-        }
-        std::copy(logit_buffer_.begin(), logit_buffer_.end(), without_logits.begin());
-        detail::axpy(without_logits.data(),
-                     output_vectors_.data() + slot * config_.vector_dim,
-                     -node.responsibility,
-                     config_.vector_dim);
-        softmax(without_logits, without_probabilities, config_.softmax_temperature);
-        const float without_loss = -std::log(
-            std::max(without_probabilities[target_token], 1e-12F));
-        node.contribution = without_loss - cross_entropy;
-    }
-
-    std::vector<float> channel_credit(signatures.size(), 0.0F);
-    for (std::size_t channel = 0; channel < signatures.size(); ++channel) {
-        if (!channel_enabled(channel)) continue;
-        std::copy(logit_buffer_.begin(), logit_buffer_.end(), without_logits.begin());
-        bool removed = false;
+    if (learn) {
+        // Counterfactual credit is computed from log-sum-exp directly.  This
+        // avoids allocating and normalizing a complete probability vector for
+        // every node and every address program.
+        const std::size_t channel_values = topology_.size() * config_.vector_dim;
+        std::fill(channel_output_buffer_.begin(),
+                  channel_output_buffer_.begin() + static_cast<std::ptrdiff_t>(channel_values),
+                  0.0F);
         for (const auto& node : active) {
-            if (node.channel != channel || std::abs(node.responsibility) < 1e-7F) continue;
             const auto slot = slot_of(node.id);
-            if (slot == SIZE_MAX) continue;
-            detail::axpy(without_logits.data(),
+            if (slot == SIZE_MAX || std::abs(node.responsibility) < 1e-7F) continue;
+            detail::axpy(channel_output_buffer_.data() +
+                             static_cast<std::size_t>(node.channel) * config_.vector_dim,
                          output_vectors_.data() + slot * config_.vector_dim,
-                         -node.responsibility, config_.vector_dim);
-            removed = true;
+                         node.responsibility, config_.vector_dim);
         }
-        if (!removed) continue;
-        softmax(without_logits, without_probabilities, config_.softmax_temperature);
-        const float without_loss = -std::log(
-            std::max(without_probabilities[target_token], 1e-12F));
-        channel_credit[channel] = without_loss - cross_entropy;
+
+        std::fill(channel_credit_buffer_.begin(), channel_credit_buffer_.end(), 0.0F);
+        std::array<std::uint8_t, kMaxAddressChannels> channel_members{};
+        for (const auto& node : active) {
+            if (node.channel < channel_members.size() &&
+                std::abs(node.responsibility) >= 1e-7F) {
+                ++channel_members[node.channel];
+            }
+        }
+        for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
+            if (!channel_enabled(channel) || channel_members[channel] == 0U) continue;
+            const float* removed = channel_output_buffer_.data() +
+                channel * config_.vector_dim;
+            const float without_loss = ablated_cross_entropy(
+                logit_buffer_, removed, 1.0F, target_token,
+                config_.softmax_temperature);
+            channel_credit_buffer_[channel] = without_loss - cross_entropy;
+        }
+
+        // A channel containing one active node has exactly the same node and
+        // channel ablation.  Reusing the exact channel result avoids another
+        // full-vocabulary log-sum-exp sweep without changing the credit rule.
+        for (auto& node : active) {
+            const auto slot = slot_of(node.id);
+            if (slot == SIZE_MAX || std::abs(node.responsibility) < 1e-7F) {
+                node.contribution = 0.0F;
+                continue;
+            }
+            if (channel_members[node.channel] == 1U) {
+                node.contribution = channel_credit_buffer_[node.channel];
+                continue;
+            }
+            const float without_loss = ablated_cross_entropy(
+                logit_buffer_, output_vectors_.data() + slot * config_.vector_dim,
+                node.responsibility, target_token, config_.softmax_temperature);
+            node.contribution = without_loss - cross_entropy;
+        }
+        observe_topology_credit(std::span<const float>(channel_credit_buffer_.data(),
+                                                        topology_.size()));
     }
-    observe_topology_credit(channel_credit);
 
     std::vector<NodeId> route;
     std::vector<float> contributions;
@@ -198,19 +240,23 @@ StepStats SparseBranchMachine::step_token(std::uint32_t token,
                 std::max(config_.softmax_temperature, 1e-5F);
             float* logits = output_vectors_.data() + slot * config_.vector_dim;
             const float retain = 1.0F - config_.logit_decay;
-            for (std::uint32_t candidate = 0; candidate < config_.vector_dim; ++candidate) {
-                const float target_value = candidate == target_token
-                    ? 1.0F - smoothing
-                    : off_target;
-                logits[candidate] = retain * logits[candidate] +
-                    rate * (target_value - prediction_buffer_[candidate]);
-            }
-            // Softmax is invariant to a shared offset.  Re-centering prevents
-            // numerically irrelevant drift from accumulating in long runs.
-            const float mean = centered_logit_mean(
-                std::span<const float>(logits, config_.vector_dim));
-            for (std::uint32_t candidate = 0; candidate < config_.vector_dim; ++candidate) {
-                logits[candidate] -= mean;
+            // The uniform part of label smoothing adds the same value to every
+            // logit and therefore cannot change softmax probabilities.  Drop
+            // that null-space component and update the dense negative gradient
+            // through the SIMD kernel.
+            detail::scale_axpy(logits, prediction_buffer_.data(), retain, -rate,
+                               config_.vector_dim);
+            logits[target_token] += rate * (1.0F - smoothing - off_target);
+
+            // The update is centered analytically; recenter only occasionally
+            // to remove accumulated floating-point drift.
+            if ((address_visits_[slot] & 255U) == 0U) {
+                const float mean = centered_logit_mean(
+                    std::span<const float>(logits, config_.vector_dim));
+                for (std::uint32_t candidate = 0; candidate < config_.vector_dim;
+                     ++candidate) {
+                    logits[candidate] -= mean;
+                }
             }
             loss_ema_[slot] = 0.96F * loss_ema_[slot] + 0.04F * normalized_loss;
             address_loss_ema_[slot] = 0.96F * address_loss_ema_[slot] +

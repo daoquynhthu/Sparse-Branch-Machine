@@ -84,11 +84,14 @@ StepStats SparseBranchMachine::step(std::uint32_t token,
         throw std::out_of_range("invalid token or target dimension");
     }
 
-    history_.push_back(token);
-    if (history_.size() > config_.context_width) history_.pop_front();
-    const std::vector<std::uint32_t> window(history_.begin(), history_.end());
+    if (history_.size() == config_.context_width) {
+        std::move(history_.begin() + 1, history_.end(), history_.begin());
+        history_.back() = token;
+    } else {
+        history_.push_back(token);
+    }
     maybe_begin_topology_probe(learn);
-    const auto signatures = make_signatures(window);
+    const auto signatures = make_signatures(history_);
     auto [active, examined] = select_route(signatures);
 
     // Prediction and all metrics are fixed before the target can modify any
@@ -101,7 +104,9 @@ StepStats SparseBranchMachine::step(std::uint32_t token,
                                                target.size()) / dimension;
     const float normalized_mse = mse / std::max(target_energy, 1e-5F);
     const float cosine = detail::cosine(prediction_buffer_, target);
-    compute_counterfactual_contributions(active, target, target_energy, normalized_mse);
+    if (learn) {
+        compute_counterfactual_contributions(active, target, target_energy, normalized_mse);
+    }
 
     const bool can_grow = learn || config_.allow_growth_when_frozen;
     std::uint32_t created = 0;
@@ -179,29 +184,31 @@ StepStats SparseBranchMachine::step(std::uint32_t token,
         }
     }
 
-    std::vector<float> channel_credit(signatures.size(), 0.0F);
-    std::vector<float> without_prediction(config_.vector_dim, 0.0F);
-    for (std::size_t channel = 0; channel < signatures.size(); ++channel) {
-        if (!channel_enabled(channel)) continue;
-        std::copy(prediction_buffer_.begin(), prediction_buffer_.end(),
-                  without_prediction.begin());
-        bool removed = false;
-        for (const auto& node : active) {
-            if (node.channel != channel || std::abs(node.responsibility) < 1e-7F) continue;
-            const auto slot = slot_of(node.id);
-            if (slot == SIZE_MAX) continue;
-            detail::axpy(without_prediction.data(),
-                         output_vectors_.data() + slot * config_.vector_dim,
-                         -node.responsibility, config_.vector_dim);
-            removed = true;
+    if (learn) {
+        std::vector<float> channel_credit(signatures.size(), 0.0F);
+        std::vector<float> without_prediction(config_.vector_dim, 0.0F);
+        for (std::size_t channel = 0; channel < signatures.size(); ++channel) {
+            if (!channel_enabled(channel)) continue;
+            std::copy(prediction_buffer_.begin(), prediction_buffer_.end(),
+                      without_prediction.begin());
+            bool removed = false;
+            for (const auto& node : active) {
+                if (node.channel != channel || std::abs(node.responsibility) < 1e-7F) continue;
+                const auto slot = slot_of(node.id);
+                if (slot == SIZE_MAX) continue;
+                detail::axpy(without_prediction.data(),
+                             output_vectors_.data() + slot * config_.vector_dim,
+                             -node.responsibility, config_.vector_dim);
+                removed = true;
+            }
+            if (!removed) continue;
+            const float without_mse = detail::squared_distance(
+                without_prediction.data(), target.data(), target.size()) / dimension;
+            const float without_normalized = without_mse / std::max(target_energy, 1e-5F);
+            channel_credit[channel] = without_normalized - normalized_mse;
         }
-        if (!removed) continue;
-        const float without_mse = detail::squared_distance(
-            without_prediction.data(), target.data(), target.size()) / dimension;
-        const float without_normalized = without_mse / std::max(target_energy, 1e-5F);
-        channel_credit[channel] = without_normalized - normalized_mse;
+        observe_topology_credit(channel_credit);
     }
-    observe_topology_credit(channel_credit);
 
     std::vector<NodeId> route;
     std::vector<float> contributions;

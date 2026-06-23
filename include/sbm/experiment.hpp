@@ -46,6 +46,7 @@ struct ExperimentResult {
     std::uint32_t token_alphabet{};
     std::vector<std::uint32_t> address_lags;
     std::vector<std::uint32_t> learned_address_lags;
+    std::vector<AddressProgram> learned_address_programs;
     std::vector<float> learned_channel_credit;
     std::vector<std::uint8_t> learned_channel_phase;
     std::vector<TopologyEvent> topology_events;
@@ -75,6 +76,7 @@ struct TokenExperimentResult {
     std::uint64_t sequence_count{};
     std::vector<std::uint32_t> address_lags;
     std::vector<std::uint32_t> learned_address_lags;
+    std::vector<AddressProgram> learned_address_programs;
     std::vector<float> learned_channel_credit;
     std::vector<std::uint8_t> learned_channel_phase;
     std::vector<TopologyEvent> topology_events;

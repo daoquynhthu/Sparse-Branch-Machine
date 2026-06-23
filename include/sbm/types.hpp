@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -9,14 +10,39 @@ namespace sbm {
 using NodeId = std::uint32_t;
 inline constexpr NodeId kInvalidNode = UINT32_MAX;
 inline constexpr std::size_t kMaxAddressChannels = 8U;
+inline constexpr std::size_t kMaxAddressProgramArity = 2U;
 
 enum class NodePhase : std::uint8_t { Cold, Warm, Mature, Dormant };
 enum class ChannelPhase : std::uint8_t { Seed, Probe, Active, Retired };
 enum class TopologyDecision : std::uint8_t { Proposed, Accepted, Rejected, Pruned };
 
+struct AddressProgram {
+    std::array<std::uint32_t, kMaxAddressProgramArity> lags{};
+    std::uint8_t arity{1U};
+
+    [[nodiscard]] bool operator==(const AddressProgram&) const noexcept = default;
+};
+
+[[nodiscard]] inline AddressProgram singleton_address_program(std::uint32_t lag) noexcept {
+    AddressProgram program;
+    program.lags[0] = lag;
+    program.arity = 1U;
+    return program;
+}
+
+[[nodiscard]] inline std::uint64_t address_program_key(
+    const AddressProgram& program) noexcept {
+    std::uint64_t key = static_cast<std::uint64_t>(program.arity) << 56U;
+    for (std::size_t index = 0; index < program.arity; ++index) {
+        key |= (static_cast<std::uint64_t>(program.lags[index]) & 0x0FFFFFFFULL)
+               << (28U * index);
+    }
+    return key;
+}
+
 struct TopologyEvent {
     std::uint64_t step{};
-    std::uint32_t lag{};
+    AddressProgram program{};
     TopologyDecision decision{TopologyDecision::Proposed};
     float credit{};
 };
@@ -66,6 +92,7 @@ struct Config {
     bool adaptive_topology{true};
     std::uint32_t max_address_channels{6};
     std::uint32_t topology_max_lag{16};
+    std::uint32_t topology_max_arity{2};
     std::uint32_t topology_probe_interval{2048};
     std::uint32_t topology_probe_warmup{512};
     std::uint32_t topology_probe_steps{4096};

@@ -26,14 +26,14 @@ bool SparseBranchMachine::push_candidate(std::vector<CandidateNode>& values,
     return true;
 }
 
-std::vector<SparseBranchMachine::CandidateNode>
+std::span<const SparseBranchMachine::CandidateNode>
 SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
     const std::size_t channel_count = topology_.size();
     const std::size_t exact_budget = channel_count * config_.bucket_scan_limit;
     const std::size_t hard_limit = exact_budget +
         static_cast<std::size_t>(config_.beam_width) * config_.edge_scan_limit;
-    std::vector<CandidateNode> output;
-    output.reserve(hard_limit);
+    auto& output = candidate_scratch_;
+    output.clear();
 
     auto append_bucket = [&](const std::vector<NodeId>& source,
                              std::size_t target_size,
@@ -109,7 +109,7 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
             }
         }
     }
-    return output;
+    return std::span<const CandidateNode>(output.data(), output.size());
 }
 
 NodePhase SparseBranchMachine::phase_of_slot(std::size_t slot) const noexcept {
@@ -136,11 +136,11 @@ double SparseBranchMachine::score(std::size_t slot,
            static_cast<double>(config_.edge_score_weight * edge_prior) + phase_bias;
 }
 
-std::pair<std::vector<SparseBranchMachine::ScoredNode>, std::uint32_t>
+std::pair<std::span<SparseBranchMachine::ScoredNode>, std::uint32_t>
 SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures) {
-    auto candidates = candidate_ids(signatures);
-    std::vector<ScoredNode> scored;
-    scored.reserve(candidates.size());
+    const auto candidates = candidate_ids(signatures);
+    auto& scored = scored_scratch_;
+    scored.clear();
     for (const auto& candidate : candidates) {
         const auto slot = slot_of(candidate.id);
         if (slot == SIZE_MAX) continue;
@@ -150,9 +150,10 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures) {
                           0.0F, 0.0F, exact, channel});
     }
 
-    std::vector<ScoredNode> selected;
-    selected.reserve(config_.beam_width);
-    std::vector<std::uint8_t> chosen(scored.size(), 0U);
+    auto& selected = selected_scratch_;
+    selected.clear();
+    chosen_scratch_.assign(scored.size(), 0U);
+    auto& chosen = chosen_scratch_;
 
     // Guarantee one exact resident from every available temporal view.
     for (std::uint8_t channel = 0; channel < topology_.size(); ++channel) {
@@ -168,8 +169,8 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures) {
         }
     }
 
-    std::vector<std::size_t> order;
-    order.reserve(scored.size());
+    auto& order = order_scratch_;
+    order.clear();
     for (std::size_t index = 0; index < scored.size(); ++index) {
         if (!chosen[index]) order.push_back(index);
     }
@@ -182,11 +183,12 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures) {
         selected.push_back(scored[index]);
     }
 
-    assign_responsibilities(selected);
-    return {std::move(selected), static_cast<std::uint32_t>(candidates.size())};
+    assign_responsibilities(std::span<ScoredNode>(selected.data(), selected.size()));
+    return {std::span<ScoredNode>(selected.data(), selected.size()),
+            static_cast<std::uint32_t>(candidates.size())};
 }
 
-void SparseBranchMachine::assign_responsibilities(std::vector<ScoredNode>& active) const {
+void SparseBranchMachine::assign_responsibilities(std::span<ScoredNode> active) const {
     for (auto& node : active) node.responsibility = 0.0F;
     for (std::uint8_t channel = 0; channel < topology_.size(); ++channel) {
         if (!channel_enabled(channel)) continue;
@@ -237,7 +239,7 @@ void SparseBranchMachine::assign_responsibilities(std::vector<ScoredNode>& activ
     }
 }
 
-void SparseBranchMachine::aggregate(const std::vector<ScoredNode>& active,
+void SparseBranchMachine::aggregate(std::span<const ScoredNode> active,
                                     std::span<float> output) const {
     std::fill(output.begin(), output.end(), 0.0F);
     for (const auto& node : active) {
@@ -251,7 +253,7 @@ void SparseBranchMachine::aggregate(const std::vector<ScoredNode>& active,
 }
 
 void SparseBranchMachine::compute_counterfactual_contributions(
-    std::vector<ScoredNode>& active,
+    std::span<ScoredNode> active,
     std::span<const float> target,
     float target_energy,
     float full_loss) const {

@@ -1,4 +1,5 @@
 #include "sbm/math.hpp"
+#include "sbm/types.hpp"
 #include <bit>
 #include <cstring>
 
@@ -75,6 +76,48 @@ std::uint64_t lagged_token_signature(std::span<const std::uint32_t> window,
         seed ^ mix64(static_cast<std::uint64_t>(lag) * 0xE7037ED1A0B428DBULL));
     return (pair_signature & high_mask) | (context_mix & ~high_mask);
 }
+
+std::uint64_t address_program_signature(std::span<const std::uint32_t> window,
+                                        std::uint32_t alphabet,
+                                        std::span<const std::uint32_t> lags,
+                                        std::uint64_t seed) noexcept {
+    if (window.empty()) return mix64(seed);
+    const unsigned symbol_bits = std::max(
+        1U, static_cast<unsigned>(std::bit_width(alphabet > 0 ? alphabet - 1U : 0U)));
+
+    std::uint32_t selected[kMaxAddressProgramArity + 1U]{};
+    std::size_t count = 0U;
+    selected[count++] = window.back();
+    for (const auto lag : lags) {
+        if (count >= std::size(selected)) break;
+        selected[count++] = window.size() > lag
+            ? window[window.size() - 1U - static_cast<std::size_t>(lag)]
+            : window.front();
+    }
+
+    std::uint64_t mixed = seed ^ mix64(static_cast<std::uint64_t>(count));
+    for (std::size_t index = 0; index < count; ++index) {
+        mixed ^= std::rotl(mix64(static_cast<std::uint64_t>(selected[index]) +
+                                 0x9E37ULL * (index + 1U)),
+                           static_cast<int>((index * 13U) & 63U));
+    }
+    mixed = mix64(mixed ^ token_context_signature(window, alphabet, seed));
+
+    std::uint64_t packed = 0U;
+    unsigned used = 0U;
+    for (std::size_t index = 0; index < count && used + symbol_bits <= 64U; ++index) {
+        const unsigned shift = 64U - used - symbol_bits;
+        const std::uint64_t mask = symbol_bits == 64U
+            ? ~std::uint64_t{0}
+            : ((std::uint64_t{1} << symbol_bits) - 1U);
+        packed |= (static_cast<std::uint64_t>(selected[index]) & mask) << shift;
+        used += symbol_bits;
+    }
+    if (used == 64U) return packed;
+    const std::uint64_t low_mask = (std::uint64_t{1} << (64U - used)) - 1U;
+    return packed | (mixed & low_mask);
+}
+
 double hamming_similarity(std::uint64_t a,std::uint64_t b) noexcept { return 1.0-static_cast<double>(std::popcount(a^b))/64.0; }
 
 } // namespace sbm

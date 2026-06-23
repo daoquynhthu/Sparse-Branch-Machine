@@ -31,11 +31,12 @@ Default calibration:
 - metrics: NLL, bits/token, perplexity, top-1/top-5 and target probability;
 - oracle NLL: recorded by the mathematical generator.
 
-On the theory-alignment branch the default topology starts from lag 1 and
-learns which additional address channels survive. Across seeds 7, 11 and 19 it
-obtains mean frozen NLL 3.41847 and finishes with learned lags `[1,2]`. A fixed
-`[1,2,4]` control obtains 3.41132, the unigram baseline is about 3.466 and the
-generator oracle about 2.914. The unresolved gap is retained deliberately.
+On the theory-alignment branch the default topology starts from address
+program `[1]` and proposes sparse one- or two-offset programs. Across seeds 7,
+11 and 19 it obtains mean frozen NLL **3.36642**. This beats both the fixed
+singleton-channel control `[1,2,4]` at 3.41819 and the fixed multiscale
+conditional-table control at 3.39199. The unigram baseline is about 3.466 and
+the generator oracle about 2.914.
 
 ## Tokenizer alignment
 
@@ -68,17 +69,22 @@ efficient; hierarchical or sampled output normalization remains future work.
 The previous continuous-vector mathematical task remains available as
 `--task vector`.  It is useful for regression experiments and SIMD validation.
 The dataset handle and experiment API dispatch automatically by dataset kind.
+The new adaptive address-program thresholds are calibrated for the categorical
+objective: on the retained vector benchmark adaptive discovery currently keeps
+only `[1]` and reaches about `R2=0.528`, while the fixed `[1,2,4]` control remains
+about `R2=0.805`.  This limitation is reported rather than hidden by sharing
+one topology policy across incompatible objectives.
 
 ## Adaptive sparse token learning
 
-Each active node stores a local logit vector. The model begins with a seed
-address topology, normally lag 1. Additional temporal channels are proposed at
-runtime, locally adapted, frozen for a validation tail and accepted only when
-exact channel ablation improves cross-entropy.
+Each active node stores a local logit vector. The model begins with seed
+address program `[1]`. Additional sparse history selectors such as `[1,2]` or
+`[1,4]` are proposed at runtime, locally adapted, frozen for a validation tail
+and accepted only when exact channel ablation improves cross-entropy.
 
 ```text
-seed channel -> propose lag -> adapt local nodes -> freeze candidate
-             -> ablate whole channel -> accept or erase
+seed program -> propose sparse selector -> adapt local nodes -> freeze candidate
+             -> ablate whole program   -> accept or erase
 ```
 
 Accepted channels contribute additive logits. Exact-address nodes receive local
@@ -145,15 +151,22 @@ python scripts/tune.py \
 
 For token training the objective is minimum mean frozen cross-entropy; for vector
 training it remains maximum frozen R2.  Repeated manual parameter edits are not
-part of the accepted workflow.
+part of the accepted workflow.  The architecture comparison itself is also
+scripted:
+
+```bash
+python scripts/theory_ablation.py \
+  --library build/libsbm_api.so \
+  --seeds 7,11,19
+```
 
 ## Current limits
 
 - Local token output is still a dense vector over the vocabulary.
-- Proposal generation still enumerates temporal lags; arbitrary address
-  programs are not yet synthesized.
-- The adaptive topology currently retains `[1,2]` and remains weaker than the
-  fixed `[1,2,4]` control on the present task.
+- Address programs currently select at most two history offsets; they do not
+  yet transform or bind selected values.
+- Dense per-node vocabulary logits remain the dominant large-vocabulary scaling
+  limit.
 - Control edges carry routing credit only; they do not yet transform logits.
 - Formal tokenizer ID ingestion is implemented, but corpus streaming, sharding,
   masking and distributed checkpointing are not yet present.

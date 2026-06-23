@@ -207,6 +207,9 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
         model.reset_sequence();
         for (std::size_t position = start; position + 1U < end; ++position) {
             const bool learn = example_index < warmup_examples;
+            if (strict_freeze && example_index == warmup_examples) {
+                model.freeze_topology();
+            }
             const auto current = dataset.tokens[position];
             const auto target = dataset.tokens[position + 1U];
             const auto stats = model.step_token(current, target, learn);
@@ -285,6 +288,7 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
     result.sequence_count = dataset.sequence_count();
     result.address_lags = config.address_lags;
     result.learned_address_lags = model.learned_address_lags();
+    result.learned_address_programs = model.learned_address_programs();
     result.learned_channel_credit = model.learned_channel_credit();
     result.learned_channel_phase = model.learned_channel_phase();
     result.topology_events = model.topology_events();
@@ -328,6 +332,17 @@ std::string to_json(const TokenExperimentResult& result) {
         if (i != 0U) out << ", ";
         out << result.learned_address_lags[i];
     }
+    out << "],\n  \"learned_address_programs\": [";
+    for (std::size_t i = 0; i < result.learned_address_programs.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << '[';
+        const auto& program = result.learned_address_programs[i];
+        for (std::size_t j = 0; j < program.arity; ++j) {
+            if (j != 0U) out << ", ";
+            out << program.lags[j];
+        }
+        out << ']';
+    }
     out << "],\n  \"learned_channel_credit\": [";
     for (std::size_t i = 0; i < result.learned_channel_credit.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -342,9 +357,12 @@ std::string to_json(const TokenExperimentResult& result) {
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
         if (i != 0U) out << ", ";
         const auto& event = result.topology_events[i];
-        out << "{\"step\":" << event.step
-            << ",\"lag\":" << event.lag
-            << ",\"decision\":" << static_cast<unsigned>(event.decision)
+        out << "{\"step\":" << event.step << ",\"lags\":[";
+        for (std::size_t j = 0; j < event.program.arity; ++j) {
+            if (j != 0U) out << ',';
+            out << event.program.lags[j];
+        }
+        out << "],\"decision\":" << static_cast<unsigned>(event.decision)
             << ",\"credit\":" << event.credit << "}";
     }
     out << "],\n"

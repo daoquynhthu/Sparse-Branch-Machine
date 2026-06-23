@@ -13,7 +13,12 @@ SparseBranchMachine::SparseBranchMachine(Config config)
       bucket_last_split_step_(static_cast<std::size_t>(config.max_address_channels) *
                               (std::size_t{1} << config.bucket_bits), 0),
       prediction_buffer_(config.vector_dim, 0.0F),
-      logit_buffer_(config.vector_dim, 0.0F) {
+      logit_buffer_(config.vector_dim, 0.0F),
+      zero_output_buffer_(config.vector_dim, 0.0F),
+      channel_output_buffer_(static_cast<std::size_t>(config.max_address_channels) *
+                             config.vector_dim, 0.0F),
+      channel_credit_buffer_(config.max_address_channels, 0.0F),
+      signature_buffer_(config.max_address_channels, 0U) {
     if (config.token_alphabet == 0 || config.vector_dim == 0) {
         throw std::invalid_argument("token_alphabet and vector_dim must be positive");
     }
@@ -30,8 +35,10 @@ SparseBranchMachine::SparseBranchMachine(Config config)
         config.max_specializations_per_bucket == 0) {
         throw std::invalid_argument("invalid routing budget");
     }
-    if (config.address_lags.front() == 0U || config.topology_max_lag == 0U) {
-        throw std::invalid_argument("address lags must be positive");
+    if (config.address_lags.front() == 0U || config.topology_max_lag == 0U ||
+        config.topology_max_arity == 0U ||
+        config.topology_max_arity > kMaxAddressProgramArity) {
+        throw std::invalid_argument("invalid address-program configuration");
     }
     if (!std::all_of(config.address_lags.begin(), config.address_lags.end(),
                      [](std::uint32_t lag) { return lag > 0U; })) {
@@ -62,11 +69,23 @@ SparseBranchMachine::SparseBranchMachine(Config config)
         config.logit_decay < 0.0F || config.logit_decay >= 1.0F) {
         throw std::invalid_argument("invalid token-objective configuration");
     }
+    history_.reserve(config.context_width);
+    const std::size_t candidate_capacity =
+        static_cast<std::size_t>(config.max_address_channels) * config.bucket_scan_limit +
+        static_cast<std::size_t>(config.beam_width) * config.edge_scan_limit;
+    candidate_scratch_.reserve(candidate_capacity);
+    scored_scratch_.reserve(candidate_capacity);
+    selected_scratch_.reserve(config.beam_width);
+    chosen_scratch_.reserve(candidate_capacity);
+    order_scratch_.reserve(candidate_capacity);
     topology_.reserve(config.max_address_channels);
+    proposed_program_keys_.reserve(config.max_address_channels * 4U);
     for (std::size_t index = 0; index < config.address_lags.size(); ++index) {
-        topology_.push_back({config.address_lags[index],
+        const auto program = singleton_address_program(config.address_lags[index]);
+        topology_.push_back({program,
                              index == 0U ? ChannelPhase::Seed : ChannelPhase::Active,
                              0.0F, 0.0, 0U, 0U});
+        proposed_program_keys_.push_back(address_program_key(program));
     }
     next_probe_step_ = config.topology_probe_interval;
 }

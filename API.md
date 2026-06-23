@@ -121,3 +121,13 @@ with runtime.token_dataset_from_ids(
 
 The Python layer does not implement the model, softmax, metrics or task logic; it
 only manages C handles and JSON conversion.
+
+## Adaptive address-program results
+
+Experiment JSON now includes `learned_address_programs`, represented as arrays
+of history offsets, for example `[[1], [1,2], [1,4]]`. `topology_events` now
+contains a `lags` array rather than one scalar lag. The compatibility field
+`learned_address_lags` contains only surviving singleton programs.
+
+The runtime parameter `topology_max_arity` is exposed through the same schema
+and currently accepts 1 or 2. Changing it does not require recompilation.

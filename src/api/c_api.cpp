@@ -191,6 +191,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"adaptive_topology", "bool", "true", "", "", "categorical", false, false, false, "Enable predictive-credit topology proposals."},
     {"max_address_channels", "uint32", "6", "1", "8", "linear", true, false, false, "Maximum simultaneous address channels."},
     {"topology_max_lag", "uint32", "16", "2", "256", "log", true, false, false, "Largest temporal lag eligible for proposal."},
+    {"topology_max_arity", "uint32", "2", "1", "2", "linear", true, false, false, "Maximum number of history offsets in an address program."},
     {"topology_probe_interval", "uint32", "2048", "128", "16384", "log", true, false, false, "Delay between topology proposals."},
     {"topology_probe_warmup", "uint32", "512", "0", "4096", "linear", true, false, false, "Probe steps ignored before credit collection."},
     {"topology_probe_steps", "uint32", "4096", "512", "32768", "log", true, false, false, "Lifetime of a candidate address channel."},
@@ -253,6 +254,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_BOOL(adaptive_topology)
     SBM_SET_UINT(max_address_channels)
     SBM_SET_UINT(topology_max_lag)
+    SBM_SET_UINT(topology_max_arity)
     SBM_SET_UINT(topology_probe_interval)
     SBM_SET_UINT(topology_probe_warmup)
     SBM_SET_UINT(topology_probe_steps)
@@ -323,6 +325,7 @@ std::string config_json(const sbm::Config& c) {
         << "  \"adaptive_topology\": " << c.adaptive_topology << ",\n"
         << "  \"max_address_channels\": " << c.max_address_channels << ",\n"
         << "  \"topology_max_lag\": " << c.topology_max_lag << ",\n"
+        << "  \"topology_max_arity\": " << c.topology_max_arity << ",\n"
         << "  \"topology_probe_interval\": " << c.topology_probe_interval << ",\n"
         << "  \"topology_probe_warmup\": " << c.topology_probe_warmup << ",\n"
         << "  \"topology_probe_steps\": " << c.topology_probe_steps << ",\n"
@@ -373,7 +376,7 @@ std::string_view parameter_tasks(std::string_view name) {
 
 std::string schema_json() {
     std::ostringstream out;
-    out << "{\n  \"api_version\": 2,\n  \"parameters\": [\n";
+    out << "{\n  \"api_version\": 3,\n  \"parameters\": [\n";
     for (std::size_t i = 0; i < std::size(kParameters); ++i) {
         const auto& p = kParameters[i];
         out << "    {\"name\": \"" << json_escape(p.name)
@@ -407,7 +410,7 @@ const std::string& static_schema() {
 extern "C" {
 
 uint32_t sbm_api_version(void) { return 3U; }
-const char* sbm_api_version_string(void) { return "3.0.0"; }
+const char* sbm_api_version_string(void) { return "3.1.0"; }
 const char* sbm_last_error(void) { return g_last_error.c_str(); }
 const char* sbm_parameter_schema_json(void) { return static_schema().c_str(); }
 
