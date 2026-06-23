@@ -501,3 +501,26 @@ worker RSS and averaged 63.5% whole-system CPU. The 28-slot CPU ceiling was not
 reached because only 24 candidates existed. Automatic and fixed one-worker
 execution produced identical candidate ordering and per-candidate NLL in the
 integration fixture.
+
+## 2026-06-23 — medium FineWeb-Edu compatibility run
+
+A deterministic compatibility subset was converted from the local NAIME
+artifact with 999,375 stored training tokens and 99,425 validation tokens.
+Because the source artifact still lacks original document identity, tokenizer
+provenance and deduplication evidence, this run is a scaling and failure-
+diagnosis experiment, not an admissible D2 language-quality result.
+
+Three fixed-topology seeds (7, 11 and 19) completed concurrently under the
+0.9/0.9 scheduler in 90.2 seconds. Each consumed 998,400 train examples and
+99,328 validation examples. Mean model throughput was 12,841 token/s; mean
+reported model time was 85.49 seconds and baseline time 2.23 seconds. The final
+machines retained about 19,253 nodes, 329,565 edges, 1.13 million bounded sparse
+output entries and 22.0 MB estimated state.
+
+Predictive quality failed decisively. Mean validation NLL was 10.6696 with
+seed standard deviation 0.0253, versus unigram 7.6826, current-token 8.3085,
+pair-context 9.3042 and interpolated multiscale 8.6670. Training NLL was also
+10.6169, so the gap is not explained by ordinary validation overfitting. The
+bounded scaling implementation is operational, but the current learning rule
+does not exploit even frequency structure at this corpus scale. Architecture
+diagnosis, rather than larger training, is now the blocking research task.

@@ -10,6 +10,15 @@
 
 ## 1. Why the project is currently blocked
 
+**Status update (2026-06-23):** local data availability is no longer the
+immediate engineering blocker. A 1.0M-train/0.1M-validation subset of the NAIME
+FineWeb-Edu artifact now runs through mapped shards, bounded output state and
+split-correct frozen evaluation. It remains `compatibility_only` because source
+document identity, tokenizer provenance and cross-split deduplication evidence
+are absent. More importantly, the three-seed run reached validation NLL 10.6696
+versus unigram 7.6826. The immediate blocker is therefore predictive learning,
+while an admissible corpus remains required before any positive research claim.
+
 The present bottleneck is not that synthetic mathematical tasks have become
 computationally impossible. The bottleneck is that the current cloud workspace
 does not contain a real natural-language corpus suitable for training and
