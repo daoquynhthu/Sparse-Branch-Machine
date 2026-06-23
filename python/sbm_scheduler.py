@@ -11,6 +11,21 @@ from typing import Any, Callable, Iterable, Protocol
 from sbm_hardware import HardwareSnapshot, ResourcePolicy, snapshot_hardware
 
 
+def estimate_worker_memory(
+    dataset_bytes: int,
+    model_bytes: int,
+    observed_growth_bytes: int = 0,
+    process_overhead_bytes: int = 128 << 20,
+    margin: float = 1.35,
+) -> int:
+    if min(dataset_bytes, model_bytes, observed_growth_bytes, process_overhead_bytes) < 0:
+        raise ValueError("memory components must be non-negative")
+    if margin < 1.0:
+        raise ValueError("memory margin must be at least one")
+    working_set = dataset_bytes + max(model_bytes, observed_growth_bytes) + process_overhead_bytes
+    return int(working_set * margin)
+
+
 @dataclass(frozen=True)
 class RunEstimate:
     cpu_slots: int

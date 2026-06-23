@@ -50,13 +50,13 @@ resource provider and process launcher are injected for tests.
 - Modify: `scripts/tune.py`
 - Modify: `tests/test_scheduler.py`
 
-- [ ] Write RED integration tests comparing fixed one-worker results with auto
+- [x] Write RED integration tests comparing fixed one-worker results with auto
 multi-worker results after removing timing/process metadata.
-- [ ] Add CLI options `--cpu-fraction`, `--memory-fraction`,
+- [x] Add CLI options `--cpu-fraction`, `--memory-fraction`,
 `--minimum-free-memory`, `--max-workers` and `--fixed-jobs`.
-- [ ] Estimate fixed model/index/output bytes from config and update growth from
+- [x] Estimate fixed model/index/output bytes from config and update growth from
 an optional calibration run; apply a conservative margin before reservation.
-- [ ] Verify identical result ordering and commit `feat: auto-size experiment workers`.
+- [x] Verify identical result ordering and commit `feat: auto-size experiment workers`.
 
 ### Task 4: Stress verification and documentation
 

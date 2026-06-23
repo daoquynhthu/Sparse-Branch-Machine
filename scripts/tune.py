@@ -17,6 +17,7 @@ import math
 import random
 import statistics
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
@@ -24,6 +25,133 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "python"))
 
 from sbm_runtime import Runtime, SBMError  # noqa: E402
+from sbm_hardware import ResourcePolicy  # noqa: E402
+from sbm_scheduler import (  # noqa: E402
+    ResourceScheduler,
+    RunEstimate,
+    ScheduledRun,
+    estimate_worker_memory,
+)
+
+
+def execute_worker_request(request_path: str) -> int:
+    request = json.loads(Path(request_path).read_text(encoding="utf-8"))
+    output_path = Path(request["output"])
+    try:
+        runtime = Runtime(request.get("library"))
+        dataset_spec = request["dataset"]
+        seed = int(request["seed"])
+        if dataset_spec["task"] == "token-ce":
+            dataset = runtime.generate_math_token_dataset(
+                dataset_spec["sequences"],
+                dataset_spec["sequence_length"],
+                dataset_spec["vocab_size"],
+                seed,
+                dataset_spec["math_temperature"],
+                dataset_spec["interaction_strength"],
+            )
+        else:
+            dataset = runtime.generate_dataset(
+                dataset_spec["length"],
+                dataset_spec["alphabet"],
+                dataset_spec["vector_dim"],
+                dataset_spec["hidden_dim"],
+                seed,
+                dataset_spec["noise_std"],
+            )
+        try:
+            values = dict(request["config"])
+            values["seed"] = seed
+            with runtime.config(values) as config:
+                result = dataset.run(
+                    config,
+                    dataset_spec["warmup"],
+                    strict_freeze=True,
+                )
+            payload = {"result": result, "error": None}
+        finally:
+            dataset.close()
+    except Exception as error:
+        payload = {"result": None, "error": str(error)}
+    output_path.write_text(
+        json.dumps(payload, sort_keys=True, allow_nan=False), encoding="utf-8"
+    )
+    return 0
+
+
+def dataset_spec_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "task": args.task,
+        "sequences": args.sequences,
+        "sequence_length": args.sequence_length,
+        "vocab_size": args.vocab_size,
+        "math_temperature": args.math_temperature,
+        "interaction_strength": args.interaction_strength,
+        "length": args.length,
+        "warmup": args.warmup,
+        "alphabet": args.alphabet,
+        "vector_dim": args.vector_dim,
+        "hidden_dim": args.hidden_dim,
+        "noise_std": args.noise_std,
+    }
+
+
+def dataset_memory_bytes(args: argparse.Namespace) -> int:
+    if args.task == "token-ce":
+        return args.sequences * args.sequence_length * 4 + (args.sequences + 1) * 8
+    return args.length * (4 + args.vector_dim * 4)
+
+
+def evaluate_isolated(
+    active: Sequence[dict[str, Any]],
+    seed: int,
+    args: argparse.Namespace,
+    observed_model_bytes: int,
+) -> list[tuple[str, int, dict[str, Any] | None, str | None]]:
+    policy = ResourcePolicy(
+        cpu_fraction=args.cpu_fraction,
+        memory_fraction=args.memory_fraction,
+        minimum_free_memory_bytes=args.minimum_free_memory_mib << 20,
+        max_workers=args.max_workers,
+    )
+    estimate_bytes = estimate_worker_memory(
+        dataset_bytes=dataset_memory_bytes(args),
+        model_bytes=args.initial_model_memory_mib << 20,
+        observed_growth_bytes=observed_model_bytes,
+        margin=args.memory_estimate_margin,
+    )
+    dataset_spec = dataset_spec_from_args(args)
+    with tempfile.TemporaryDirectory(prefix="sbm-tune-") as directory:
+        root = Path(directory)
+        scheduled: list[ScheduledRun] = []
+        outputs: dict[str, Path] = {}
+        for index, candidate in enumerate(active):
+            run_id = f"s{seed}-{index}-{candidate['id']}"
+            request_path = root / f"{run_id}.request.json"
+            output_path = root / f"{run_id}.result.json"
+            request = {
+                "library": args.library,
+                "dataset": dataset_spec,
+                "seed": seed,
+                "config": candidate["config"],
+                "output": str(output_path),
+            }
+            request_path.write_text(json.dumps(request), encoding="utf-8")
+            command = [sys.executable, str(Path(__file__).resolve()), "--worker-request", str(request_path)]
+            scheduled.append(ScheduledRun(run_id, RunEstimate(1, estimate_bytes), command))
+            outputs[run_id] = output_path
+
+        scheduler = ResourceScheduler(policy=policy)
+        returncodes = scheduler.run(scheduled)
+        completed: list[tuple[str, int, dict[str, Any] | None, str | None]] = []
+        for candidate, run in zip(active, scheduled):
+            output_path = outputs[run.run_id]
+            if returncodes.get(run.run_id) != 0 or not output_path.exists():
+                completed.append((candidate["id"], seed, None, "worker process failed"))
+                continue
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+            completed.append((candidate["id"], seed, payload["result"], payload["error"]))
+        return completed
 
 
 def parse_assignment(text: str) -> tuple[str, str]:
@@ -90,10 +218,18 @@ def score_result(result: Mapping[str, Any], node_penalty: float) -> float:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--worker-request", help=argparse.SUPPRESS)
     parser.add_argument("--library", help="Path to sbm_api shared library")
     parser.add_argument("--trials", type=int, default=27)
     parser.add_argument("--eta", type=int, default=3, help="Successive-halving reduction factor")
-    parser.add_argument("--jobs", type=int, default=1)
+    parser.add_argument("--fixed-jobs", type=int, help="Disable auto scheduling and use this thread count")
+    parser.add_argument("--jobs", type=int, dest="fixed_jobs", help=argparse.SUPPRESS)
+    parser.add_argument("--cpu-fraction", type=float, default=0.9)
+    parser.add_argument("--memory-fraction", type=float, default=0.9)
+    parser.add_argument("--minimum-free-memory-mib", type=int, default=1024)
+    parser.add_argument("--max-workers", type=int)
+    parser.add_argument("--initial-model-memory-mib", type=int, default=256)
+    parser.add_argument("--memory-estimate-margin", type=float, default=1.35)
     parser.add_argument("--search-seed", type=int, default=20260623)
     parser.add_argument("--seeds", type=parse_seed_list, default=parse_seed_list("7,11,19"))
     parser.add_argument("--task", choices=["token-ce", "vector"], default="token-ce")
@@ -115,8 +251,24 @@ def main() -> int:
     parser.add_argument("--best-config", default="best_config.json")
     args = parser.parse_args()
 
-    if args.trials < 1 or args.eta < 2 or args.jobs < 1:
-        parser.error("trials/jobs must be positive and eta must be at least 2")
+    if args.worker_request:
+        return execute_worker_request(args.worker_request)
+
+    if args.trials < 1 or args.eta < 2:
+        parser.error("trials must be positive and eta must be at least 2")
+    if args.fixed_jobs is not None and args.fixed_jobs < 1:
+        parser.error("fixed jobs must be positive")
+    try:
+        ResourcePolicy(
+            args.cpu_fraction,
+            args.memory_fraction,
+            args.minimum_free_memory_mib << 20,
+            args.max_workers,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+    if args.initial_model_memory_mib < 1 or args.memory_estimate_margin < 1.0:
+        parser.error("memory estimate inputs must be positive and margin at least one")
 
     runtime = Runtime(args.library)
     schema = runtime.parameter_schema()
@@ -153,7 +305,7 @@ def main() -> int:
         seen.add(key)
         candidates.append({"id": key, "config": values, "runs": {}, "status": "active"})
 
-    if args.task == "token-ce":
+    if args.fixed_jobs is not None and args.task == "token-ce":
         datasets = {
             seed: runtime.generate_math_token_dataset(
                 args.sequences,
@@ -165,7 +317,7 @@ def main() -> int:
             )
             for seed in args.seeds
         }
-    else:
+    elif args.fixed_jobs is not None:
         datasets = {
             seed: runtime.generate_dataset(
                 args.length,
@@ -177,6 +329,8 @@ def main() -> int:
             )
             for seed in args.seeds
         }
+    else:
+        datasets = {}
 
     def evaluate(candidate: dict[str, Any], seed: int) -> tuple[str, int, dict[str, Any] | None, str | None]:
         try:
@@ -190,15 +344,23 @@ def main() -> int:
 
     active = candidates
     stages: list[dict[str, Any]] = []
+    observed_model_bytes = 0
     for stage_index, seed in enumerate(args.seeds):
         if not active:
             break
-        with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
-            futures = [executor.submit(evaluate, candidate, seed) for candidate in active]
-            for future in concurrent.futures.as_completed(futures):
-                candidate_id, run_seed, result, error = future.result()
-                candidate = next(item for item in active if item["id"] == candidate_id)
-                candidate["runs"][str(run_seed)] = {"result": result, "error": error}
+        if args.fixed_jobs is None:
+            stage_results = evaluate_isolated(active, seed, args, observed_model_bytes)
+        else:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=args.fixed_jobs) as executor:
+                futures = [executor.submit(evaluate, candidate, seed) for candidate in active]
+                stage_results = [future.result() for future in concurrent.futures.as_completed(futures)]
+        for candidate_id, run_seed, result, error in stage_results:
+            candidate = next(item for item in active if item["id"] == candidate_id)
+            candidate["runs"][str(run_seed)] = {"result": result, "error": error}
+            if result is not None:
+                observed_model_bytes = max(
+                    observed_model_bytes, int(result.get("estimated_bytes", 0))
+                )
 
         for candidate in active:
             valid = [

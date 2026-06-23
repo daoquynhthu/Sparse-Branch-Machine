@@ -136,6 +136,11 @@ if(SBM_BUILD_TESTS)
         NAME sbm_shard_tool
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_shard_tool.py)
+      add_test(
+        NAME sbm_tune_scheduler
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tune_scheduler.py
+                --library $<TARGET_FILE:sbm_api>)
     endif()
   endif()
 endif()

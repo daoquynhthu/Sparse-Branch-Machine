@@ -13,7 +13,12 @@ from sbm_hardware import (  # noqa: E402
     parse_linux_meminfo,
     snapshot_hardware,
 )
-from sbm_scheduler import ResourceScheduler, RunEstimate, ScheduledRun  # noqa: E402
+from sbm_scheduler import (  # noqa: E402
+    ResourceScheduler,
+    RunEstimate,
+    ScheduledRun,
+    estimate_worker_memory,
+)
 
 
 def test_policy_budgets() -> None:
@@ -125,10 +130,21 @@ def test_memory_limit_blocks_launch() -> None:
         raise AssertionError("unschedulable run was not rejected")
 
 
+def test_worker_memory_estimate_uses_growth_and_margin() -> None:
+    assert estimate_worker_memory(
+        dataset_bytes=100,
+        model_bytes=200,
+        observed_growth_bytes=300,
+        process_overhead_bytes=400,
+        margin=1.5,
+    ) == 1200
+
+
 if __name__ == "__main__":
     test_policy_budgets()
     test_snapshot_injection()
     test_linux_meminfo_parser()
     test_dual_constraint_fifo_and_release()
     test_memory_limit_blocks_launch()
+    test_worker_memory_estimate_uses_growth_and_margin()
     print("Scheduler tests passed")
