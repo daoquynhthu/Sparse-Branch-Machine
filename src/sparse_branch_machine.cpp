@@ -99,7 +99,7 @@ bool SparseBranchMachine::contains(NodeId id) const noexcept {
     return slot_of(id) != std::numeric_limits<std::size_t>::max();
 }
 
-NodeId SparseBranchMachine::new_node(std::uint64_t signature) {
+NodeId SparseBranchMachine::new_node(std::uint64_t signature, NodeId parent) {
     if (next_id_ == kInvalidNode) throw std::overflow_error("logical node id space exhausted");
     const NodeId id = next_id_++;
     const auto slot = static_cast<std::uint32_t>(ids_.size());
@@ -109,8 +109,12 @@ NodeId SparseBranchMachine::new_node(std::uint64_t signature) {
     prototypes_.push_back(signature);
     visits_.push_back(0);
     correct_.push_back(0);
+    conflicts_.push_back(0U);
     utility_ema_.push_back(0.0F);
+    error_ema_.push_back(0.0F);
+    phases_.push_back(static_cast<std::uint8_t>(NodePhase::Cold));
     hot_indexed_.push_back(0U);
+    parents_.push_back(parent);
     output_counts_.insert(output_counts_.end(), config_.alphabet_size, 1.0F);
     edges_.emplace_back();
     edges_.back().reserve(config_.max_edges_per_node);
@@ -187,7 +191,9 @@ double SparseBranchMachine::score(std::size_t slot, std::uint64_t signature) con
     const auto reliability = (static_cast<double>(correct_[slot]) + 1.0) /
                              (static_cast<double>(visits_[slot]) + 2.0);
     const auto novelty = 1.0 / std::sqrt(static_cast<double>(visits_[slot]) + 1.0);
-    return 0.72 * similarity + 0.23 * reliability + 0.05 * novelty;
+    const auto lifecycle = phase_of_slot(slot);
+    const double phase_bias = lifecycle == NodePhase::Dormant ? -0.18 : 0.0;
+    return 0.70 * similarity + 0.22 * reliability + 0.05 * novelty + phase_bias;
 }
 
 std::pair<std::vector<SparseBranchMachine::ScoredNode>, std::uint32_t>
@@ -229,12 +235,73 @@ void SparseBranchMachine::reinforce_edge(NodeId source, NodeId destination, floa
     if (slot == std::numeric_limits<std::size_t>::max() || !contains(destination)) return;
     auto& list = edges_[slot];
     auto it = std::find_if(list.begin(), list.end(), [destination](const Edge& e){ return e.dst == destination; });
-    if (it == list.end()) list.push_back({destination, delta});
-    else it->weight = 0.995F * it->weight + delta;
+    if (it == list.end()) list.push_back({destination, delta, delta});
+    else {
+        it->eligibility = config_.trace_decay * it->eligibility + delta;
+        it->weight = config_.edge_decay * it->weight + it->eligibility;
+    }
     std::sort(list.begin(), list.end(), [](const Edge& a, const Edge& b){
         return a.weight == b.weight ? a.dst < b.dst : a.weight > b.weight;
     });
     if (list.size() > config_.max_edges_per_node) list.resize(config_.max_edges_per_node);
+}
+
+NodePhase SparseBranchMachine::phase_of_slot(std::size_t slot) const noexcept {
+    return static_cast<NodePhase>(phases_[slot]);
+}
+
+NodePhase SparseBranchMachine::phase(NodeId id) const noexcept {
+    const auto slot = slot_of(id);
+    return slot == std::numeric_limits<std::size_t>::max() ? NodePhase::Dormant : phase_of_slot(slot);
+}
+
+std::uint32_t SparseBranchMachine::node_prediction(std::size_t slot) const noexcept {
+    const auto base = slot * config_.alphabet_size;
+    std::uint32_t best = 0;
+    float best_value = output_counts_[base];
+    for (std::uint32_t s = 1; s < config_.alphabet_size; ++s) {
+        if (output_counts_[base + s] > best_value) {
+            best_value = output_counts_[base + s];
+            best = s;
+        }
+    }
+    return best;
+}
+
+double SparseBranchMachine::output_distance(std::size_t a, std::size_t b) const noexcept {
+    const auto ba = a * config_.alphabet_size;
+    const auto bb = b * config_.alphabet_size;
+    double sa = 0.0, sb = 0.0;
+    for (std::uint32_t s = 0; s < config_.alphabet_size; ++s) {
+        sa += output_counts_[ba + s];
+        sb += output_counts_[bb + s];
+    }
+    double l1 = 0.0;
+    for (std::uint32_t s = 0; s < config_.alphabet_size; ++s)
+        l1 += std::abs(output_counts_[ba + s] / sa - output_counts_[bb + s] / sb);
+    return 0.5 * l1;
+}
+
+void SparseBranchMachine::update_phase(std::size_t slot) {
+    NodePhase next = NodePhase::Cold;
+    if (utility_ema_[slot] <= config_.dormant_utility) next = NodePhase::Dormant;
+    else if (visits_[slot] >= config_.mature_visits) next = NodePhase::Mature;
+    else if (visits_[slot] >= config_.warm_visits) next = NodePhase::Warm;
+    phases_[slot] = static_cast<std::uint8_t>(next);
+}
+
+void SparseBranchMachine::apply_trace_credit(bool correct) {
+    float credit = correct ? config_.positive_credit : -config_.negative_credit;
+    float decay = 1.0F;
+    for (auto it = trace_.rbegin(); it != trace_.rend(); ++it) {
+        for (const auto id : it->route) {
+            const auto slot = slot_of(id);
+            if (slot == std::numeric_limits<std::size_t>::max()) continue;
+            utility_ema_[slot] = 0.97F * utility_ema_[slot] + 0.03F * credit * decay;
+            update_phase(slot);
+        }
+        decay *= config_.trace_decay;
+    }
 }
 
 StepStats SparseBranchMachine::step(std::uint32_t token, std::uint32_t target, bool learn) {
@@ -245,7 +312,7 @@ StepStats SparseBranchMachine::step(std::uint32_t token, std::uint32_t target, b
     std::vector<std::uint32_t> window(history_.begin(), history_.end());
     const auto signature = rolling_signature(window);
     auto [active, examined] = select_route(signature);
-    std::uint32_t created = 0;
+    std::uint32_t created = 0, split = 0;
 
     double best_similarity = 0.0;
     for (const auto& selected : active) {
@@ -269,6 +336,7 @@ StepStats SparseBranchMachine::step(std::uint32_t token, std::uint32_t target, b
     for (const auto& x : active) route.push_back(x.id);
 
     if (learn) {
+        apply_trace_credit(is_correct);
         for (std::size_t rank = 0; rank < active.size(); ++rank) {
             const auto slot = slot_of(active[rank].id);
             if (slot == std::numeric_limits<std::size_t>::max()) continue;
@@ -279,18 +347,41 @@ StepStats SparseBranchMachine::step(std::uint32_t token, std::uint32_t target, b
             ++visits_[slot];
             correct_[slot] += static_cast<std::uint32_t>(is_correct);
             output_counts_[slot * config_.alphabet_size + target] += 1.0F / static_cast<float>(rank + 1U);
-            utility_ema_[slot] = 0.98F * utility_ema_[slot] + 0.02F * (is_correct ? 1.0F : -1.0F);
+            const float err = is_correct ? 0.0F : 1.0F;
+            error_ema_[slot] = 0.96F * error_ema_[slot] + 0.04F * err;
+            conflicts_[slot] = is_correct ? (conflicts_[slot] > 0 ? conflicts_[slot] - 1U : 0U)
+                                          : conflicts_[slot] + 1U;
+            utility_ema_[slot] = 0.985F * utility_ema_[slot] + 0.015F * (is_correct ? 1.0F : -1.0F);
+            update_phase(slot);
         }
+
         for (const auto src : previous_route_)
             for (std::size_t rank = 0; rank < route.size(); ++rank)
-                reinforce_edge(src, route[rank], (is_correct ? 1.0F : 0.2F) / static_cast<float>(rank + 1U));
+                reinforce_edge(src, route[rank],
+                    (is_correct ? config_.positive_credit : 0.15F) /
+                    static_cast<float>(rank + 1U));
 
-        if (config_.create_on_error && !is_correct && best_similarity >= config_.create_similarity) {
-            const auto id = new_node(signature);
-            const auto slot = slot_of(id);
-            output_counts_[slot * config_.alphabet_size + target] += 2.0F;
-            ++created;
+        // Structural growth is now conflict-gated. A single error is not enough.
+        if (config_.create_on_error && !is_correct && !active.empty()) {
+            const auto parent = active.front().id;
+            const auto parent_slot = slot_of(parent);
+            if (parent_slot != std::numeric_limits<std::size_t>::max() &&
+                conflicts_[parent_slot] >= config_.split_conflict_threshold &&
+                error_ema_[parent_slot] >= config_.split_error_threshold) {
+                const auto id = new_node(signature, parent);
+                const auto child_slot = slot_of(id);
+                output_counts_[child_slot * config_.alphabet_size + target] += 3.0F;
+                conflicts_[parent_slot] /= 2U;
+                error_ema_[parent_slot] *= 0.5F;
+                reinforce_edge(parent, id, config_.positive_credit);
+                ++created;
+                ++split;
+                ++total_split_;
+            }
         }
+
+        trace_.push_back({route});
+        while (trace_.size() > config_.trace_horizon) trace_.pop_front();
         previous_route_ = route;
     }
 
@@ -298,7 +389,7 @@ StepStats SparseBranchMachine::step(std::uint32_t token, std::uint32_t target, b
     total_candidates_ += examined;
     total_active_ += active.size();
     return {prediction, is_correct, static_cast<std::uint32_t>(active.size()), examined,
-            static_cast<std::uint32_t>(ids_.size()), created, std::move(route)};
+            static_cast<std::uint32_t>(ids_.size()), created, split, std::move(route)};
 }
 
 void SparseBranchMachine::erase_slot(std::size_t slot) {
@@ -309,15 +400,19 @@ void SparseBranchMachine::erase_slot(std::size_t slot) {
         prototypes_[slot] = prototypes_[last];
         visits_[slot] = visits_[last];
         correct_[slot] = correct_[last];
+        conflicts_[slot] = conflicts_[last];
         utility_ema_[slot] = utility_ema_[last];
+        error_ema_[slot] = error_ema_[last];
+        phases_[slot] = phases_[last];
         hot_indexed_[slot] = hot_indexed_[last];
+        parents_[slot] = parents_[last];
         edges_[slot] = std::move(edges_[last]);
         for (std::uint32_t s = 0; s < config_.alphabet_size; ++s)
             output_counts_[slot * config_.alphabet_size + s] = output_counts_[last * config_.alphabet_size + s];
         id_to_slot_[ids_[slot]] = static_cast<std::uint32_t>(slot);
     }
-    ids_.pop_back(); prototypes_.pop_back(); visits_.pop_back(); correct_.pop_back();
-    utility_ema_.pop_back(); hot_indexed_.pop_back(); edges_.pop_back();
+    ids_.pop_back(); prototypes_.pop_back(); visits_.pop_back(); correct_.pop_back(); conflicts_.pop_back();
+    utility_ema_.pop_back(); error_ema_.pop_back(); phases_.pop_back(); hot_indexed_.pop_back(); parents_.pop_back(); edges_.pop_back();
     output_counts_.resize(ids_.size() * config_.alphabet_size);
     id_to_slot_[removed] = UINT32_MAX;
 }
@@ -337,6 +432,56 @@ std::size_t SparseBranchMachine::prune(std::uint32_t min_visits, float utility_t
     return removed;
 }
 
+void SparseBranchMachine::absorb_node(std::size_t survivor_slot, std::size_t victim_slot) {
+    if (survivor_slot == victim_slot) return;
+    const auto survivor = ids_[survivor_slot];
+    const auto victim = ids_[victim_slot];
+    const auto sb = survivor_slot * config_.alphabet_size;
+    const auto vb = victim_slot * config_.alphabet_size;
+    for (std::uint32_t s = 0; s < config_.alphabet_size; ++s)
+        output_counts_[sb + s] += output_counts_[vb + s];
+    visits_[survivor_slot] += visits_[victim_slot];
+    correct_[survivor_slot] += correct_[victim_slot];
+    conflicts_[survivor_slot] += conflicts_[victim_slot];
+    utility_ema_[survivor_slot] = std::max(utility_ema_[survivor_slot], utility_ema_[victim_slot]);
+    error_ema_[survivor_slot] = 0.5F * (error_ema_[survivor_slot] + error_ema_[victim_slot]);
+    for (const auto& e : edges_[victim_slot]) reinforce_edge(survivor, e.dst, e.weight);
+    for (auto& list : edges_) {
+        for (auto& e : list) if (e.dst == victim) e.dst = survivor;
+        std::sort(list.begin(), list.end(), [](const Edge& a, const Edge& b){
+            return a.weight == b.weight ? a.dst < b.dst : a.weight > b.weight;
+        });
+        list.erase(std::unique(list.begin(), list.end(), [](const Edge& a, const Edge& b){ return a.dst == b.dst; }), list.end());
+    }
+    for (auto& id : previous_route_) if (id == victim) id = survivor;
+    for (auto& frame : trace_) for (auto& id : frame.route) if (id == victim) id = survivor;
+    erase_slot(victim_slot);
+}
+
+std::size_t SparseBranchMachine::merge_redundant(std::size_t max_merges) {
+    std::size_t merged = 0;
+    for (std::size_t bi = 0; bi < hot_buckets_.size() && merged < max_merges; ++bi) {
+        auto ids = hot_buckets_[bi];
+        for (std::size_t i = 0; i < ids.size() && merged < max_merges; ++i) {
+            auto a = slot_of(ids[i]);
+            if (a == std::numeric_limits<std::size_t>::max()) continue;
+            for (std::size_t j = i + 1; j < ids.size() && merged < max_merges; ++j) {
+                auto b = slot_of(ids[j]);
+                if (b == std::numeric_limits<std::size_t>::max()) continue;
+                if (hamming_similarity(prototypes_[a], prototypes_[b]) < config_.merge_similarity) continue;
+                if (output_distance(a, b) > config_.merge_output_distance) continue;
+                if (visits_[b] > visits_[a]) std::swap(a, b);
+                absorb_node(a, b);
+                ++merged;
+                break;
+            }
+        }
+    }
+    total_merged_ += merged;
+    if (merged > 0) rebuild_indexes();
+    return merged;
+}
+
 void SparseBranchMachine::rebuild_indexes() {
     for (auto& bucket_nodes : buckets_) bucket_nodes.clear();
     for (auto& bucket_nodes : hot_buckets_) bucket_nodes.clear();
@@ -354,22 +499,33 @@ void SparseBranchMachine::prefill_distractors(std::size_t count) {
 }
 
 Diagnostics SparseBranchMachine::diagnostics() const noexcept {
-    std::uint64_t edge_count = 0;
-    std::uint64_t edge_capacity = 0;
+    std::uint64_t edge_count = 0, edge_capacity = 0;
     for (const auto& list : edges_) { edge_count += list.size(); edge_capacity += list.capacity(); }
     std::uint64_t bucket_capacity = 0;
     for (const auto& b : buckets_) bucket_capacity += b.capacity();
     for (const auto& b : hot_buckets_) bucket_capacity += b.capacity();
     const auto denom = std::max<std::uint64_t>(1, total_steps_);
+    std::uint64_t cold=0,warm=0,mature=0,dormant=0;
+    for (std::size_t i=0;i<ids_.size();++i) {
+        switch (phase_of_slot(i)) {
+            case NodePhase::Cold: ++cold; break;
+            case NodePhase::Warm: ++warm; break;
+            case NodePhase::Mature: ++mature; break;
+            case NodePhase::Dormant: ++dormant; break;
+        }
+    }
     std::uint64_t bytes = ids_.capacity()*sizeof(NodeId) + prototypes_.capacity()*sizeof(std::uint64_t) +
         visits_.capacity()*sizeof(std::uint32_t) + correct_.capacity()*sizeof(std::uint32_t) +
-        utility_ema_.capacity()*sizeof(float) + hot_indexed_.capacity()*sizeof(std::uint8_t) + output_counts_.capacity()*sizeof(float) +
-        id_to_slot_.capacity()*sizeof(std::uint32_t) + edge_capacity*sizeof(Edge) +
-        bucket_capacity*sizeof(NodeId);
+        conflicts_.capacity()*sizeof(std::uint32_t) + utility_ema_.capacity()*sizeof(float) +
+        error_ema_.capacity()*sizeof(float) + phases_.capacity()*sizeof(std::uint8_t) +
+        hot_indexed_.capacity()*sizeof(std::uint8_t) + parents_.capacity()*sizeof(NodeId) +
+        output_counts_.capacity()*sizeof(float) + id_to_slot_.capacity()*sizeof(std::uint32_t) +
+        edge_capacity*sizeof(Edge) + bucket_capacity*sizeof(NodeId);
     return {total_steps_, ids_.size(), next_id_, edge_count,
             static_cast<double>(total_active_)/static_cast<double>(denom),
             static_cast<double>(total_candidates_)/static_cast<double>(denom),
-            total_created_, total_pruned_, stale_bucket_refs_skipped_, stale_edge_refs_skipped_, bytes};
+            total_created_, total_split_, total_merged_, total_pruned_,
+            cold, warm, mature, dormant, stale_bucket_refs_skipped_, stale_edge_refs_skipped_, bytes};
 }
 
 Dataset generate_hidden_fsm(std::size_t length, std::uint32_t alphabet,
@@ -431,7 +587,8 @@ Dataset load_dataset(const std::string& path) {
 
 ExperimentResult run_experiment(const Dataset& dataset, std::size_t warmup,
                                 std::uint64_t seed, bool strict_freeze,
-                                std::size_t prefill, std::size_t prune_interval) {
+                                std::size_t prefill, std::size_t prune_interval,
+                                std::size_t merge_interval) {
     if (dataset.sequence.size() < 2) throw std::invalid_argument("dataset needs at least two symbols");
     const std::size_t steps = dataset.sequence.size() - 1U;
     if (warmup > steps) throw std::invalid_argument("warmup exceeds dataset steps");
@@ -448,6 +605,7 @@ ExperimentResult run_experiment(const Dataset& dataset, std::size_t warmup,
         const auto stats = model.step(dataset.sequence[i], dataset.sequence[i+1U], learn);
         if (learn) train_correct += stats.correct; else eval_correct += stats.correct;
         if (learn && prune_interval > 0 && (i + 1U) % prune_interval == 0) (void)model.prune();
+        if (learn && merge_interval > 0 && (i + 1U) % merge_interval == 0) (void)model.merge_redundant();
     }
     const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
     ExperimentResult r;
@@ -471,7 +629,13 @@ std::string to_json(const ExperimentResult& r) {
       << "  \"avg_active\": " << r.diagnostics.avg_active << ",\n"
       << "  \"avg_candidates\": " << r.diagnostics.avg_candidates << ",\n"
       << "  \"created_total\": " << r.diagnostics.created_total << ",\n"
+      << "  \"split_total\": " << r.diagnostics.split_total << ",\n"
+      << "  \"merged_total\": " << r.diagnostics.merged_total << ",\n"
       << "  \"pruned_total\": " << r.diagnostics.pruned_total << ",\n"
+      << "  \"cold_nodes\": " << r.diagnostics.cold_nodes << ",\n"
+      << "  \"warm_nodes\": " << r.diagnostics.warm_nodes << ",\n"
+      << "  \"mature_nodes\": " << r.diagnostics.mature_nodes << ",\n"
+      << "  \"dormant_nodes\": " << r.diagnostics.dormant_nodes << ",\n"
       << "  \"stale_bucket_refs_skipped\": " << r.diagnostics.stale_bucket_refs_skipped << ",\n"
       << "  \"stale_edge_refs_skipped\": " << r.diagnostics.stale_edge_refs_skipped << ",\n"
       << "  \"estimated_bytes\": " << r.diagnostics.estimated_bytes << ",\n"
@@ -483,5 +647,6 @@ std::string to_json(const ExperimentResult& r) {
       << "  \"dataset_hash\": " << r.dataset_hash << "\n}\n";
     return o.str();
 }
+
 
 } // namespace sbm

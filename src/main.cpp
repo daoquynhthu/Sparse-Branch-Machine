@@ -13,13 +13,13 @@ template<class T> T number(std::string_view s, const char* n) {
 }
 void usage(){
     std::cout << "sbm_benchmark [--length N] [--warmup N] [--seed N] [--dataset FILE] "
-                 "[--write-dataset FILE] [--prefill N] [--prune-interval N] "
+                 "[--write-dataset FILE] [--prefill N] [--prune-interval N] [--merge-interval N] "
                  "[--allow-eval-growth] [--output FILE]\n";
 }
 }
 int main(int argc,char**argv){
     try {
-        std::size_t length=100001,warmup=20000,prefill=0,prune_interval=0;
+        std::size_t length=100001,warmup=20000,prefill=0,prune_interval=0,merge_interval=0;
         std::uint64_t seed=7; bool strict=true;
         std::string dataset_path,write_dataset_path,output="results_cpp_v2.json";
         for(int i=1;i<argc;++i){
@@ -33,6 +33,7 @@ int main(int argc,char**argv){
             else if(a=="--seed") seed=number<std::uint64_t>(v,"seed");
             else if(a=="--prefill") prefill=number<std::size_t>(v,"prefill");
             else if(a=="--prune-interval") prune_interval=number<std::size_t>(v,"prune-interval");
+            else if(a=="--merge-interval") merge_interval=number<std::size_t>(v,"merge-interval");
             else if(a=="--dataset") dataset_path=v;
             else if(a=="--write-dataset") write_dataset_path=v;
             else if(a=="--output") output=v;
@@ -40,7 +41,7 @@ int main(int argc,char**argv){
         }
         auto dataset = dataset_path.empty()?sbm::generate_hidden_fsm(length,8,64,seed):sbm::load_dataset(dataset_path);
         if(!write_dataset_path.empty()) sbm::save_dataset(dataset,write_dataset_path);
-        auto result=sbm::run_experiment(dataset,warmup,seed,strict,prefill,prune_interval);
+        auto result=sbm::run_experiment(dataset,warmup,seed,strict,prefill,prune_interval,merge_interval);
         auto json=sbm::to_json(result);
         std::ofstream out(output,std::ios::binary); if(!out) throw std::runtime_error("cannot open output");
         out<<json; std::cout<<json;
