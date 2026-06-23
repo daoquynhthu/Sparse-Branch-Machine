@@ -107,6 +107,19 @@ int main(int argc, char** argv) {
         std::cout << "implicit output tests passed\n";
         return 0;
     }
+    if (mode == "capacity") {
+        auto config = sparse_config(4U, 257U);
+        config.max_sparse_decisions_per_node = 8U;
+        config.max_specializations_per_bucket = 1U;
+        config.split_min_visits = UINT32_MAX;
+        sbm::SparseBranchMachine machine(config);
+        for (std::uint32_t step = 0U; step < 4096U; ++step) {
+            (void)machine.step_token(3U, step % 257U, true);
+        }
+        assert(machine.diagnostics().max_sparse_entries_per_node <= 8U);
+        std::cout << "bounded decision capacity passed\n";
+        return 0;
+    }
     const auto address_10 = address_bytes(10U);
     const auto address_16 = address_bytes(16U);
     const auto address_20 = address_bytes(20U);

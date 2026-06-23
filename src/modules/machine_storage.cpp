@@ -80,6 +80,10 @@ SparseBranchMachine::SparseBranchMachine(Config config)
         config.logit_decay < 0.0F || config.logit_decay >= 1.0F) {
         throw std::invalid_argument("invalid token-objective configuration");
     }
+    if (config.max_sparse_decisions_per_node < 8U ||
+        config.max_sparse_decisions_per_node > 4096U) {
+        throw std::invalid_argument("max_sparse_decisions_per_node must be in [8,4096]");
+    }
     history_.reserve(config.context_width);
     const std::size_t candidate_capacity =
         static_cast<std::size_t>(config.max_address_channels) * config.bucket_scan_limit +

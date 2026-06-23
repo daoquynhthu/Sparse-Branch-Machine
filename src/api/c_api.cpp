@@ -230,6 +230,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"sparse_token_output", "bool", "true", "", "", "categorical", false, false, false, "Use exact hierarchical softmax with sparse per-node binary decisions."},
     {"sparse_output_topk", "uint32", "5", "1", "32", "linear", true, false, false, "Number of hierarchical candidates reported by token decoding."},
     {"sparse_output_beam_width", "uint32", "16", "5", "128", "log", true, false, false, "Fixed candidate beam for O(B log V) hierarchical decoding."},
+    {"max_sparse_decisions_per_node", "uint32", "64", "8", "4096", "log", true, false, false, "Hard bound on local hierarchical decisions stored by one address node."},
     {"seed", "uint64", "7", "0", "18446744073709551615", "linear", false, false, false, "Model random seed."},
 };
 
@@ -297,6 +298,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_BOOL(sparse_token_output)
     SBM_SET_UINT(sparse_output_topk)
     SBM_SET_UINT(sparse_output_beam_width)
+    SBM_SET_UINT(max_sparse_decisions_per_node)
     SBM_SET_U64(seed)
 #undef SBM_SET_UINT
 #undef SBM_SET_U64
@@ -372,6 +374,8 @@ std::string config_json(const sbm::Config& c) {
         << "  \"sparse_token_output\": " << c.sparse_token_output << ",\n"
         << "  \"sparse_output_topk\": " << c.sparse_output_topk << ",\n"
         << "  \"sparse_output_beam_width\": " << c.sparse_output_beam_width << ",\n"
+        << "  \"max_sparse_decisions_per_node\": "
+        << c.max_sparse_decisions_per_node << ",\n"
         << "  \"seed\": " << c.seed << "\n"
         << "}\n";
     return out.str();
@@ -383,7 +387,9 @@ std::string_view parameter_tasks(std::string_view name) {
         name == "label_smoothing" ||
         name == "softmax_temperature" ||
         name == "logit_decay" ||
-        name == "sparse_output_topk") {
+        name == "sparse_output_topk" ||
+        name == "sparse_output_beam_width" ||
+        name == "max_sparse_decisions_per_node") {
         return "token-ce";
     }
     if (name == "residual_learning_rate" ||

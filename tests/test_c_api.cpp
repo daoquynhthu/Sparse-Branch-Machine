@@ -13,6 +13,7 @@ int main() {
     const std::string_view schema(sbm_parameter_schema_json());
     assert(schema.find("exact_region_mass") != std::string_view::npos);
     assert(schema.find("classification_learning_rate") != std::string_view::npos);
+    assert(schema.find("max_sparse_decisions_per_node") != std::string_view::npos);
     assert(schema.find("search_default") != std::string_view::npos);
 
     sbm_config_handle* config = sbm_config_create();

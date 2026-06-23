@@ -447,3 +447,32 @@ estimated model state and reported 4,429 model token/s. The command took about
 baseline ranking dominates the 50,257-way validation path. The architecture is
 therefore still substantially behind even trivial language controls at this
 training scale; the run validates split semantics, not model quality.
+
+## 2026-06-23 — bounded address and sparse-output scaling
+
+Release tests had been compiled with `NDEBUG`, so their C++ `assert` checks were
+not executing. Test targets now explicitly enable assertions. This exposed and
+corrected one impossible topology-test configuration whose 512-step warmup
+exceeded its 48-step probe lifetime.
+
+The dense empty-bucket directory was replaced by occupied-bucket states with
+bounded hot and cold candidate indices. Empty address-index storage for
+`bucket_bits=10,16,20` changed from 57,344, 3,670,016 and 58,720,256 bytes to 8
+bytes in all three cases. A deliberately colliding 20,000-node bucket changed
+from 10,138 inspected entries to the configured limit of 16. Batched p95 token
+latency between 100,000 and 1,000,000 prefetched nodes varied by roughly
+0.84x–1.14x after the bounded cold sample replaced full resident rotation.
+
+The materialized vocabulary tree and per-token path table were replaced by a
+keyed affine permutation and implicit balanced intervals. Fixed output-structure
+storage for vocabularies 4,096, 50,257 and 250,000 is now 120, 152 and 168 bytes,
+versus 442,372, 8,922,232 and 39,747,076 bytes before the change. Three small
+fixed-seed comparisons against the materialized-tree commit changed held-out NLL
+by +0.070%, -0.149% and +0.025%, within the declared 1% gate.
+
+Per-node sparse decisions are now sorted, binary-searched and capacity-bounded.
+On a 4,096-token broad-context fixture, the unbounded control stored 596–651
+decisions per node and used 450–478 KB. Capacities 64, 128 and 256 were tested on
+seeds 7, 11 and 19. Capacity 64 used 92–93 KB, approximately doubled measured
+model throughput from 12k to 25k token/s, and did not worsen NLL on any seed, so
+64 became the default hard bound.

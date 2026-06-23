@@ -42,20 +42,44 @@ float SparseBranchMachine::sparse_logit(std::size_t slot,
                                         std::uint32_t decision) const noexcept {
     if (slot >= sparse_outputs_.size()) return 0.0F;
     const auto& entries = sparse_outputs_[slot];
-    for (const auto& entry : entries) {
-        if (entry.decision == decision) return entry.logit;
-    }
-    return 0.0F;
+    const auto found = std::lower_bound(
+        entries.begin(), entries.end(), decision,
+        [](const SparseOutputEntry& entry, std::uint32_t value) {
+            return entry.decision < value;
+        });
+    return found != entries.end() && found->decision == decision
+        ? found->logit : 0.0F;
 }
 
 float& SparseBranchMachine::mutable_sparse_logit(std::size_t slot,
                                                   std::uint32_t decision) {
     auto& entries = sparse_outputs_.at(slot);
-    for (auto& entry : entries) {
-        if (entry.decision == decision) return entry.logit;
+    auto found = std::lower_bound(
+        entries.begin(), entries.end(), decision,
+        [](const SparseOutputEntry& entry, std::uint32_t value) {
+            return entry.decision < value;
+        });
+    if (found != entries.end() && found->decision == decision) {
+        return found->logit;
     }
-    entries.push_back({decision, 0.0F});
-    return entries.back().logit;
+    if (entries.size() >= config_.max_sparse_decisions_per_node) {
+        const auto victim = std::min_element(
+            entries.begin(), entries.end(),
+            [](const SparseOutputEntry& left, const SparseOutputEntry& right) {
+                const float left_magnitude = std::abs(left.logit);
+                const float right_magnitude = std::abs(right.logit);
+                return left_magnitude != right_magnitude
+                    ? left_magnitude < right_magnitude
+                    : left.decision > right.decision;
+            });
+        entries.erase(victim);
+        found = std::lower_bound(
+            entries.begin(), entries.end(), decision,
+            [](const SparseOutputEntry& entry, std::uint32_t value) {
+                return entry.decision < value;
+            });
+    }
+    return entries.insert(found, {decision, 0.0F})->logit;
 }
 
 float SparseBranchMachine::aggregate_sparse_logit(
