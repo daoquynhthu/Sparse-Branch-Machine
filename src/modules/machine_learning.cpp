@@ -78,6 +78,9 @@ void SparseBranchMachine::apply_trace_credit(float loss) {
 StepStats SparseBranchMachine::step(std::uint32_t token,
                                     std::span<const float> target,
                                     bool learn) {
+    if (config_.objective != ObjectiveKind::VectorRegression) {
+        throw std::logic_error("step requires the vector-regression objective");
+    }
     if (token >= config_.token_alphabet || target.size() != config_.vector_dim) {
         throw std::out_of_range("invalid token or target dimension");
     }

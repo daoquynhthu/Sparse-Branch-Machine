@@ -96,11 +96,30 @@ class Runtime:
             ctypes.c_float,
         ]
         lib.sbm_dataset_generate.restype = ctypes.c_void_p
+        lib.sbm_token_dataset_generate_math.argtypes = [
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_uint32,
+            ctypes.c_uint64,
+            ctypes.c_float,
+            ctypes.c_float,
+        ]
+        lib.sbm_token_dataset_generate_math.restype = ctypes.c_void_p
+        lib.sbm_token_dataset_from_ids.argtypes = [
+            ctypes.POINTER(ctypes.c_uint32),
+            ctypes.c_size_t,
+            ctypes.c_uint32,
+            ctypes.POINTER(ctypes.c_uint64),
+            ctypes.c_size_t,
+        ]
+        lib.sbm_token_dataset_from_ids.restype = ctypes.c_void_p
         lib.sbm_dataset_load.argtypes = [ctypes.c_char_p]
         lib.sbm_dataset_load.restype = ctypes.c_void_p
         lib.sbm_dataset_save.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
         lib.sbm_dataset_save.restype = ctypes.c_int
         lib.sbm_dataset_destroy.argtypes = [ctypes.c_void_p]
+        lib.sbm_dataset_kind_of.argtypes = [ctypes.c_void_p]
+        lib.sbm_dataset_kind_of.restype = ctypes.c_uint32
         lib.sbm_dataset_hash.argtypes = [ctypes.c_void_p]
         lib.sbm_dataset_hash.restype = ctypes.c_uint64
         lib.sbm_dataset_length.argtypes = [ctypes.c_void_p]
@@ -109,6 +128,12 @@ class Runtime:
         lib.sbm_dataset_vector_dim.restype = ctypes.c_uint32
         lib.sbm_dataset_alphabet.argtypes = [ctypes.c_void_p]
         lib.sbm_dataset_alphabet.restype = ctypes.c_uint32
+        lib.sbm_dataset_vocab_size.argtypes = [ctypes.c_void_p]
+        lib.sbm_dataset_vocab_size.restype = ctypes.c_uint32
+        lib.sbm_dataset_sequence_count.argtypes = [ctypes.c_void_p]
+        lib.sbm_dataset_sequence_count.restype = ctypes.c_size_t
+        lib.sbm_dataset_example_count.argtypes = [ctypes.c_void_p]
+        lib.sbm_dataset_example_count.restype = ctypes.c_size_t
 
         lib.sbm_run_experiment_json.argtypes = [
             ctypes.c_void_p,
@@ -163,6 +188,56 @@ class Runtime:
         )
         if not pointer:
             raise self._error("generate dataset")
+        return Dataset(self, pointer)
+
+    def generate_math_token_dataset(
+        self,
+        sequence_count: int = 64,
+        sequence_length: int = 2048,
+        vocab_size: int = 128,
+        seed: int = 7,
+        temperature: float = 1.0,
+        interaction_strength: float = 0.35,
+    ) -> "Dataset":
+        pointer = self.lib.sbm_token_dataset_generate_math(
+            sequence_count,
+            sequence_length,
+            vocab_size,
+            seed,
+            temperature,
+            interaction_strength,
+        )
+        if not pointer:
+            raise self._error("generate mathematical token dataset")
+        return Dataset(self, pointer)
+
+    def token_dataset_from_ids(
+        self,
+        tokens: Iterable[int],
+        vocab_size: int,
+        sequence_offsets: Optional[Iterable[int]] = None,
+    ) -> "Dataset":
+        token_values = [int(token) for token in tokens]
+        if not token_values:
+            raise ValueError("tokens must be non-empty")
+        token_array = (ctypes.c_uint32 * len(token_values))(*token_values)
+        if sequence_offsets is None:
+            offset_pointer = None
+            offset_count = 0
+        else:
+            offset_values = [int(offset) for offset in sequence_offsets]
+            offset_array = (ctypes.c_uint64 * len(offset_values))(*offset_values)
+            offset_pointer = offset_array
+            offset_count = len(offset_values)
+        pointer = self.lib.sbm_token_dataset_from_ids(
+            token_array,
+            len(token_values),
+            vocab_size,
+            offset_pointer,
+            offset_count,
+        )
+        if not pointer:
+            raise self._error("create token dataset from IDs")
         return Dataset(self, pointer)
 
     def load_dataset(self, path: str | os.PathLike[str]) -> "Dataset":
@@ -253,6 +328,15 @@ class Dataset:
             pass
 
     @property
+    def kind(self) -> str:
+        value = int(self.runtime.lib.sbm_dataset_kind_of(self.pointer))
+        if value == 1:
+            return "vector_regression"
+        if value == 2:
+            return "token_cross_entropy"
+        return "unknown"
+
+    @property
     def hash(self) -> int:
         return int(self.runtime.lib.sbm_dataset_hash(self.pointer))
 
@@ -267,6 +351,18 @@ class Dataset:
     @property
     def alphabet(self) -> int:
         return int(self.runtime.lib.sbm_dataset_alphabet(self.pointer))
+
+    @property
+    def vocab_size(self) -> int:
+        return int(self.runtime.lib.sbm_dataset_vocab_size(self.pointer))
+
+    @property
+    def sequence_count(self) -> int:
+        return int(self.runtime.lib.sbm_dataset_sequence_count(self.pointer))
+
+    @property
+    def example_count(self) -> int:
+        return int(self.runtime.lib.sbm_dataset_example_count(self.pointer))
 
     def save(self, path: str | os.PathLike[str]) -> None:
         if self.runtime.lib.sbm_dataset_save(self.pointer, os.fsencode(path)) != 0:

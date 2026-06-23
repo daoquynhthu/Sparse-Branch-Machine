@@ -77,7 +77,11 @@ def fingerprint(config: Mapping[str, Any]) -> str:
 
 
 def score_result(result: Mapping[str, Any], node_penalty: float) -> float:
-    quality = float(result["eval_r2"])
+    quality = (
+        -float(result["eval_cross_entropy"])
+        if "eval_cross_entropy" in result
+        else float(result["eval_r2"])
+    )
     if node_penalty <= 0.0:
         return quality
     nodes = max(1.0, float(result["live_nodes"]))
@@ -92,8 +96,14 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--search-seed", type=int, default=20260623)
     parser.add_argument("--seeds", type=parse_seed_list, default=parse_seed_list("7,11,19"))
+    parser.add_argument("--task", choices=["token-ce", "vector"], default="token-ce")
+    parser.add_argument("--sequences", type=int, default=64)
+    parser.add_argument("--sequence-length", type=int, default=2048)
+    parser.add_argument("--vocab-size", type=int, default=32)
+    parser.add_argument("--math-temperature", type=float, default=0.8)
+    parser.add_argument("--interaction-strength", type=float, default=0.2)
     parser.add_argument("--length", type=int, default=120_000)
-    parser.add_argument("--warmup", type=int, default=40_000)
+    parser.add_argument("--warmup", type=int, default=80_000)
     parser.add_argument("--alphabet", type=int, default=64)
     parser.add_argument("--vector-dim", type=int, default=16)
     parser.add_argument("--hidden-dim", type=int, default=24)
@@ -114,7 +124,11 @@ def main() -> int:
     if args.include:
         search_names = [name.strip() for name in args.include.split(",") if name.strip()]
     else:
-        search_names = [item["name"] for item in schema["parameters"] if item.get("search_default")]
+        search_names = [
+            item["name"]
+            for item in schema["parameters"]
+            if item.get("search_default") and args.task in item.get("tasks", [args.task])
+        ]
     unknown = [name for name in search_names if name not in descriptors]
     if unknown:
         parser.error(f"unknown search parameters: {', '.join(unknown)}")
@@ -124,8 +138,11 @@ def main() -> int:
 
     base = {name: cast_override(value) for name, value in args.set}
     rng = random.Random(args.search_seed)
-    candidates: list[dict[str, Any]] = []
-    seen: set[str] = set()
+    baseline_id = fingerprint(base)
+    candidates: list[dict[str, Any]] = [
+        {"id": baseline_id, "config": dict(base), "runs": {}, "status": "active"}
+    ]
+    seen: set[str] = {baseline_id}
     while len(candidates) < args.trials:
         values = dict(base)
         for name in search_names:
@@ -136,17 +153,30 @@ def main() -> int:
         seen.add(key)
         candidates.append({"id": key, "config": values, "runs": {}, "status": "active"})
 
-    datasets = {
-        seed: runtime.generate_dataset(
-            args.length,
-            args.alphabet,
-            args.vector_dim,
-            args.hidden_dim,
-            seed,
-            args.noise_std,
-        )
-        for seed in args.seeds
-    }
+    if args.task == "token-ce":
+        datasets = {
+            seed: runtime.generate_math_token_dataset(
+                args.sequences,
+                args.sequence_length,
+                args.vocab_size,
+                seed,
+                args.math_temperature,
+                args.interaction_strength,
+            )
+            for seed in args.seeds
+        }
+    else:
+        datasets = {
+            seed: runtime.generate_dataset(
+                args.length,
+                args.alphabet,
+                args.vector_dim,
+                args.hidden_dim,
+                seed,
+                args.noise_std,
+            )
+            for seed in args.seeds
+        }
 
     def evaluate(candidate: dict[str, Any], seed: int) -> tuple[str, int, dict[str, Any] | None, str | None]:
         try:
@@ -178,11 +208,16 @@ def main() -> int:
             ]
             scores = [score_result(result, args.node_penalty) for result in valid]
             candidate["mean_score"] = statistics.fmean(scores) if scores else None
-            candidate["mean_eval_r2"] = (
-                statistics.fmean(float(result["eval_r2"]) for result in valid)
-                if valid
-                else None
-            )
+            if valid and "eval_cross_entropy" in valid[0]:
+                candidate["mean_eval_cross_entropy"] = statistics.fmean(
+                    float(result["eval_cross_entropy"]) for result in valid
+                )
+            else:
+                candidate["mean_eval_r2"] = (
+                    statistics.fmean(float(result["eval_r2"]) for result in valid)
+                    if valid
+                    else None
+                )
 
         score_key = lambda item: item.get("mean_score") if item.get("mean_score") is not None else float("-inf")
         active.sort(key=score_key, reverse=True)
@@ -222,17 +257,32 @@ def main() -> int:
         "search_parameters": search_names,
         "base_config": base,
         "dataset": {
-            "length": args.length,
+            "task": args.task,
+            "length": args.length if args.task == "vector" else None,
+            "sequences": args.sequences if args.task == "token-ce" else None,
+            "sequence_length": args.sequence_length if args.task == "token-ce" else None,
+            "vocab_size": args.vocab_size if args.task == "token-ce" else None,
             "warmup": args.warmup,
-            "alphabet": args.alphabet,
-            "vector_dim": args.vector_dim,
-            "hidden_dim": args.hidden_dim,
-            "noise_std": args.noise_std,
+            "alphabet": args.alphabet if args.task == "vector" else None,
+            "vector_dim": args.vector_dim if args.task == "vector" else None,
+            "hidden_dim": args.hidden_dim if args.task == "vector" else None,
+            "noise_std": args.noise_std if args.task == "vector" else None,
+            "math_temperature": args.math_temperature if args.task == "token-ce" else None,
+            "interaction_strength": args.interaction_strength if args.task == "token-ce" else None,
             "seeds": args.seeds,
         },
-        "objective": "mean eval_r2" if args.node_penalty == 0 else "mean eval_r2 minus node penalty",
+        "objective": (
+            "minimize mean eval_cross_entropy"
+            if args.task == "token-ce"
+            else "maximize mean eval_r2"
+        ),
         "stages": stages,
-        "best": {"id": best["id"], "config": best["config"], "mean_eval_r2": best.get("mean_eval_r2")},
+        "best": {
+            "id": best["id"],
+            "config": best["config"],
+            "mean_eval_cross_entropy": best.get("mean_eval_cross_entropy"),
+            "mean_eval_r2": best.get("mean_eval_r2"),
+        },
         "candidates": ranked,
     }
     Path(args.output).write_text(

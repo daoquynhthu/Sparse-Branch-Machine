@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(sparse_branch_machine VERSION 1.0.0 LANGUAGES CXX)
+project(sparse_branch_machine VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -25,7 +25,7 @@ function(sbm_configure_target target)
   endif()
   set_target_properties(${target} PROPERTIES
     VERSION ${PROJECT_VERSION}
-    SOVERSION 1)
+    SOVERSION ${PROJECT_VERSION_MAJOR})
 endfunction()
 
 add_library(sbm_core SHARED
@@ -38,6 +38,7 @@ add_library(sbm_machine SHARED
   src/modules/machine_storage.cpp
   src/modules/machine_routing.cpp
   src/modules/machine_learning.cpp
+  src/modules/token_objective.cpp
   src/modules/machine_maintenance.cpp
 )
 sbm_configure_target(sbm_machine)
@@ -51,6 +52,7 @@ target_link_libraries(sbm_dataset PUBLIC sbm_core)
 
 add_library(sbm_experiment SHARED
   src/modules/experiment.cpp
+  src/modules/token_experiment.cpp
 )
 sbm_configure_target(sbm_experiment)
 target_link_libraries(sbm_experiment PUBLIC sbm_machine sbm_dataset sbm_core)

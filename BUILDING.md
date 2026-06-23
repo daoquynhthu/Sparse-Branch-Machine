@@ -1,23 +1,18 @@
 # Build and linkage layout
 
-The project now separates research components into shared libraries. On Windows
-these targets produce DLLs; on Linux they produce `.so` files; on macOS they
-produce `.dylib` files.
+The project is separated into shared libraries.  Windows produces DLLs, Linux
+`.so` files and macOS `.dylib` files.
 
-| Target | Responsibility | Typical consumer |
-|---|---|---|
-| `sbm_core` | SIMD vector kernels and address signatures | internal libraries |
-| `sbm_machine` | node storage, routing, learning and maintenance | C++ embedding / experiment layer |
-| `sbm_dataset` | task generation, hashing and binary persistence | experiment layer |
-| `sbm_experiment` | baselines, metrics and experiment runner | stable API layer |
-| `sbm_api` | versioned C ABI, parameter registry and opaque handles | CLI and Python |
-| `sbm_cli` | argument parsing, file output and API calls only | shell users |
+| Target | Responsibility |
+|---|---|
+| `sbm_core` | SIMD vector kernels and address signatures |
+| `sbm_machine` | storage, routing, vector learning and token cross-entropy |
+| `sbm_dataset` | vector/math-token generation and binary persistence |
+| `sbm_experiment` | baselines, metrics and experiment runners |
+| `sbm_api` | versioned C ABI, parameter registry and opaque handles |
+| `sbm_cli` | argument parsing and API calls only |
 
-The CLI links directly only to `sbm_api`. It does not include model, dataset or
-experiment C++ headers. Python uses the same C ABI through `ctypes`; there is no
-separate Python implementation of the algorithm.
-
-## Configure and build
+## Build
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -25,121 +20,87 @@ cmake --build build -j2
 ctest --test-dir build --output-on-failure
 ```
 
-The build produces a shared-library chain similar to:
-
-```text
-sbm_cli
-  -> sbm_api
-      -> sbm_experiment
-          -> sbm_machine
-          -> sbm_dataset
-              -> sbm_core
-```
-
-Build only the model after changing a learning rule:
+Build only the learning library after changing an objective:
 
 ```bash
 cmake --build build --target sbm_machine -j2
 ```
 
-Build only the stable API and its dependencies:
+Build only the API and dependencies:
 
 ```bash
 cmake --build build --target sbm_api -j2
 ```
 
-Disable executable and tests for library-only embedding:
+## Token cross-entropy CLI
 
 ```bash
-cmake -S . -B build-library \
-  -DSBM_BUILD_CLI=OFF \
-  -DSBM_BUILD_TESTS=OFF
-cmake --build build-library -j2
-```
-
-## Thin CLI
-
-The CLI has no hand-maintained hyperparameter option list. It discovers the
-runtime registry exposed by `sbm_api` and accepts generic assignments:
-
-```bash
-./build/sbm_cli --describe-parameters
-./build/sbm_cli --dump-config \
-  --set exact_region_mass=0.88 \
-  --set edge_score_weight=0.32
-
-./build/sbm_cli --length 120000 --warmup 40000 --seed 7 \
-  --set exact_region_mass=0.88 \
+./build/sbm_cli \
+  --task token-ce \
+  --sequences 64 \
+  --sequence-length 2048 \
+  --vocab-size 32 \
+  --math-temperature 0.8 \
+  --interaction-strength 0.2 \
+  --warmup 80000 \
   --output results.json
 ```
 
-`--set` is intended for reproducing a known configuration or a single diagnostic
-ablation. Repeated calibration should use the automatic search script below.
+Save and reload exactly the same mathematical token stream:
 
-## Python API
+```bash
+./build/sbm_cli --task token-ce \
+  --write-dataset math_tokens.bin \
+  --output first.json
 
-Set the library path explicitly when it is outside the default build folders:
+./build/sbm_cli --dataset math_tokens.bin \
+  --warmup 80000 \
+  --output replay.json
+```
+
+The file magic identifies vector versus token datasets automatically.
+
+## Python in-process execution
 
 ```bash
 export SBM_LIBRARY="$PWD/build/libsbm_api.so"
-python scripts/run_python_api.py --length 20000 --warmup 7000
+python scripts/run_python_api.py \
+  --task token-ce \
+  --sequences 16 \
+  --sequence-length 1024 \
+  --vocab-size 32 \
+  --warmup 10000
 ```
 
-Windows example:
-
-```powershell
-$env:SBM_LIBRARY = "$PWD\build\Release\sbm_api.dll"
-python scripts/run_python_api.py
-```
-
-The binding is standard-library-only and keeps dataset/config ownership explicit.
-A generated dataset can be reused for many in-process trials without serialization
-or process startup overhead.
-
-## Automatic hyperparameter search
-
-Do not tune by repeatedly editing headers or manually launching parameter grids.
-Use the schema-driven successive-halving search:
+## Automated search
 
 ```bash
 python scripts/tune.py \
   --library build/libsbm_api.so \
+  --task token-ce \
   --trials 27 \
   --seeds 7,11,19 \
+  --eta 3 \
   --jobs 3 \
-  --output tuning_results.json \
-  --best-config best_config.json
+  --output tuning_token.json \
+  --best-config best_token.json
 ```
 
-By default the script searches parameters marked `search_default` by the shared
-library. A deliberate broader study can select other registered parameters:
+The tuner:
 
-```bash
-python scripts/tune.py \
-  --include beam_width,bucket_scan_limit,edge_score_weight,exact_region_mass \
-  --trials 36
-```
+- discovers ranges from the shared library;
+- filters parameters by task applicability;
+- always evaluates the unchanged default configuration;
+- minimizes frozen cross-entropy for token tasks;
+- maximizes frozen R2 for vector tasks;
+- uses multi-seed successive halving;
+- writes checkpoints without recompilation.
 
-Each stage writes a checkpoint to the output path. Invalid configurations are
-recorded rather than terminating the search. The final choice is based only on
-candidates that survive all configured seeds, avoiding the bias of selecting a
-one-seed outlier.
-
-Use the selected configuration directly from Python:
-
-```bash
-python scripts/run_python_api.py \
-  --config best_config.json \
-  --length 120000 \
-  --warmup 40000
-```
-
-## Installation
+## Install
 
 ```bash
 cmake --install build --prefix install
 ```
 
-This installs shared libraries, the C/C++ headers, the CLI, the Python wrapper
-and the automation scripts. Build and install RPATHs use the library directory,
-so binaries do not depend on the source-tree build layout.
+The installed CLI uses a relative `../lib` RPATH.  The installed Python wrapper
+also searches the installation prefix's `lib` directory.

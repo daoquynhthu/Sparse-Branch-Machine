@@ -12,7 +12,8 @@ SparseBranchMachine::SparseBranchMachine(Config config)
       hot_buckets_(config.address_lags.size() * (std::size_t{1} << config.bucket_bits)),
       bucket_last_split_step_(config.address_lags.size() *
                               (std::size_t{1} << config.bucket_bits), 0),
-      prediction_buffer_(config.vector_dim, 0.0F) {
+      prediction_buffer_(config.vector_dim, 0.0F),
+      logit_buffer_(config.vector_dim, 0.0F) {
     if (config.token_alphabet == 0 || config.vector_dim == 0) {
         throw std::invalid_argument("token_alphabet and vector_dim must be positive");
     }
@@ -43,6 +44,20 @@ SparseBranchMachine::SparseBranchMachine(Config config)
         config.residual_recency_pseudocount < 0.0F) {
         throw std::invalid_argument("invalid mixture or residual configuration");
     }
+    if (config.softmax_temperature <= 0.0F ||
+        config.label_smoothing < 0.0F || config.label_smoothing >= 1.0F ||
+        config.classification_learning_rate <= 0.0F ||
+        config.classification_mature_learning_rate <= 0.0F ||
+        config.logit_decay < 0.0F || config.logit_decay >= 1.0F) {
+        throw std::invalid_argument("invalid token-objective configuration");
+    }
+}
+
+void SparseBranchMachine::reset_sequence() {
+    history_.clear();
+    previous_route_.clear();
+    previous_responsibilities_.clear();
+    trace_.clear();
 }
 
 std::uint32_t SparseBranchMachine::bucket(std::uint64_t signature) const noexcept {

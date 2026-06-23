@@ -94,5 +94,41 @@ int main() {
     assert(result.address_lags == sbm::Config{}.address_lags);
     assert(result.diagnostics.steps == 8000);
 
+
+    auto token_dataset = sbm::generate_math_token_process(8, 512, 16, 13, 0.8F, 0.2F);
+    assert(token_dataset.tokens.size() == 4096);
+    assert(token_dataset.sequence_count() == 8);
+    assert(token_dataset.example_count() == 4088);
+    const auto token_hash = sbm::hash_dataset(token_dataset);
+    const char* token_path = "sbm_token_test.bin";
+    sbm::save_token_dataset(token_dataset, token_path);
+    auto loaded_tokens = sbm::load_token_dataset(token_path);
+    std::remove(token_path);
+    assert(sbm::hash_dataset(loaded_tokens) == token_hash);
+
+    sbm::Config token_config;
+    token_config.objective = sbm::ObjectiveKind::TokenCrossEntropy;
+    token_config.token_alphabet = 16;
+    token_config.vector_dim = 16;
+    token_config.bucket_bits = 8;
+    token_config.seed = 13;
+    sbm::SparseBranchMachine token_machine(token_config);
+    token_machine.reset_sequence();
+    const auto first_token_stats = token_machine.step_token(
+        token_dataset.tokens[0], token_dataset.tokens[1], true);
+    assert(std::isfinite(first_token_stats.cross_entropy));
+    assert(first_token_stats.target_probability > 0.0F);
+    const auto first_prediction = token_machine.last_prediction();
+    float probability_sum = 0.0F;
+    for (const float probability : first_prediction) probability_sum += probability;
+    assert(close(probability_sum, 1.0F, 1e-5F));
+
+    const auto token_result = sbm::run_token_experiment(
+        token_dataset, 2500, token_config, true, 0, 0, 0);
+    assert(std::isfinite(token_result.eval.cross_entropy));
+    assert(std::isfinite(token_result.eval.perplexity));
+    assert(token_result.eval_examples == token_dataset.example_count() - 2500);
+    assert(token_result.oracle_cross_entropy > 0.0);
+
     std::cout << "all tests passed; SIMD=" << sbm::simd_available() << '\n';
 }

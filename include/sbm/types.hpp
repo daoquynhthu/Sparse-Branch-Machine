@@ -13,6 +13,11 @@ inline constexpr std::size_t kAddressChannelCount = 3U;
 
 enum class NodePhase : std::uint8_t { Cold, Warm, Mature, Dormant };
 
+enum class ObjectiveKind : std::uint8_t {
+    VectorRegression = 0U,
+    TokenCrossEntropy = 1U,
+};
+
 struct Edge {
     NodeId dst{kInvalidNode};
     float weight{};
@@ -20,6 +25,7 @@ struct Edge {
 };
 
 struct Config {
+    ObjectiveKind objective{ObjectiveKind::VectorRegression};
     std::uint32_t token_alphabet{64};
     std::uint32_t vector_dim{16};
     std::uint32_t context_width{12};
@@ -61,6 +67,15 @@ struct Config {
     float merge_similarity{0.95F};
     float merge_vector_distance{0.08F};
 
+    // Token-cross-entropy objective.  vector_dim is set to the output
+    // vocabulary size by the token experiment so the same node storage can
+    // hold dense local logits without introducing a separate matrix path.
+    float classification_learning_rate{0.35F};
+    float classification_mature_learning_rate{0.08F};
+    float label_smoothing{0.01F};
+    float softmax_temperature{1.0F};
+    float logit_decay{0.0001F};
+
     std::uint64_t seed{7};
 };
 
@@ -72,6 +87,9 @@ struct StepStats {
     std::uint32_t live_nodes{};
     std::uint32_t created{};
     std::vector<NodeId> route;
+    float cross_entropy{};
+    float target_probability{};
+    bool top1_correct{};
 };
 
 struct Diagnostics {

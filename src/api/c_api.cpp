@@ -19,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
 struct sbm_config_handle {
@@ -26,7 +27,7 @@ struct sbm_config_handle {
 };
 
 struct sbm_dataset_handle {
-    sbm::VectorDataset value;
+    std::variant<sbm::VectorDataset, sbm::TokenDataset> value;
 };
 
 namespace {
@@ -202,7 +203,12 @@ constexpr ParameterDescriptor kParameters[] = {
     {"node_learning_rate", "float", "0.12", "0.005", "0.50", "log", true, false, false, "Legacy anchor update cap used by non-mean paths."},
     {"mature_learning_rate", "float", "0.035", "0.001", "0.20", "log", true, false, false, "Legacy mature anchor update cap."},
     {"merge_similarity", "float", "0.95", "0.70", "0.999", "linear", true, false, false, "Minimum address similarity for node merge."},
-    {"merge_vector_distance", "float", "0.08", "0.005", "0.50", "log", true, false, false, "Maximum output-vector distance for node merge."},
+    {"merge_vector_distance", "float", "0.08", "0.005", "0.50", "log", true, false, false, "Maximum output-vector/logit distance for node merge."},
+    {"classification_learning_rate", "float", "0.35", "0.01", "1.0", "log", true, true, false, "Initial local logit learning rate for token cross-entropy."},
+    {"classification_mature_learning_rate", "float", "0.08", "0.002", "0.40", "log", true, true, false, "Local logit learning rate for mature token nodes."},
+    {"label_smoothing", "float", "0.01", "0.0", "0.20", "linear", true, true, false, "Label smoothing for mathematical next-token cross-entropy."},
+    {"softmax_temperature", "float", "1.0", "0.25", "3.0", "log", true, true, false, "Temperature applied to aggregated token logits."},
+    {"logit_decay", "float", "0.0001", "0.0", "0.02", "linear", true, true, false, "Per-update decay applied to local token logits."},
     {"seed", "uint64", "7", "0", "18446744073709551615", "linear", false, false, false, "Model random seed."},
 };
 
@@ -248,6 +254,11 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_FLOAT(mature_learning_rate)
     SBM_SET_FLOAT(merge_similarity)
     SBM_SET_FLOAT(merge_vector_distance)
+    SBM_SET_FLOAT(classification_learning_rate)
+    SBM_SET_FLOAT(classification_mature_learning_rate)
+    SBM_SET_FLOAT(label_smoothing)
+    SBM_SET_FLOAT(softmax_temperature)
+    SBM_SET_FLOAT(logit_decay)
     SBM_SET_U64(seed)
 #undef SBM_SET_UINT
 #undef SBM_SET_U64
@@ -297,14 +308,37 @@ std::string config_json(const sbm::Config& c) {
         << "  \"mature_learning_rate\": " << c.mature_learning_rate << ",\n"
         << "  \"merge_similarity\": " << c.merge_similarity << ",\n"
         << "  \"merge_vector_distance\": " << c.merge_vector_distance << ",\n"
+        << "  \"classification_learning_rate\": " << c.classification_learning_rate << ",\n"
+        << "  \"classification_mature_learning_rate\": " << c.classification_mature_learning_rate << ",\n"
+        << "  \"label_smoothing\": " << c.label_smoothing << ",\n"
+        << "  \"softmax_temperature\": " << c.softmax_temperature << ",\n"
+        << "  \"logit_decay\": " << c.logit_decay << ",\n"
         << "  \"seed\": " << c.seed << "\n"
         << "}\n";
     return out.str();
 }
 
+std::string_view parameter_tasks(std::string_view name) {
+    if (name == "classification_learning_rate" ||
+        name == "classification_mature_learning_rate" ||
+        name == "label_smoothing" ||
+        name == "softmax_temperature" ||
+        name == "logit_decay") {
+        return "token-ce";
+    }
+    if (name == "residual_learning_rate" ||
+        name == "residual_mature_learning_rate" ||
+        name == "residual_recency_pseudocount" ||
+        name == "node_learning_rate" ||
+        name == "mature_learning_rate") {
+        return "vector";
+    }
+    return "both";
+}
+
 std::string schema_json() {
     std::ostringstream out;
-    out << "{\n  \"api_version\": 1,\n  \"parameters\": [\n";
+    out << "{\n  \"api_version\": 2,\n  \"parameters\": [\n";
     for (std::size_t i = 0; i < std::size(kParameters); ++i) {
         const auto& p = kParameters[i];
         out << "    {\"name\": \"" << json_escape(p.name)
@@ -316,7 +350,11 @@ std::string schema_json() {
             << ", \"scale\": \"" << p.scale << "\"";
         if (p.minimum[0] != '\0') out << ", \"minimum\": " << p.minimum;
         if (p.maximum[0] != '\0') out << ", \"maximum\": " << p.maximum;
-        out << ", \"description\": \"" << json_escape(p.description) << "\"}";
+        const auto tasks = parameter_tasks(p.name);
+        out << ", \"tasks\": [";
+        if (tasks == "both") out << "\"token-ce\", \"vector\"";
+        else out << "\"" << tasks << "\"";
+        out << "], \"description\": \"" << json_escape(p.description) << "\"}";
         if (i + 1U != std::size(kParameters)) out << ',';
         out << '\n';
     }
@@ -333,8 +371,8 @@ const std::string& static_schema() {
 
 extern "C" {
 
-uint32_t sbm_api_version(void) { return 1U; }
-const char* sbm_api_version_string(void) { return "1.0.0"; }
+uint32_t sbm_api_version(void) { return 2U; }
+const char* sbm_api_version_string(void) { return "2.0.0"; }
 const char* sbm_last_error(void) { return g_last_error.c_str(); }
 const char* sbm_parameter_schema_json(void) { return static_schema().c_str(); }
 
@@ -381,15 +419,52 @@ sbm_dataset_handle* sbm_dataset_generate(size_t length, uint32_t alphabet,
                                          uint32_t vector_dim, uint32_t hidden_dim,
                                          uint64_t seed, float noise_std) {
     return guarded([&] {
+        return new sbm_dataset_handle{sbm::generate_vector_process(
+            length, alphabet, vector_dim, hidden_dim, seed, noise_std)};
+    });
+}
+
+sbm_dataset_handle* sbm_token_dataset_generate_math(size_t sequence_count,
+                                                     size_t sequence_length,
+                                                     uint32_t vocab_size,
+                                                     uint64_t seed,
+                                                     float temperature,
+                                                     float interaction_strength) {
+    return guarded([&] {
+        return new sbm_dataset_handle{sbm::generate_math_token_process(
+            sequence_count, sequence_length, vocab_size, seed,
+            temperature, interaction_strength)};
+    });
+}
+
+sbm_dataset_handle* sbm_token_dataset_from_ids(const uint32_t* tokens,
+                                                size_t token_count,
+                                                uint32_t vocab_size,
+                                                const uint64_t* sequence_offsets,
+                                                size_t offset_count) {
+    return guarded([&] {
+        if (tokens == nullptr || token_count == 0U) {
+            throw std::invalid_argument("tokens must be non-null and non-empty");
+        }
+        if ((sequence_offsets == nullptr) != (offset_count == 0U)) {
+            throw std::invalid_argument(
+                "sequence_offsets must be null iff offset_count is zero");
+        }
+        const std::span<const std::uint32_t> token_span(tokens, token_count);
+        const std::span<const std::uint64_t> offset_span = sequence_offsets == nullptr
+            ? std::span<const std::uint64_t>{}
+            : std::span<const std::uint64_t>(sequence_offsets, offset_count);
         return new sbm_dataset_handle{
-            sbm::generate_vector_process(length, alphabet, vector_dim,
-                                         hidden_dim, seed, noise_std)};
+            sbm::make_token_dataset(token_span, vocab_size, offset_span)};
     });
 }
 
 sbm_dataset_handle* sbm_dataset_load(const char* path) {
     return guarded([&] {
         if (path == nullptr) throw std::invalid_argument("path is null");
+        if (sbm::inspect_dataset_kind(path) == sbm::DatasetKind::TokenCrossEntropy) {
+            return new sbm_dataset_handle{sbm::load_token_dataset(path)};
+        }
         return new sbm_dataset_handle{sbm::load_dataset(path)};
     });
 }
@@ -400,7 +475,14 @@ int sbm_dataset_save(const sbm_dataset_handle* dataset, const char* path) {
         if (dataset == nullptr || path == nullptr) {
             throw std::invalid_argument("dataset and path must be non-null");
         }
-        sbm::save_dataset(dataset->value, path);
+        std::visit([&](const auto& value) {
+            using Dataset = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<Dataset, sbm::VectorDataset>) {
+                sbm::save_dataset(value, path);
+            } else {
+                sbm::save_token_dataset(value, path);
+            }
+        }, dataset->value);
         return 0;
     } catch (const std::exception& error) {
         set_error(error.what());
@@ -413,20 +495,63 @@ int sbm_dataset_save(const sbm_dataset_handle* dataset, const char* path) {
 
 void sbm_dataset_destroy(sbm_dataset_handle* dataset) { delete dataset; }
 
+uint32_t sbm_dataset_kind_of(const sbm_dataset_handle* dataset) {
+    if (dataset == nullptr) return 0U;
+    return std::holds_alternative<sbm::VectorDataset>(dataset->value)
+        ? static_cast<uint32_t>(SBM_DATASET_VECTOR_REGRESSION)
+        : static_cast<uint32_t>(SBM_DATASET_TOKEN_CROSS_ENTROPY);
+}
+
 uint64_t sbm_dataset_hash(const sbm_dataset_handle* dataset) {
-    return dataset == nullptr ? 0U : sbm::hash_dataset(dataset->value);
+    if (dataset == nullptr) return 0U;
+    return std::visit([](const auto& value) { return sbm::hash_dataset(value); },
+                      dataset->value);
 }
 
 size_t sbm_dataset_length(const sbm_dataset_handle* dataset) {
-    return dataset == nullptr ? 0U : dataset->value.tokens.size();
+    if (dataset == nullptr) return 0U;
+    return std::visit([](const auto& value) { return value.tokens.size(); },
+                      dataset->value);
 }
 
 uint32_t sbm_dataset_vector_dim(const sbm_dataset_handle* dataset) {
-    return dataset == nullptr ? 0U : dataset->value.vector_dim;
+    if (dataset == nullptr) return 0U;
+    if (const auto* vector = std::get_if<sbm::VectorDataset>(&dataset->value)) {
+        return vector->vector_dim;
+    }
+    return 0U;
 }
 
 uint32_t sbm_dataset_alphabet(const sbm_dataset_handle* dataset) {
-    return dataset == nullptr ? 0U : dataset->value.token_alphabet;
+    if (dataset == nullptr) return 0U;
+    if (const auto* vector = std::get_if<sbm::VectorDataset>(&dataset->value)) {
+        return vector->token_alphabet;
+    }
+    return std::get<sbm::TokenDataset>(dataset->value).vocab_size;
+}
+
+uint32_t sbm_dataset_vocab_size(const sbm_dataset_handle* dataset) {
+    if (dataset == nullptr) return 0U;
+    if (const auto* token = std::get_if<sbm::TokenDataset>(&dataset->value)) {
+        return token->vocab_size;
+    }
+    return 0U;
+}
+
+size_t sbm_dataset_sequence_count(const sbm_dataset_handle* dataset) {
+    if (dataset == nullptr) return 0U;
+    if (const auto* token = std::get_if<sbm::TokenDataset>(&dataset->value)) {
+        return token->sequence_count();
+    }
+    return 1U;
+}
+
+size_t sbm_dataset_example_count(const sbm_dataset_handle* dataset) {
+    if (dataset == nullptr) return 0U;
+    if (const auto* token = std::get_if<sbm::TokenDataset>(&dataset->value)) {
+        return token->example_count();
+    }
+    return std::get<sbm::VectorDataset>(dataset->value).tokens.size();
 }
 
 char* sbm_run_experiment_json(const sbm_dataset_handle* dataset, size_t warmup,
@@ -437,9 +562,19 @@ char* sbm_run_experiment_json(const sbm_dataset_handle* dataset, size_t warmup,
         if (dataset == nullptr || config == nullptr) {
             throw std::invalid_argument("dataset and config must be non-null");
         }
-        const auto result = sbm::run_experiment(
-            dataset->value, warmup, config->value, strict_freeze != 0,
-            prefill, prune_interval, merge_interval);
+        if (const auto* vector = std::get_if<sbm::VectorDataset>(&dataset->value)) {
+            auto resolved = config->value;
+            resolved.objective = sbm::ObjectiveKind::VectorRegression;
+            const auto result = sbm::run_experiment(
+                *vector, warmup, resolved, strict_freeze != 0,
+                prefill, prune_interval, merge_interval);
+            return duplicate_string(sbm::to_json(result));
+        }
+        auto resolved = config->value;
+        resolved.objective = sbm::ObjectiveKind::TokenCrossEntropy;
+        const auto result = sbm::run_token_experiment(
+            std::get<sbm::TokenDataset>(dataset->value), warmup, resolved,
+            strict_freeze != 0, prefill, prune_interval, merge_interval);
         return duplicate_string(sbm::to_json(result));
     });
 }

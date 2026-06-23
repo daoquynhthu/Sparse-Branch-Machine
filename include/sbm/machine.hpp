@@ -17,6 +17,10 @@ public:
 
     [[nodiscard]] StepStats step(std::uint32_t token, std::span<const float> target,
                                  bool learn = true);
+    [[nodiscard]] StepStats step_token(std::uint32_t token,
+                                       std::uint32_t target_token,
+                                       bool learn = true);
+    void reset_sequence();
     [[nodiscard]] std::size_t prune(std::uint32_t min_visits = 8,
                                     float utility_threshold = -0.05F);
     [[nodiscard]] std::size_t merge_redundant(std::size_t max_merges = 64);
@@ -111,6 +115,7 @@ private:
     std::deque<TraceFrame> trace_;
     std::deque<std::uint32_t> history_;
     std::vector<float> prediction_buffer_;
+    std::vector<float> logit_buffer_;
 
     std::uint64_t total_steps_{};
     std::uint64_t total_candidates_{};

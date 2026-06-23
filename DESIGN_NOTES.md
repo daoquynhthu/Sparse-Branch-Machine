@@ -97,3 +97,30 @@ pseudocount to track the still-changing upstream estimates.
 The benchmark includes a fixed multiscale residual-table control with the same
 lags. The learned machine must be compared against this control, not only against
 a token or token-pair centroid.
+
+## Token cross-entropy objective
+
+Token alignment is defined at the data/loss boundary, not by declaring the
+mathematical process to be language.  A token sequence supplies input `x_t` and
+target `x_{t+1}`; the machine produces normalized categorical probabilities and
+receives exact cross-entropy.
+
+The node store is reused as local logits.  Active temporal channels add logits,
+then one softmax is evaluated over the output vocabulary.  Exact-address nodes
+receive the local cross-entropy gradient proportional to their routing
+responsibility.  Foreign nodes remain read-only, preserving the separation
+between address-local knowledge and control-edge credit.
+
+Sequence boundaries reset only transient execution state.  This is required
+before corpus integration: concatenating unrelated documents would otherwise
+create false lag relations and false control edges.
+
+The mathematical generator contains no hidden stochastic state.  Its systematic
+conditional distribution is fully determined by visible token history; the only
+irreducible uncertainty is the categorical sample.  Oracle NLL is stored so that
+model error can be separated from source entropy.
+
+The current full-vocabulary local logit vector is intentionally a correctness
+implementation.  It must not be mistaken for a final large-vocabulary output
+architecture.  Hierarchical, adaptive or sampled normalization will be required
+before 30k+ vocabularies are memory-efficient.

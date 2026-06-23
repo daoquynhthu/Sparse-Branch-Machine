@@ -255,3 +255,38 @@ A fixed 20,000-step seed-7 semantic regression was executed before and after the
 DLL/API conversion. Ignoring only wall-clock fields, the result JSON had zero
 field differences. `ldd` confirms that the CLI directly depends on `sbm_api`; the
 remaining model libraries are transitive shared-library dependencies.
+
+## 2026-06-23 — tokenizer-aligned mathematical cross-entropy task
+
+Work continued on `modular-build-v5`; no new branch was created.
+
+The primary task was changed from continuous-vector regression to a standard
+next-token categorical contract.  The data source is still mathematical rather
+than linguistic: an explicit autoregressive distribution combines lag-1,
+lag-2, lag-4 and a weaker nonlinear interaction term, then samples the next
+token.  The dataset records oracle negative log-likelihood for each generated
+token.
+
+A new `TokenDataset` stores flat token IDs plus sequence offsets.  Sequence
+boundaries clear history, previous routes and delayed trace credit while
+retaining learned nodes.  The C and Python APIs can construct the same dataset
+from arbitrary external tokenizer IDs, so later corpus integration does not
+require changing the model call.
+
+The machine now has a token-cross-entropy objective.  Active node vectors are
+interpreted as local logits, combined additively and normalized by softmax.
+Exact-address nodes receive local cross-entropy gradients; foreign edge-recalled
+nodes remain read-only.  Label smoothing, temperature, logit decay and token
+learning rates are exposed through the runtime registry.
+
+Default calibration uses a 32-token vocabulary, 64 sequences of length 2048 and
+80,000 learning examples.  Across seeds 7, 11 and 19, frozen NLL values are
+3.4125, 3.4100 and 3.4114 (mean 3.4113).  The unigram baseline is about 3.4658,
+the fixed multiscale conditional-table control about 3.3920, and the generator
+oracle about 2.9143.  Top-1 remains near 6.2%, which is expected for the broad
+stochastic target distribution.
+
+The automated tuner was updated to minimize cross-entropy for token tasks,
+filter parameters by task applicability and always include the default
+configuration.  A nine-candidate, three-seed successive-halving run retained the
+default configuration as best; no manually selected override was accepted.

@@ -49,7 +49,6 @@ struct ConfigOwner {
 
 struct DatasetOwner {
     DatasetOwner() = default;
-    explicit DatasetOwner(sbm_dataset_handle* pointer) : value(pointer) {}
     sbm_dataset_handle* value{};
     ~DatasetOwner() { sbm_dataset_destroy(value); }
     DatasetOwner(const DatasetOwner&) = delete;
@@ -67,24 +66,32 @@ struct StringOwner {
 void usage() {
     std::cout
         << "sbm_cli [dataset options] [experiment options] [--set name=value ...]\n\n"
-        << "Dataset options:\n"
-        << "  --dataset FILE             Load a binary dataset\n"
-        << "  --write-dataset FILE       Save the generated/loaded dataset\n"
-        << "  --length N                 Generated dataset length (default 120000)\n"
-        << "  --alphabet N               Generated token alphabet (default 64)\n"
-        << "  --vector-dim N             Generated target dimension (default 16)\n"
-        << "  --hidden-dim N             Generator hidden feature dimension (default 24)\n"
-        << "  --noise-std X              Generator observation noise (default 0.035)\n"
-        << "  --seed N                   Dataset and model seed (default 7)\n\n"
+        << "Task selection:\n"
+        << "  --task token-ce|vector     Generated task (default token-ce)\n"
+        << "  --dataset FILE             Load either supported binary dataset\n"
+        << "  --write-dataset FILE       Save generated/loaded dataset\n\n"
+        << "Mathematical token task:\n"
+        << "  --sequences N              Independent token sequences (default 64)\n"
+        << "  --sequence-length N        Tokens per sequence (default 2048)\n"
+        << "  --vocab-size N             Token vocabulary (default 32)\n"
+        << "  --math-temperature X       Generator distribution temperature (default 0.8)\n"
+        << "  --interaction-strength X   Non-additive mathematical term (default 0.2)\n\n"
+        << "Legacy vector task:\n"
+        << "  --length N                 Vector dataset length (default 120000)\n"
+        << "  --alphabet N               Input alphabet (default 64)\n"
+        << "  --vector-dim N             Target dimension (default 16)\n"
+        << "  --hidden-dim N             Generator feature dimension (default 24)\n"
+        << "  --noise-std X              Observation noise (default 0.035)\n\n"
         << "Experiment options:\n"
-        << "  --warmup N                 Training steps (default 40000)\n"
+        << "  --seed N                   Dataset/model seed (default 7)\n"
+        << "  --warmup N                 Training examples (default 80000)\n"
         << "  --prefill N                Cold distractor nodes\n"
         << "  --prune-interval N         Structural prune interval\n"
         << "  --merge-interval N         Structural merge interval\n"
         << "  --allow-eval-growth        Disable strict structural freeze\n"
         << "  --set NAME=VALUE           Set any registered model parameter\n"
         << "  --output FILE              Result JSON path\n"
-        << "  --describe-parameters      Print the runtime parameter schema\n"
+        << "  --describe-parameters      Print runtime parameter schema\n"
         << "  --dump-config              Print resolved configuration and exit\n";
 }
 
@@ -100,16 +107,24 @@ std::pair<std::string, std::string> split_assignment(std::string_view text) {
 
 int main(int argc, char** argv) {
     try {
+        std::string task = "token-ce";
+        std::size_t sequence_count = 64;
+        std::size_t sequence_length = 2048;
+        std::uint32_t vocab_size = 32;
+        float math_temperature = 0.8F;
+        float interaction_strength = 0.2F;
+
         std::size_t length = 120000;
-        std::size_t warmup = 40000;
-        std::size_t prefill = 0;
-        std::size_t prune_interval = 0;
-        std::size_t merge_interval = 0;
-        std::uint64_t seed = 7;
         std::uint32_t alphabet = 64;
         std::uint32_t vector_dim = 16;
         std::uint32_t hidden_dim = 24;
         float noise_std = 0.035F;
+
+        std::size_t warmup = 80000;
+        std::size_t prefill = 0;
+        std::size_t prune_interval = 0;
+        std::size_t merge_interval = 0;
+        std::uint64_t seed = 7;
         bool strict_freeze = true;
         bool describe_parameters = false;
         bool dump_config = false;
@@ -138,7 +153,13 @@ int main(int argc, char** argv) {
             }
             if (i + 1 >= argc) throw std::invalid_argument("missing option value");
             const std::string_view value(argv[++i]);
-            if (argument == "--length") length = number<std::size_t>(value, "length");
+            if (argument == "--task") task = value;
+            else if (argument == "--sequences") sequence_count = number<std::size_t>(value, "sequences");
+            else if (argument == "--sequence-length") sequence_length = number<std::size_t>(value, "sequence-length");
+            else if (argument == "--vocab-size") vocab_size = number<std::uint32_t>(value, "vocab-size");
+            else if (argument == "--math-temperature") math_temperature = real_number(value, "math-temperature");
+            else if (argument == "--interaction-strength") interaction_strength = real_number(value, "interaction-strength");
+            else if (argument == "--length") length = number<std::size_t>(value, "length");
             else if (argument == "--warmup") warmup = number<std::size_t>(value, "warmup");
             else if (argument == "--seed") seed = number<std::uint64_t>(value, "seed");
             else if (argument == "--alphabet") alphabet = number<std::uint32_t>(value, "alphabet");
@@ -158,6 +179,9 @@ int main(int argc, char** argv) {
         if (describe_parameters) {
             std::cout << sbm_parameter_schema_json();
             return 0;
+        }
+        if (task != "token-ce" && task != "vector") {
+            throw std::invalid_argument("--task must be token-ce or vector");
         }
 
         ConfigOwner config;
@@ -179,9 +203,16 @@ int main(int argc, char** argv) {
         }
 
         DatasetOwner dataset;
-        dataset.value = dataset_path.empty()
-            ? sbm_dataset_generate(length, alphabet, vector_dim, hidden_dim, seed, noise_std)
-            : sbm_dataset_load(dataset_path.c_str());
+        if (!dataset_path.empty()) {
+            dataset.value = sbm_dataset_load(dataset_path.c_str());
+        } else if (task == "token-ce") {
+            dataset.value = sbm_token_dataset_generate_math(
+                sequence_count, sequence_length, vocab_size, seed,
+                math_temperature, interaction_strength);
+        } else {
+            dataset.value = sbm_dataset_generate(
+                length, alphabet, vector_dim, hidden_dim, seed, noise_std);
+        }
         if (dataset.value == nullptr) api_failure("create dataset");
         if (!write_dataset_path.empty() &&
             sbm_dataset_save(dataset.value, write_dataset_path.c_str()) != 0) {
