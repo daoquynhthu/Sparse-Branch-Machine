@@ -24,12 +24,12 @@
 - Create: `python/sbm_hardware.py`
 - Create: `tests/test_scheduler.py`
 
-- [ ] Write RED tests for CPU fraction, available-memory budget formula and
+- [x] Write RED tests for CPU fraction, available-memory budget formula and
 Windows/Linux snapshot parsing using injected providers.
-- [ ] Run `python tests/test_scheduler.py`; expect missing module failure.
-- [ ] Implement `HardwareSnapshot`, `ResourcePolicy` and
+- [x] Run `python tests/test_scheduler.py`; expect missing module failure.
+- [x] Implement `HardwareSnapshot`, `ResourcePolicy` and
 `dispatchable_memory = max(0,min(fraction*available,available-minimum_free))`.
-- [ ] Verify tests pass and commit `feat: profile schedulable hardware resources`.
+- [x] Verify tests pass and commit `feat: profile schedulable hardware resources`.
 
 ### Task 2: Deterministic reservation scheduler
 
@@ -37,12 +37,12 @@ Windows/Linux snapshot parsing using injected providers.
 - Create: `python/sbm_scheduler.py`
 - Modify: `tests/test_scheduler.py`
 
-- [ ] Write RED tests proving a worker is not launched above CPU or memory
+- [x] Write RED tests proving a worker is not launched above CPU or memory
 budget, reservations release after failure, and pending order remains FIFO.
-- [ ] Implement `RunEstimate`, `Reservation`, `WorkerState` and a scheduler whose
+- [x] Implement `RunEstimate`, `Reservation`, `WorkerState` and a scheduler whose
 resource provider and process launcher are injected for tests.
-- [ ] Emit only `queued`, `started`, `completed` and `failed` compact transitions.
-- [ ] Verify tests and commit `feat: schedule experiments under dual limits`.
+- [x] Emit only `queued`, `started`, `completed` and `failed` compact transitions.
+- [x] Verify tests and commit `feat: schedule experiments under dual limits`.
 
 ### Task 3: Integrate automated experiment dispatch
 

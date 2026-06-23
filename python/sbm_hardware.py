@@ -45,10 +45,7 @@ class ResourcePolicy:
             raise ValueError("max_workers must be positive")
 
     def cpu_budget(self, snapshot: HardwareSnapshot) -> int:
-        budget = max(1, int(snapshot.cpu_count * self.cpu_fraction))
-        if self.max_workers is not None:
-            budget = min(budget, self.max_workers)
-        return budget
+        return max(1, int(snapshot.cpu_count * self.cpu_fraction))
 
     def dispatchable_memory(self, snapshot: HardwareSnapshot) -> int:
         fraction_limit = int(snapshot.available_memory_bytes * self.memory_fraction)

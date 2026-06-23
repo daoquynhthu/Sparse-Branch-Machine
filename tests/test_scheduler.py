@@ -13,6 +13,7 @@ from sbm_hardware import (  # noqa: E402
     parse_linux_meminfo,
     snapshot_hardware,
 )
+from sbm_scheduler import ResourceScheduler, RunEstimate, ScheduledRun  # noqa: E402
 
 
 def test_policy_budgets() -> None:
@@ -51,8 +52,83 @@ def test_linux_meminfo_parser() -> None:
     assert available == 12288 * 1024
 
 
+class FakeWorker:
+    def __init__(self, returncode: int, polls: int = 1, on_finish=lambda: None) -> None:
+        self.returncode = returncode
+        self.polls = polls
+        self.on_finish = on_finish
+
+    def poll(self) -> int | None:
+        if self.polls > 0:
+            self.polls -= 1
+            return None
+        self.on_finish()
+        self.on_finish = lambda: None
+        return self.returncode
+
+
+def test_dual_constraint_fifo_and_release() -> None:
+    state = {"available": 700, "launched": []}
+
+    def profile() -> HardwareSnapshot:
+        return HardwareSnapshot(4, 1000, state["available"])
+
+    def launch(run: ScheduledRun) -> FakeWorker:
+        state["launched"].append(run.run_id)
+        state["available"] -= run.estimate.memory_bytes
+        return FakeWorker(
+            1 if run.run_id == "first" else 0,
+            on_finish=lambda: state.__setitem__(
+                "available", state["available"] + run.estimate.memory_bytes
+            ),
+        )
+
+    transitions: list[tuple[str, str]] = []
+    scheduler = ResourceScheduler(
+        policy=ResourcePolicy(0.5, 1.0, 100),
+        snapshot_provider=profile,
+        launcher=launch,
+        emit=lambda transition: transitions.append((transition.run_id, transition.state)),
+        sleep=lambda _: None,
+    )
+    results = scheduler.run([
+        ScheduledRun("first", RunEstimate(cpu_slots=2, memory_bytes=500), None),
+        ScheduledRun("second", RunEstimate(cpu_slots=1, memory_bytes=300), None),
+    ])
+    assert state["launched"] == ["first", "second"]
+    assert results == {"first": 1, "second": 0}
+    assert transitions == [
+        ("first", "queued"),
+        ("second", "queued"),
+        ("first", "started"),
+        ("first", "failed"),
+        ("second", "started"),
+        ("second", "completed"),
+    ]
+
+
+def test_memory_limit_blocks_launch() -> None:
+    snapshot = HardwareSnapshot(8, 1000, 300)
+    scheduler = ResourceScheduler(
+        policy=ResourcePolicy(1.0, 0.9, 100),
+        snapshot_provider=lambda: snapshot,
+        launcher=lambda _: (_ for _ in ()).throw(AssertionError("must not launch")),
+        emit=lambda _: None,
+        sleep=lambda _: None,
+        maximum_idle_polls=2,
+    )
+    try:
+        scheduler.run([ScheduledRun("large", RunEstimate(1, 250), None)])
+    except RuntimeError as error:
+        assert "cannot fit" in str(error)
+    else:
+        raise AssertionError("unschedulable run was not rejected")
+
+
 if __name__ == "__main__":
     test_policy_budgets()
     test_snapshot_injection()
     test_linux_meminfo_parser()
+    test_dual_constraint_fifo_and_release()
+    test_memory_limit_blocks_launch()
     print("Scheduler tests passed")
