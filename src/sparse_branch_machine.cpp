@@ -1,6 +1,7 @@
 #include "sparse_branch_machine.hpp"
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <chrono>
 #include <cmath>
@@ -8,645 +9,321 @@
 #include <fstream>
 #include <limits>
 #include <numeric>
+#include <random>
 #include <sstream>
 #include <stdexcept>
+#if defined(__x86_64__) || defined(_M_X64)
+#include <immintrin.h>
+#endif
 
 namespace sbm {
 namespace {
-constexpr std::uint32_t kDatasetVersion = 1;
-constexpr std::array<char, 8> kMagic{'S','B','M','D','A','T','A','1'};
+constexpr std::uint32_t kDatasetVersion = 2;
+constexpr std::array<char, 8> kMagic{'S','B','M','V','E','C','0','2'};
 
 std::uint64_t next_random(std::uint64_t& state) noexcept {
     state += 0x9E3779B97F4A7C15ULL;
     return mix64(state);
 }
 
-template <typename T>
-void write_pod(std::ofstream& out, const T& value) {
+template <typename T> void write_pod(std::ofstream& out, const T& value) {
     out.write(reinterpret_cast<const char*>(&value), sizeof(T));
     if (!out) throw std::runtime_error("dataset write failed");
 }
+template <typename T> T read_pod(std::ifstream& in) {
+    T value{}; in.read(reinterpret_cast<char*>(&value), sizeof(T));
+    if (!in) throw std::runtime_error("dataset read failed"); return value;
+}
 
-template <typename T>
-T read_pod(std::ifstream& in) {
-    T value{};
-    in.read(reinterpret_cast<char*>(&value), sizeof(T));
-    if (!in) throw std::runtime_error("dataset read failed");
-    return value;
+float dot_scalar(const float* a, const float* b, std::size_t n) noexcept {
+    float s=0; for(std::size_t i=0;i<n;++i) s += a[i]*b[i]; return s;
+}
+float sqdist_scalar(const float* a, const float* b, std::size_t n) noexcept {
+    float s=0; for(std::size_t i=0;i<n;++i){ const float d=a[i]-b[i]; s += d*d; } return s;
+}
+void axpy_scalar(float* dst, const float* src, float alpha, std::size_t n) noexcept {
+    for(std::size_t i=0;i<n;++i) dst[i] += alpha*src[i];
+}
+void lerp_scalar(float* dst, const float* target, float lr, std::size_t n) noexcept {
+    for(std::size_t i=0;i<n;++i) dst[i] += lr*(target[i]-dst[i]);
+}
+
+#if defined(__x86_64__) || defined(_M_X64)
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((target("avx2,fma")))
+#endif
+float dot_avx2(const float* a, const float* b, std::size_t n) noexcept {
+    __m256 sum=_mm256_setzero_ps(); std::size_t i=0;
+    for(;i+8<=n;i+=8) sum=_mm256_fmadd_ps(_mm256_loadu_ps(a+i),_mm256_loadu_ps(b+i),sum);
+    alignas(32) float tmp[8]; _mm256_store_ps(tmp,sum); float s=0; for(float v:tmp)s+=v;
+    for(;i<n;++i)s+=a[i]*b[i]; return s;
+}
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((target("avx2,fma")))
+#endif
+float sqdist_avx2(const float* a, const float* b, std::size_t n) noexcept {
+    __m256 sum=_mm256_setzero_ps(); std::size_t i=0;
+    for(;i+8<=n;i+=8){ auto d=_mm256_sub_ps(_mm256_loadu_ps(a+i),_mm256_loadu_ps(b+i)); sum=_mm256_fmadd_ps(d,d,sum); }
+    alignas(32) float tmp[8]; _mm256_store_ps(tmp,sum); float s=0; for(float v:tmp)s+=v;
+    for(;i<n;++i){float d=a[i]-b[i];s+=d*d;} return s;
+}
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((target("avx2,fma")))
+#endif
+void axpy_avx2(float* dst,const float* src,float alpha,std::size_t n) noexcept {
+    auto av=_mm256_set1_ps(alpha); std::size_t i=0;
+    for(;i+8<=n;i+=8){auto d=_mm256_loadu_ps(dst+i);auto s=_mm256_loadu_ps(src+i);_mm256_storeu_ps(dst+i,_mm256_fmadd_ps(av,s,d));}
+    for(;i<n;++i)dst[i]+=alpha*src[i];
+}
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((target("avx2,fma")))
+#endif
+void lerp_avx2(float* dst,const float* target,float lr,std::size_t n) noexcept {
+    auto l=_mm256_set1_ps(lr); std::size_t i=0;
+    for(;i+8<=n;i+=8){auto d=_mm256_loadu_ps(dst+i);auto t=_mm256_loadu_ps(target+i);_mm256_storeu_ps(dst+i,_mm256_fmadd_ps(l,_mm256_sub_ps(t,d),d));}
+    for(;i<n;++i)dst[i]+=lr*(target[i]-dst[i]);
+}
+#endif
+
+bool has_avx2_fma() noexcept {
+#if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+    return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma");
+#else
+    return false;
+#endif
+}
+float dotv(const float* a,const float* b,std::size_t n) noexcept { return has_avx2_fma()?dot_avx2(a,b,n):dot_scalar(a,b,n); }
+float sqdistv(const float* a,const float* b,std::size_t n) noexcept { return has_avx2_fma()?sqdist_avx2(a,b,n):sqdist_scalar(a,b,n); }
+void axpyv(float* d,const float* s,float a,std::size_t n) noexcept { if(has_avx2_fma())axpy_avx2(d,s,a,n);else axpy_scalar(d,s,a,n); }
+void lerpv(float* d,const float* t,float lr,std::size_t n) noexcept { if(has_avx2_fma())lerp_avx2(d,t,lr,n);else lerp_scalar(d,t,lr,n); }
+
+float cosine_of(std::span<const float> a,std::span<const float> b) noexcept {
+    const float ab=dotv(a.data(),b.data(),a.size());
+    const float aa=dotv(a.data(),a.data(),a.size()); const float bb=dotv(b.data(),b.data(),b.size());
+    return ab/std::sqrt(std::max(aa*bb,1e-12F));
 }
 }
 
-std::uint64_t mix64(std::uint64_t x) noexcept {
-    x ^= x >> 30U;
-    x *= 0xbf58476d1ce4e5b9ULL;
-    x ^= x >> 27U;
-    x *= 0x94d049bb133111ebULL;
-    x ^= x >> 31U;
-    return x;
-}
-
-std::uint64_t rolling_signature(std::span<const std::uint32_t> window,
-                                std::uint64_t seed) noexcept {
-    auto h = seed;
-    for (std::size_t i = 0; i < window.size(); ++i) {
-        h ^= mix64(static_cast<std::uint64_t>(window[i]) +
-                   0x10001ULL * static_cast<std::uint64_t>(i + 1U));
-        h = std::rotl(h, 11);
-        h = mix64(h);
+bool simd_available() noexcept { return has_avx2_fma(); }
+std::uint64_t mix64(std::uint64_t x) noexcept { x^=x>>30U;x*=0xbf58476d1ce4e5b9ULL;x^=x>>27U;x*=0x94d049bb133111ebULL;x^=x>>31U;return x; }
+std::uint64_t rolling_signature(std::span<const std::uint32_t> w,std::uint64_t seed) noexcept {
+    // Preserve recent-token locality in the high bits used by the bucket index.
+    // The lower bits remain mixed to separate longer histories inside a bucket.
+    std::uint64_t h = seed;
+    for (std::size_t i = 0; i < w.size(); ++i) {
+        h ^= std::rotl(mix64(static_cast<std::uint64_t>(w[i]) + 0x10001ULL * (i + 1U)),
+                       static_cast<int>((i * 9U) & 63U));
+    }
+    h = mix64(h);
+    std::uint64_t recent = 0;
+    const std::size_t take = std::min<std::size_t>(4, w.size());
+    // Most recent token occupies the most significant byte.
+    for (std::size_t k = 0; k < take; ++k) {
+        recent |= static_cast<std::uint64_t>(w[w.size() - 1U - k] & 0xFFU)
+                  << (56U - static_cast<unsigned>(8U * k));
+    }
+    const unsigned bits = static_cast<unsigned>(take * 8U);
+    if (bits != 0U) {
+        const std::uint64_t low_mask = bits == 64U ? 0U : ((std::uint64_t{1} << (64U - bits)) - 1U);
+        h = recent | (h & low_mask);
     }
     return h;
 }
-
-double hamming_similarity(std::uint64_t a, std::uint64_t b) noexcept {
-    return 1.0 - static_cast<double>(std::popcount(a ^ b)) / 64.0;
+double hamming_similarity(std::uint64_t a,std::uint64_t b) noexcept { return 1.0-static_cast<double>(std::popcount(a^b))/64.0; }
+std::uint64_t hash_dataset(const VectorDataset& d) noexcept {
+    std::uint64_t h=mix64(d.token_alphabet)^std::rotl(mix64(d.vector_dim),13);
+    for(std::size_t i=0;i<d.tokens.size();++i){h^=mix64(static_cast<std::uint64_t>(d.tokens[i])+i*0x9E37ULL);h=std::rotl(h,7);} 
+    for(std::size_t i=0;i<d.targets.size();++i){std::uint32_t bits;std::memcpy(&bits,&d.targets[i],4);h^=mix64(static_cast<std::uint64_t>(bits)+i*0x85EBULL);h=std::rotl(h,9);} return mix64(h);
 }
 
-std::uint64_t hash_dataset(const Dataset& dataset) noexcept {
-    std::uint64_t h = mix64(dataset.alphabet_size);
-    for (std::size_t i = 0; i < dataset.sequence.size(); ++i) {
-        h ^= mix64(static_cast<std::uint64_t>(dataset.sequence[i]) + i * 0x9E37ULL);
-        h = std::rotl(h, 7);
-    }
-    return mix64(h ^ dataset.sequence.size());
+SparseBranchMachine::SparseBranchMachine(Config c):config_(c),rng_state_(c.seed),buckets_(std::size_t{1}<<c.bucket_bits),hot_buckets_(std::size_t{1}<<c.bucket_bits),prediction_buffer_(c.vector_dim,0.0F){
+    if(c.token_alphabet==0||c.vector_dim==0)throw std::invalid_argument("token_alphabet and vector_dim must be positive");
+    if(c.bucket_bits==0||c.bucket_bits>20)throw std::invalid_argument("bucket_bits must be in [1,20]");
+    if(c.beam_width==0||c.bucket_scan_limit==0||c.max_edges_per_node==0)throw std::invalid_argument("invalid zero budget");
 }
-
-SparseBranchMachine::SparseBranchMachine(Config config)
-    : config_(config), rng_state_(config.seed),
-      buckets_(std::size_t{1} << config.bucket_bits),
-      hot_buckets_(std::size_t{1} << config.bucket_bits) {
-    if (config_.alphabet_size == 0U) throw std::invalid_argument("alphabet_size must be positive");
-    if (config_.bucket_bits == 0U || config_.bucket_bits > 20U)
-        throw std::invalid_argument("bucket_bits must be in [1,20]");
-    if (config_.beam_width == 0U || config_.bucket_scan_limit == 0U)
-        throw std::invalid_argument("beam_width and bucket_scan_limit must be positive");
-    if (config_.max_edges_per_node == 0U)
-        throw std::invalid_argument("max_edges_per_node must be positive");
+std::uint32_t SparseBranchMachine::bucket(std::uint64_t s) const noexcept{return static_cast<std::uint32_t>(s>>(64U-config_.bucket_bits));}
+std::size_t SparseBranchMachine::slot_of(NodeId id) const noexcept {if(id>=id_to_slot_.size())return SIZE_MAX;auto s=id_to_slot_[id];return(s==UINT32_MAX||s>=ids_.size()||ids_[s]!=id)?SIZE_MAX:s;}
+bool SparseBranchMachine::contains(NodeId id) const noexcept{return slot_of(id)!=SIZE_MAX;}
+NodeId SparseBranchMachine::new_node(std::uint64_t sig,std::span<const float> initial,NodeId parent){
+    if(next_id_==kInvalidNode)throw std::overflow_error("node ids exhausted"); NodeId id=next_id_++; auto slot=static_cast<std::uint32_t>(ids_.size());
+    if(id_to_slot_.size()<=id)id_to_slot_.resize(static_cast<std::size_t>(id)+1,UINT32_MAX);id_to_slot_[id]=slot;
+    ids_.push_back(id);prototypes_.push_back(sig);visits_.push_back(0);utility_ema_.push_back(0);loss_ema_.push_back(1);phases_.push_back((std::uint8_t)NodePhase::Cold);hot_indexed_.push_back(0);parents_.push_back(parent);
+    output_vectors_.insert(output_vectors_.end(),initial.begin(),initial.end());edges_.emplace_back();edges_.back().reserve(config_.max_edges_per_node);buckets_[bucket(sig)].push_back(id);++total_created_;return id;
 }
+bool SparseBranchMachine::push_unique(std::vector<NodeId>& v,NodeId id) const noexcept{if(!contains(id)||std::find(v.begin(),v.end(),id)!=v.end())return false;v.push_back(id);return true;}
+std::vector<NodeId> SparseBranchMachine::candidate_ids(std::uint64_t sig) {
+    std::vector<NodeId> out;
+    out.reserve(config_.bucket_scan_limit + config_.beam_width * config_.edge_scan_limit);
+    const auto exact = static_cast<std::size_t>(bucket(sig));
 
-std::uint32_t SparseBranchMachine::bucket(std::uint64_t signature) const noexcept {
-    return static_cast<std::uint32_t>(signature >> (64U - config_.bucket_bits));
-}
+    // Exact address-region residents must never be displaced by incoming edges.
+    auto append_bucket = [&](const std::vector<NodeId>& source, std::size_t limit, bool randomize) {
+        if (source.empty()) return;
+        const std::size_t start = randomize
+            ? static_cast<std::size_t>(next_random(rng_state_) % source.size()) : 0U;
+        const std::size_t attempts = std::min<std::size_t>(source.size(), limit * 4U + 1U);
+        for (std::size_t k = 0; k < attempts && out.size() < limit; ++k) {
+            const NodeId id = source[(start + k) % source.size()];
+            if (!contains(id)) { ++stale_bucket_refs_skipped_; continue; }
+            (void)push_unique(out, id);
+        }
+    };
+    append_bucket(hot_buckets_[exact], config_.bucket_scan_limit, false);
+    append_bucket(buckets_[exact], config_.bucket_scan_limit, true);
 
-std::size_t SparseBranchMachine::slot_of(NodeId id) const noexcept {
-    if (id >= id_to_slot_.size()) return std::numeric_limits<std::size_t>::max();
-    const auto slot = id_to_slot_[id];
-    if (slot == UINT32_MAX || slot >= ids_.size() || ids_[slot] != id)
-        return std::numeric_limits<std::size_t>::max();
-    return slot;
-}
-
-bool SparseBranchMachine::contains(NodeId id) const noexcept {
-    return slot_of(id) != std::numeric_limits<std::size_t>::max();
-}
-
-NodeId SparseBranchMachine::new_node(std::uint64_t signature, NodeId parent) {
-    if (next_id_ == kInvalidNode) throw std::overflow_error("logical node id space exhausted");
-    const NodeId id = next_id_++;
-    const auto slot = static_cast<std::uint32_t>(ids_.size());
-    if (id_to_slot_.size() <= id) id_to_slot_.resize(static_cast<std::size_t>(id) + 1U, UINT32_MAX);
-    id_to_slot_[id] = slot;
-    ids_.push_back(id);
-    prototypes_.push_back(signature);
-    visits_.push_back(0);
-    correct_.push_back(0);
-    conflicts_.push_back(0U);
-    utility_ema_.push_back(0.0F);
-    error_ema_.push_back(0.0F);
-    phases_.push_back(static_cast<std::uint8_t>(NodePhase::Cold));
-    hot_indexed_.push_back(0U);
-    parents_.push_back(parent);
-    output_counts_.insert(output_counts_.end(), config_.alphabet_size, 1.0F);
-    edges_.emplace_back();
-    edges_.back().reserve(config_.max_edges_per_node);
-    buckets_[bucket(signature)].push_back(id);
-    ++total_created_;
-    return id;
-}
-
-bool SparseBranchMachine::push_unique(std::vector<NodeId>& values, NodeId id) const noexcept {
-    if (!contains(id)) return false;
-    if (std::find(values.begin(), values.end(), id) != values.end()) return false;
-    values.push_back(id);
-    return true;
-}
-
-std::vector<NodeId> SparseBranchMachine::candidate_ids(std::uint64_t signature) {
+    // Learned control-flow edges supplement, rather than replace, content addressing.
     const std::size_t hard_limit = static_cast<std::size_t>(config_.bucket_scan_limit) +
         static_cast<std::size_t>(config_.beam_width) * config_.edge_scan_limit;
-    std::vector<NodeId> out;
-    out.reserve(hard_limit);
-
     for (const NodeId src : previous_route_) {
         const auto slot = slot_of(src);
-        if (slot == std::numeric_limits<std::size_t>::max()) continue;
-        const auto& list = edges_[slot];
-        const auto limit = std::min<std::size_t>(list.size(), config_.edge_scan_limit);
-        for (std::size_t i = 0; i < limit; ++i) {
-            if (!contains(list[i].dst)) { ++stale_edge_refs_skipped_; continue; }
-            (void)push_unique(out, list[i].dst);
+        if (slot == SIZE_MAX) continue;
+        const auto limit = std::min<std::size_t>(edges_[slot].size(), config_.edge_scan_limit);
+        for (std::size_t i = 0; i < limit && out.size() < hard_limit; ++i) {
+            if (!contains(edges_[slot][i].dst)) { ++stale_edge_refs_skipped_; continue; }
+            (void)push_unique(out, edges_[slot][i].dst);
         }
     }
 
-    const auto base = static_cast<std::int64_t>(bucket(signature));
+    // Nearby regions are fallback exploration only.
+    const auto base = static_cast<std::int64_t>(exact);
     const auto max_bucket = static_cast<std::int64_t>(buckets_.size());
-
-    // Proven nodes are searched before the cold address space. This keeps
-    // retrieval quality stable when the model contains many unused nodes.
-    for (std::int64_t radius = 0; out.size() < config_.bucket_scan_limit && radius <= 3; ++radius) {
-        const std::array<std::int64_t, 2> probes{base - radius, base + radius};
-        const int probe_count = radius == 0 ? 1 : 2;
-        for (int p = 0; p < probe_count && out.size() < config_.bucket_scan_limit; ++p) {
-            const auto pb = probes[static_cast<std::size_t>(p)];
-            if (pb < 0 || pb >= max_bucket) continue;
-            for (const NodeId id : hot_buckets_[static_cast<std::size_t>(pb)]) {
-                if (!contains(id)) { ++stale_bucket_refs_skipped_; continue; }
-                (void)push_unique(out, id);
-                if (out.size() >= config_.bucket_scan_limit) break;
-            }
-        }
-    }
-    for (std::int64_t radius = 0; out.size() < config_.bucket_scan_limit && radius <= 3; ++radius) {
-        const std::array<std::int64_t, 2> probes{base - radius, base + radius};
-        const int probe_count = radius == 0 ? 1 : 2;
-        for (int p = 0; p < probe_count && out.size() < config_.bucket_scan_limit; ++p) {
-            const auto pb = probes[static_cast<std::size_t>(p)];
-            if (pb < 0 || pb >= max_bucket) continue;
-            const auto& source = buckets_[static_cast<std::size_t>(pb)];
-            if (source.empty()) continue;
-            const std::size_t attempts_limit = std::min<std::size_t>(
-                source.size(), static_cast<std::size_t>(config_.bucket_scan_limit) * 4U);
-            std::size_t start = static_cast<std::size_t>(next_random(rng_state_) % source.size());
-            for (std::size_t k = 0; k < attempts_limit && out.size() < config_.bucket_scan_limit; ++k) {
-                const NodeId id = source[(start + k) % source.size()];
-                if (!contains(id)) { ++stale_bucket_refs_skipped_; continue; }
-                (void)push_unique(out, id);
-            }
+    for (std::int64_t radius = 1; out.size() < hard_limit && radius <= 3; ++radius) {
+        for (const auto probe : {base - radius, base + radius}) {
+            if (probe < 0 || probe >= max_bucket) continue;
+            append_bucket(hot_buckets_[static_cast<std::size_t>(probe)], hard_limit, false);
+            append_bucket(buckets_[static_cast<std::size_t>(probe)], hard_limit, true);
+            if (out.size() >= hard_limit) break;
         }
     }
     return out;
 }
-
-double SparseBranchMachine::score(std::size_t slot, std::uint64_t signature) const noexcept {
-    const auto similarity = hamming_similarity(prototypes_[slot], signature);
-    const auto reliability = (static_cast<double>(correct_[slot]) + 1.0) /
-                             (static_cast<double>(visits_[slot]) + 2.0);
-    const auto novelty = 1.0 / std::sqrt(static_cast<double>(visits_[slot]) + 1.0);
-    const auto lifecycle = phase_of_slot(slot);
-    const double phase_bias = lifecycle == NodePhase::Dormant ? -0.18 : 0.0;
-    return 0.70 * similarity + 0.22 * reliability + 0.05 * novelty + phase_bias;
+NodePhase SparseBranchMachine::phase_of_slot(std::size_t s) const noexcept{return(NodePhase)phases_[s];}
+NodePhase SparseBranchMachine::phase(NodeId id) const noexcept{auto s=slot_of(id);return s==SIZE_MAX?NodePhase::Dormant:phase_of_slot(s);}
+double SparseBranchMachine::score(std::size_t s, std::uint64_t sig) const noexcept {
+    const double sim = hamming_similarity(prototypes_[s], sig);
+    const double rel = 1.0 / (1.0 + loss_ema_[s]);
+    const double nov = 1.0 / std::sqrt(static_cast<double>(visits_[s]) + 1.0);
+    const double exact_region = bucket(prototypes_[s]) == bucket(sig) ? 0.42 : 0.0;
+    const double phase_bias = phase_of_slot(s) == NodePhase::Dormant ? -0.18 : 0.0;
+    return exact_region + 0.72 * sim + 0.10 * rel + 0.02 * nov + phase_bias;
 }
-
-std::pair<std::vector<SparseBranchMachine::ScoredNode>, std::uint32_t>
-SparseBranchMachine::select_route(std::uint64_t signature) {
-    auto candidates = candidate_ids(signature);
-    std::vector<ScoredNode> scored;
-    scored.reserve(candidates.size());
-    for (const auto id : candidates) {
-        const auto slot = slot_of(id);
-        if (slot != std::numeric_limits<std::size_t>::max()) scored.push_back({score(slot, signature), id});
-    }
-    const auto keep = std::min<std::size_t>(scored.size(), config_.beam_width);
-    std::partial_sort(scored.begin(), scored.begin() + static_cast<std::ptrdiff_t>(keep), scored.end(),
-        [](const ScoredNode& a, const ScoredNode& b) {
-            return a.score == b.score ? a.id > b.id : a.score > b.score;
-        });
-    scored.resize(keep);
-    return {std::move(scored), static_cast<std::uint32_t>(candidates.size())};
-}
-
-std::uint32_t SparseBranchMachine::aggregate(const std::vector<ScoredNode>& active) const {
-    if (active.empty()) return 0U;
-    std::vector<double> vote(config_.alphabet_size, 0.0);
+std::pair<std::vector<SparseBranchMachine::ScoredNode>,std::uint32_t> SparseBranchMachine::select_route(std::uint64_t sig){auto c=candidate_ids(sig);std::vector<ScoredNode>s;s.reserve(c.size());for(auto id:c){auto sl=slot_of(id);if(sl!=SIZE_MAX)s.push_back({score(sl,sig),id});}auto keep=std::min<std::size_t>(s.size(),config_.beam_width);std::partial_sort(s.begin(),s.begin()+keep,s.end(),[](auto&a,auto&b){return a.score==b.score?a.id>b.id:a.score>b.score;});s.resize(keep);return{std::move(s),(std::uint32_t)c.size()};}
+void SparseBranchMachine::aggregate(const std::vector<ScoredNode>& a,std::span<float> out) const {std::fill(out.begin(),out.end(),0);if(a.empty())return;double ws=0;for(auto&x:a){auto s=slot_of(x.id);if(s==SIZE_MAX)continue;float w=static_cast<float>(std::exp(3.0 * std::clamp(x.score, -2.0, 2.0)));axpyv(out.data(),output_vectors_.data()+s*config_.vector_dim,w,config_.vector_dim);ws+=w;}if(ws>0){float inv=(float)(1.0/ws);for(auto&v:out)v*=inv;}}
+void SparseBranchMachine::reinforce_edge(NodeId src,NodeId dst,float delta){auto s=slot_of(src);if(s==SIZE_MAX||!contains(dst))return;auto&l=edges_[s];auto it=std::find_if(l.begin(),l.end(),[&](auto&e){return e.dst==dst;});if(it==l.end())l.push_back({dst,delta,delta});else{it->eligibility=config_.trace_decay*it->eligibility+delta;it->weight=config_.edge_decay*it->weight+it->eligibility;}std::sort(l.begin(),l.end(),[](auto&a,auto&b){return a.weight==b.weight?a.dst<b.dst:a.weight>b.weight;});if(l.size()>config_.max_edges_per_node)l.resize(config_.max_edges_per_node);}
+void SparseBranchMachine::update_phase(std::size_t s){NodePhase p=NodePhase::Cold;if(utility_ema_[s]<=config_.dormant_utility)p=NodePhase::Dormant;else if(visits_[s]>=config_.mature_visits)p=NodePhase::Mature;else if(visits_[s]>=config_.warm_visits)p=NodePhase::Warm;phases_[s]=(std::uint8_t)p;}
+void SparseBranchMachine::apply_trace_credit(float loss){float credit=1.0F-std::min(loss,2.0F);float decay=1;for(auto it=trace_.rbegin();it!=trace_.rend();++it){for(auto id:it->route){auto s=slot_of(id);if(s==SIZE_MAX)continue;utility_ema_[s]=.97F*utility_ema_[s]+.03F*credit*decay;update_phase(s);}decay*=config_.trace_decay;}}
+StepStats SparseBranchMachine::step(std::uint32_t token,std::span<const float> target,bool learn){
+    if(token>=config_.token_alphabet||target.size()!=config_.vector_dim)throw std::out_of_range("invalid token or target dimension");history_.push_back(token);if(history_.size()>config_.context_width)history_.pop_front();std::vector<std::uint32_t>w(history_.begin(),history_.end());auto sig=rolling_signature(w);auto[active,examined]=select_route(sig);
+    aggregate(active,prediction_buffer_);float target_energy=dotv(target.data(),target.data(),target.size())/target.size();float mse=sqdistv(prediction_buffer_.data(),target.data(),target.size())/target.size();float nmse=mse/std::max(target_energy,1e-5F);float cos=cosine_of(prediction_buffer_,target);std::uint32_t created=0;
+    double best=0;for(auto&x:active){auto s=slot_of(x.id);if(s!=SIZE_MAX)best=std::max(best,hamming_similarity(prototypes_[s],sig));}
+    std::size_t same_bucket = 0;
     for (const auto& selected : active) {
         const auto slot = slot_of(selected.id);
-        if (slot == std::numeric_limits<std::size_t>::max()) continue;
-        const auto base = slot * config_.alphabet_size;
-        double total = 0.0;
-        for (std::uint32_t s = 0; s < config_.alphabet_size; ++s) total += output_counts_[base + s];
-        const double weight = std::max(selected.score, 1e-6);
-        for (std::uint32_t s = 0; s < config_.alphabet_size; ++s)
-            vote[s] += weight * output_counts_[base + s] / total;
+        if (slot != SIZE_MAX && bucket(prototypes_[slot]) == bucket(sig)) ++same_bucket;
     }
-    return static_cast<std::uint32_t>(std::distance(vote.begin(), std::max_element(vote.begin(), vote.end())));
-}
-
-void SparseBranchMachine::reinforce_edge(NodeId source, NodeId destination, float delta) {
-    const auto slot = slot_of(source);
-    if (slot == std::numeric_limits<std::size_t>::max() || !contains(destination)) return;
-    auto& list = edges_[slot];
-    auto it = std::find_if(list.begin(), list.end(), [destination](const Edge& e){ return e.dst == destination; });
-    if (it == list.end()) list.push_back({destination, delta, delta});
-    else {
-        it->eligibility = config_.trace_decay * it->eligibility + delta;
-        it->weight = config_.edge_decay * it->weight + it->eligibility;
+    bool exact_region_has_live_node = false;
+    for (const NodeId id : buckets_[bucket(sig)]) {
+        if (contains(id)) { exact_region_has_live_node = true; break; }
     }
-    std::sort(list.begin(), list.end(), [](const Edge& a, const Edge& b){
-        return a.weight == b.weight ? a.dst < b.dst : a.weight > b.weight;
-    });
-    if (list.size() > config_.max_edges_per_node) list.resize(config_.max_edges_per_node);
-}
-
-NodePhase SparseBranchMachine::phase_of_slot(std::size_t slot) const noexcept {
-    return static_cast<NodePhase>(phases_[slot]);
-}
-
-NodePhase SparseBranchMachine::phase(NodeId id) const noexcept {
-    const auto slot = slot_of(id);
-    return slot == std::numeric_limits<std::size_t>::max() ? NodePhase::Dormant : phase_of_slot(slot);
-}
-
-std::uint32_t SparseBranchMachine::node_prediction(std::size_t slot) const noexcept {
-    const auto base = slot * config_.alphabet_size;
-    std::uint32_t best = 0;
-    float best_value = output_counts_[base];
-    for (std::uint32_t s = 1; s < config_.alphabet_size; ++s) {
-        if (output_counts_[base + s] > best_value) {
-            best_value = output_counts_[base + s];
-            best = s;
-        }
-    }
-    return best;
-}
-
-double SparseBranchMachine::output_distance(std::size_t a, std::size_t b) const noexcept {
-    const auto ba = a * config_.alphabet_size;
-    const auto bb = b * config_.alphabet_size;
-    double sa = 0.0, sb = 0.0;
-    for (std::uint32_t s = 0; s < config_.alphabet_size; ++s) {
-        sa += output_counts_[ba + s];
-        sb += output_counts_[bb + s];
-    }
-    double l1 = 0.0;
-    for (std::uint32_t s = 0; s < config_.alphabet_size; ++s)
-        l1 += std::abs(output_counts_[ba + s] / sa - output_counts_[bb + s] / sb);
-    return 0.5 * l1;
-}
-
-void SparseBranchMachine::update_phase(std::size_t slot) {
-    NodePhase next = NodePhase::Cold;
-    if (utility_ema_[slot] <= config_.dormant_utility) next = NodePhase::Dormant;
-    else if (visits_[slot] >= config_.mature_visits) next = NodePhase::Mature;
-    else if (visits_[slot] >= config_.warm_visits) next = NodePhase::Warm;
-    phases_[slot] = static_cast<std::uint8_t>(next);
-}
-
-void SparseBranchMachine::apply_trace_credit(bool correct) {
-    float credit = correct ? config_.positive_credit : -config_.negative_credit;
-    float decay = 1.0F;
-    for (auto it = trace_.rbegin(); it != trace_.rend(); ++it) {
-        for (const auto id : it->route) {
-            const auto slot = slot_of(id);
-            if (slot == std::numeric_limits<std::size_t>::max()) continue;
-            utility_ema_[slot] = 0.97F * utility_ema_[slot] + 0.03F * credit * decay;
-            update_phase(slot);
-        }
-        decay *= config_.trace_decay;
-    }
-}
-
-StepStats SparseBranchMachine::step(std::uint32_t token, std::uint32_t target, bool learn) {
-    if (token >= config_.alphabet_size || target >= config_.alphabet_size)
-        throw std::out_of_range("token and target must be inside alphabet");
-    history_.push_back(token);
-    if (history_.size() > config_.context_width) history_.pop_front();
-    std::vector<std::uint32_t> window(history_.begin(), history_.end());
-    const auto signature = rolling_signature(window);
-    auto [active, examined] = select_route(signature);
-    std::uint32_t created = 0, split = 0;
-
-    double best_similarity = 0.0;
-    for (const auto& selected : active) {
-        const auto slot = slot_of(selected.id);
-        if (slot != std::numeric_limits<std::size_t>::max())
-            best_similarity = std::max(best_similarity, hamming_similarity(prototypes_[slot], signature));
-    }
-
+    const bool missing_exact_region = !exact_region_has_live_node;
+    const bool unresolved_conflict = false; // v4: growth is address novelty, not per-sample error.
     if ((learn || config_.allow_growth_when_frozen) &&
-        (active.empty() || best_similarity < config_.create_similarity)) {
-        const auto id = new_node(signature);
+        (active.empty() || missing_exact_region || unresolved_conflict)) {
+        NodeId parent = active.empty() ? kInvalidNode : active.front().id;
+        auto id = new_node(sig, target, parent);
         if (active.size() >= config_.beam_width) active.resize(config_.beam_width - 1U);
-        active.insert(active.begin(), ScoredNode{1.0, id});
+        active.insert(active.begin(), {1.0, id});
         created = 1;
+        aggregate(active, prediction_buffer_);
+        mse = sqdistv(prediction_buffer_.data(), target.data(), target.size()) / static_cast<float>(target.size());
+        nmse = mse / std::max(target_energy, 1e-5F);
+        cos = cosine_of(prediction_buffer_, target);
     }
-
-    const auto prediction = aggregate(active);
-    const bool is_correct = prediction == target;
-    std::vector<NodeId> route;
-    route.reserve(active.size());
-    for (const auto& x : active) route.push_back(x.id);
-
-    if (learn) {
-        apply_trace_credit(is_correct);
-        for (std::size_t rank = 0; rank < active.size(); ++rank) {
-            const auto slot = slot_of(active[rank].id);
-            if (slot == std::numeric_limits<std::size_t>::max()) continue;
-            if (visits_[slot] == 0U && hot_indexed_[slot] == 0U) {
-                hot_buckets_[bucket(prototypes_[slot])].push_back(ids_[slot]);
-                hot_indexed_[slot] = 1U;
-            }
-            ++visits_[slot];
-            correct_[slot] += static_cast<std::uint32_t>(is_correct);
-            output_counts_[slot * config_.alphabet_size + target] += 1.0F / static_cast<float>(rank + 1U);
-            const float err = is_correct ? 0.0F : 1.0F;
-            error_ema_[slot] = 0.96F * error_ema_[slot] + 0.04F * err;
-            conflicts_[slot] = is_correct ? (conflicts_[slot] > 0 ? conflicts_[slot] - 1U : 0U)
-                                          : conflicts_[slot] + 1U;
-            utility_ema_[slot] = 0.985F * utility_ema_[slot] + 0.015F * (is_correct ? 1.0F : -1.0F);
-            update_phase(slot);
-        }
-
-        for (const auto src : previous_route_)
-            for (std::size_t rank = 0; rank < route.size(); ++rank)
-                reinforce_edge(src, route[rank],
-                    (is_correct ? config_.positive_credit : 0.15F) /
-                    static_cast<float>(rank + 1U));
-
-        // Structural growth is now conflict-gated. A single error is not enough.
-        if (config_.create_on_error && !is_correct && !active.empty()) {
-            const auto parent = active.front().id;
-            const auto parent_slot = slot_of(parent);
-            if (parent_slot != std::numeric_limits<std::size_t>::max() &&
-                conflicts_[parent_slot] >= config_.split_conflict_threshold &&
-                error_ema_[parent_slot] >= config_.split_error_threshold) {
-                const auto id = new_node(signature, parent);
-                const auto child_slot = slot_of(id);
-                output_counts_[child_slot * config_.alphabet_size + target] += 3.0F;
-                conflicts_[parent_slot] /= 2U;
-                error_ema_[parent_slot] *= 0.5F;
-                reinforce_edge(parent, id, config_.positive_credit);
-                ++created;
-                ++split;
-                ++total_split_;
-            }
-        }
-
-        trace_.push_back({route});
-        while (trace_.size() > config_.trace_horizon) trace_.pop_front();
-        previous_route_ = route;
-    }
-
-    ++total_steps_;
-    total_candidates_ += examined;
-    total_active_ += active.size();
-    return {prediction, is_correct, static_cast<std::uint32_t>(active.size()), examined,
-            static_cast<std::uint32_t>(ids_.size()), created, split, std::move(route)};
+    std::vector<NodeId> route;for(auto&x:active)route.push_back(x.id);
+    if(learn){apply_trace_credit(nmse);for(std::size_t rank=0;rank<active.size();++rank){auto s=slot_of(active[rank].id);if(s==SIZE_MAX)continue;if(visits_[s]==0&&!hot_indexed_[s]){hot_buckets_[bucket(prototypes_[s])].push_back(ids_[s]);hot_indexed_[s]=1;}++visits_[s];float lr=(phase_of_slot(s)==NodePhase::Mature?config_.mature_learning_rate:config_.node_learning_rate)/(1.0F+.15F*(float)rank);lerpv(output_vectors_.data()+s*config_.vector_dim,target.data(),lr,config_.vector_dim);loss_ema_[s]=.96F*loss_ema_[s]+.04F*nmse;utility_ema_[s]=.985F*utility_ema_[s]+.015F*(1.0F-std::min(nmse,2.0F));update_phase(s);}for(auto src:previous_route_)for(std::size_t r=0;r<route.size();++r)reinforce_edge(src,route[r],1.0F/(r+1));trace_.push_back({route,nmse});while(trace_.size()>config_.trace_horizon)trace_.pop_front();}
+    previous_route_=route;++total_steps_;total_candidates_+=examined;total_active_+=route.size();return{nmse,cos,(std::uint32_t)route.size(),examined,(std::uint32_t)ids_.size(),created,std::move(route)};
 }
 
-void SparseBranchMachine::erase_slot(std::size_t slot) {
-    const NodeId removed = ids_[slot];
-    const std::size_t last = ids_.size() - 1U;
-    if (slot != last) {
-        ids_[slot] = ids_[last];
-        prototypes_[slot] = prototypes_[last];
-        visits_[slot] = visits_[last];
-        correct_[slot] = correct_[last];
-        conflicts_[slot] = conflicts_[last];
-        utility_ema_[slot] = utility_ema_[last];
-        error_ema_[slot] = error_ema_[last];
-        phases_[slot] = phases_[last];
-        hot_indexed_[slot] = hot_indexed_[last];
-        parents_[slot] = parents_[last];
-        edges_[slot] = std::move(edges_[last]);
-        for (std::uint32_t s = 0; s < config_.alphabet_size; ++s)
-            output_counts_[slot * config_.alphabet_size + s] = output_counts_[last * config_.alphabet_size + s];
-        id_to_slot_[ids_[slot]] = static_cast<std::uint32_t>(slot);
-    }
-    ids_.pop_back(); prototypes_.pop_back(); visits_.pop_back(); correct_.pop_back(); conflicts_.pop_back();
-    utility_ema_.pop_back(); error_ema_.pop_back(); phases_.pop_back(); hot_indexed_.pop_back(); parents_.pop_back(); edges_.pop_back();
-    output_counts_.resize(ids_.size() * config_.alphabet_size);
-    id_to_slot_[removed] = UINT32_MAX;
-}
+void SparseBranchMachine::erase_slot(std::size_t s){auto victim=ids_[s];auto last=ids_.size()-1;if(s!=last){ids_[s]=ids_[last];prototypes_[s]=prototypes_[last];visits_[s]=visits_[last];utility_ema_[s]=utility_ema_[last];loss_ema_[s]=loss_ema_[last];phases_[s]=phases_[last];hot_indexed_[s]=hot_indexed_[last];parents_[s]=parents_[last];std::copy_n(output_vectors_.data()+last*config_.vector_dim,config_.vector_dim,output_vectors_.data()+s*config_.vector_dim);edges_[s]=std::move(edges_[last]);id_to_slot_[ids_[s]]=(std::uint32_t)s;}ids_.pop_back();prototypes_.pop_back();visits_.pop_back();utility_ema_.pop_back();loss_ema_.pop_back();phases_.pop_back();hot_indexed_.pop_back();parents_.pop_back();output_vectors_.resize(ids_.size()*config_.vector_dim);edges_.pop_back();id_to_slot_[victim]=UINT32_MAX;}
+std::size_t SparseBranchMachine::prune(std::uint32_t minv,float uth){std::size_t n=0;for(std::size_t s=ids_.size();s-->0;){if(visits_[s]<minv&&utility_ema_[s]<uth){erase_slot(s);++n;}}total_pruned_+=n;if(n)rebuild_indexes();return n;}
+double SparseBranchMachine::output_distance(std::size_t a,std::size_t b) const noexcept{return std::sqrt(sqdistv(output_vectors_.data()+a*config_.vector_dim,output_vectors_.data()+b*config_.vector_dim,config_.vector_dim)/config_.vector_dim);}
+void SparseBranchMachine::absorb_node(std::size_t a,std::size_t b){float wa=(float)std::max(1U,visits_[a]),wb=(float)std::max(1U,visits_[b]),inv=1.0F/(wa+wb);auto*av=output_vectors_.data()+a*config_.vector_dim;auto*bv=output_vectors_.data()+b*config_.vector_dim;for(std::uint32_t i=0;i<config_.vector_dim;++i)av[i]=(wa*av[i]+wb*bv[i])*inv;visits_[a]+=visits_[b];utility_ema_[a]=(wa*utility_ema_[a]+wb*utility_ema_[b])*inv;loss_ema_[a]=(wa*loss_ema_[a]+wb*loss_ema_[b])*inv;for(auto&e:edges_[b])reinforce_edge(ids_[a],e.dst,e.weight);NodeId victim=ids_[b],survivor=ids_[a];for(auto&l:edges_)for(auto&e:l)if(e.dst==victim)e.dst=survivor;for(auto&x:previous_route_)if(x==victim)x=survivor;for(auto&f:trace_)for(auto&x:f.route)if(x==victim)x=survivor;erase_slot(b);}
+std::size_t SparseBranchMachine::merge_redundant(std::size_t maxm){std::size_t m=0;for(std::size_t a=0;a<ids_.size()&&m<maxm;++a){for(std::size_t b=a+1;b<ids_.size()&&m<maxm;++b){if(hamming_similarity(prototypes_[a],prototypes_[b])<config_.merge_similarity)continue;if(output_distance(a,b)>config_.merge_vector_distance)continue;if(visits_[b]>visits_[a]){absorb_node(b,a);}else absorb_node(a,b);++m;break;}}total_merged_+=m;if(m)rebuild_indexes();return m;}
+void SparseBranchMachine::rebuild_indexes(){for(auto&b:buckets_)b.clear();for(auto&b:hot_buckets_)b.clear();for(std::size_t s=0;s<ids_.size();++s){buckets_[bucket(prototypes_[s])].push_back(ids_[s]);if(hot_indexed_[s])hot_buckets_[bucket(prototypes_[s])].push_back(ids_[s]);}for(auto&l:edges_)l.erase(std::remove_if(l.begin(),l.end(),[&](auto&e){return!contains(e.dst);}),l.end());}
+void SparseBranchMachine::prefill_distractors(std::size_t n){std::vector<float> z(config_.vector_dim);for(std::size_t i=0;i<n;++i){for(auto&v:z)v=((int)(next_random(rng_state_)%2001)-1000)/1000.0F;new_node(next_random(rng_state_),z);}}
+Diagnostics SparseBranchMachine::diagnostics() const noexcept{std::uint64_t ec=0,ecap=0,bcap=0,c=0,w=0,m=0,d=0;for(auto&l:edges_){ec+=l.size();ecap+=l.capacity();}for(auto&b:buckets_)bcap+=b.capacity();for(auto&b:hot_buckets_)bcap+=b.capacity();for(std::size_t s=0;s<ids_.size();++s)switch(phase_of_slot(s)){case NodePhase::Cold:++c;break;case NodePhase::Warm:++w;break;case NodePhase::Mature:++m;break;case NodePhase::Dormant:++d;break;}auto den=std::max<std::uint64_t>(1,total_steps_);std::uint64_t bytes=ids_.capacity()*4+prototypes_.capacity()*8+visits_.capacity()*4+utility_ema_.capacity()*4+loss_ema_.capacity()*4+phases_.capacity()+hot_indexed_.capacity()+parents_.capacity()*4+output_vectors_.capacity()*4+id_to_slot_.capacity()*4+ecap*sizeof(Edge)+bcap*4;return{total_steps_,ids_.size(),next_id_,ec,(double)total_active_/den,(double)total_candidates_/den,total_created_,total_merged_,total_pruned_,c,w,m,d,stale_bucket_refs_skipped_,stale_edge_refs_skipped_,bytes,simd_available()};}
 
-std::size_t SparseBranchMachine::prune(std::uint32_t min_visits, float utility_threshold) {
-    std::size_t removed = 0;
-    for (std::size_t slot = ids_.size(); slot-- > 0;) {
-        if (visits_[slot] < min_visits && utility_ema_[slot] < utility_threshold) {
-            erase_slot(slot);
-            ++removed;
+VectorDataset generate_vector_process(std::size_t length, std::uint32_t alphabet,
+                                             std::uint32_t dim, std::uint32_t hidden_dim,
+                                             std::uint64_t seed, float noise_std) {
+    VectorDataset d{alphabet, dim, {}, {}};
+    if (!length || !alphabet || !dim || !hidden_dim) return d;
+
+    std::mt19937_64 rng(seed);
+    std::normal_distribution<float> normal(0.0F, 1.0F);
+    std::normal_distribution<float> noise(0.0F, noise_std);
+    std::uniform_int_distribution<std::uint32_t> token_draw(0, alphabet - 1U);
+
+    // The observed token history fully determines the noise-free target.  The
+    // hidden dimension is a feature bank, not an unobservable stochastic state.
+    std::vector<float> token_embedding(static_cast<std::size_t>(alphabet) * hidden_dim);
+    std::vector<float> regime_embedding(4U * hidden_dim);
+    std::vector<float> projection(static_cast<std::size_t>(dim) * hidden_dim);
+    for (auto& v : token_embedding) v = 0.55F * normal(rng);
+    for (auto& v : regime_embedding) v = 0.22F * normal(rng);
+    for (auto& v : projection) v = normal(rng) / std::sqrt(static_cast<float>(hidden_dim));
+
+    d.tokens.reserve(length);
+    d.targets.resize(length * dim);
+    std::array<std::uint32_t, 6> history{};
+    for (auto& x : history) x = token_draw(rng);
+
+    std::vector<float> features(hidden_dim);
+    for (std::size_t t = 0; t < length; ++t) {
+        // Mostly structured second-order transitions, with a small observed
+        // innovation.  The innovation affects the current token and is thus
+        // available to the predictor; it is not hidden target noise.
+        const std::uint32_t innovation = token_draw(rng) % 7U;
+        const std::uint32_t token = static_cast<std::uint32_t>(
+            (13U * history[5] + 7U * history[4] + 3U * history[2] + innovation) % alphabet);
+        for (std::size_t i = 0; i + 1U < history.size(); ++i) history[i] = history[i + 1U];
+        history.back() = token;
+        d.tokens.push_back(token);
+
+        const std::uint32_t regime = static_cast<std::uint32_t>(
+            (history[5] + 2U * history[3] + history[1]) & 3U);
+        for (std::uint32_t j = 0; j < hidden_dim; ++j) {
+            const float e0 = token_embedding[static_cast<std::size_t>(history[5]) * hidden_dim + j];
+            const float e1 = token_embedding[static_cast<std::size_t>(history[4]) * hidden_dim + j];
+            const float e2 = token_embedding[static_cast<std::size_t>(history[3]) * hidden_dim + j];
+            const float e4 = token_embedding[static_cast<std::size_t>(history[1]) * hidden_dim + j];
+            const float rg = regime_embedding[static_cast<std::size_t>(regime) * hidden_dim + j];
+            const float cross = e0 * e2 - 0.45F * e1 * e4;
+            const float gate = ((history[5] ^ history[2] ^ j) & 1U) ? 1.0F : -1.0F;
+            features[j] = std::tanh(0.80F * e0 + 0.12F * e1 + 0.07F * e2 +
+                                    0.08F * rg + 0.05F * gate * cross);
+        }
+        for (std::uint32_t k = 0; k < dim; ++k) {
+            float y = dotv(projection.data() + static_cast<std::size_t>(k) * hidden_dim,
+                           features.data(), hidden_dim);
+            y += 0.10F * features[(k * 5U + regime) % hidden_dim] *
+                 features[(k * 11U + 3U) % hidden_dim];
+            d.targets[t * dim + k] = std::tanh(y) + noise(rng);
         }
     }
-    total_pruned_ += removed;
-    previous_route_.erase(std::remove_if(previous_route_.begin(), previous_route_.end(),
-        [this](NodeId id){ return !contains(id); }), previous_route_.end());
-    if (removed > 0) rebuild_indexes();
-    return removed;
-}
-
-void SparseBranchMachine::absorb_node(std::size_t survivor_slot, std::size_t victim_slot) {
-    if (survivor_slot == victim_slot) return;
-    const auto survivor = ids_[survivor_slot];
-    const auto victim = ids_[victim_slot];
-    const auto sb = survivor_slot * config_.alphabet_size;
-    const auto vb = victim_slot * config_.alphabet_size;
-    for (std::uint32_t s = 0; s < config_.alphabet_size; ++s)
-        output_counts_[sb + s] += output_counts_[vb + s];
-    visits_[survivor_slot] += visits_[victim_slot];
-    correct_[survivor_slot] += correct_[victim_slot];
-    conflicts_[survivor_slot] += conflicts_[victim_slot];
-    utility_ema_[survivor_slot] = std::max(utility_ema_[survivor_slot], utility_ema_[victim_slot]);
-    error_ema_[survivor_slot] = 0.5F * (error_ema_[survivor_slot] + error_ema_[victim_slot]);
-    for (const auto& e : edges_[victim_slot]) reinforce_edge(survivor, e.dst, e.weight);
-    for (auto& list : edges_) {
-        for (auto& e : list) if (e.dst == victim) e.dst = survivor;
-        std::sort(list.begin(), list.end(), [](const Edge& a, const Edge& b){
-            return a.weight == b.weight ? a.dst < b.dst : a.weight > b.weight;
-        });
-        list.erase(std::unique(list.begin(), list.end(), [](const Edge& a, const Edge& b){ return a.dst == b.dst; }), list.end());
-    }
-    for (auto& id : previous_route_) if (id == victim) id = survivor;
-    for (auto& frame : trace_) for (auto& id : frame.route) if (id == victim) id = survivor;
-    erase_slot(victim_slot);
-}
-
-std::size_t SparseBranchMachine::merge_redundant(std::size_t max_merges) {
-    std::size_t merged = 0;
-    for (std::size_t bi = 0; bi < hot_buckets_.size() && merged < max_merges; ++bi) {
-        auto ids = hot_buckets_[bi];
-        for (std::size_t i = 0; i < ids.size() && merged < max_merges; ++i) {
-            auto a = slot_of(ids[i]);
-            if (a == std::numeric_limits<std::size_t>::max()) continue;
-            for (std::size_t j = i + 1; j < ids.size() && merged < max_merges; ++j) {
-                auto b = slot_of(ids[j]);
-                if (b == std::numeric_limits<std::size_t>::max()) continue;
-                if (hamming_similarity(prototypes_[a], prototypes_[b]) < config_.merge_similarity) continue;
-                if (output_distance(a, b) > config_.merge_output_distance) continue;
-                if (visits_[b] > visits_[a]) std::swap(a, b);
-                absorb_node(a, b);
-                ++merged;
-                break;
-            }
-        }
-    }
-    total_merged_ += merged;
-    if (merged > 0) rebuild_indexes();
-    return merged;
-}
-
-void SparseBranchMachine::rebuild_indexes() {
-    for (auto& bucket_nodes : buckets_) bucket_nodes.clear();
-    for (auto& bucket_nodes : hot_buckets_) bucket_nodes.clear();
-    for (std::size_t slot = 0; slot < ids_.size(); ++slot) {
-        buckets_[bucket(prototypes_[slot])].push_back(ids_[slot]);
-        if (hot_indexed_[slot] != 0U) hot_buckets_[bucket(prototypes_[slot])].push_back(ids_[slot]);
-    }
-    for (auto& list : edges_) {
-        list.erase(std::remove_if(list.begin(), list.end(), [this](const Edge& e){ return !contains(e.dst); }), list.end());
-    }
-}
-
-void SparseBranchMachine::prefill_distractors(std::size_t count) {
-    for (std::size_t i = 0; i < count; ++i) (void)new_node(next_random(rng_state_));
-}
-
-Diagnostics SparseBranchMachine::diagnostics() const noexcept {
-    std::uint64_t edge_count = 0, edge_capacity = 0;
-    for (const auto& list : edges_) { edge_count += list.size(); edge_capacity += list.capacity(); }
-    std::uint64_t bucket_capacity = 0;
-    for (const auto& b : buckets_) bucket_capacity += b.capacity();
-    for (const auto& b : hot_buckets_) bucket_capacity += b.capacity();
-    const auto denom = std::max<std::uint64_t>(1, total_steps_);
-    std::uint64_t cold=0,warm=0,mature=0,dormant=0;
-    for (std::size_t i=0;i<ids_.size();++i) {
-        switch (phase_of_slot(i)) {
-            case NodePhase::Cold: ++cold; break;
-            case NodePhase::Warm: ++warm; break;
-            case NodePhase::Mature: ++mature; break;
-            case NodePhase::Dormant: ++dormant; break;
-        }
-    }
-    std::uint64_t bytes = ids_.capacity()*sizeof(NodeId) + prototypes_.capacity()*sizeof(std::uint64_t) +
-        visits_.capacity()*sizeof(std::uint32_t) + correct_.capacity()*sizeof(std::uint32_t) +
-        conflicts_.capacity()*sizeof(std::uint32_t) + utility_ema_.capacity()*sizeof(float) +
-        error_ema_.capacity()*sizeof(float) + phases_.capacity()*sizeof(std::uint8_t) +
-        hot_indexed_.capacity()*sizeof(std::uint8_t) + parents_.capacity()*sizeof(NodeId) +
-        output_counts_.capacity()*sizeof(float) + id_to_slot_.capacity()*sizeof(std::uint32_t) +
-        edge_capacity*sizeof(Edge) + bucket_capacity*sizeof(NodeId);
-    return {total_steps_, ids_.size(), next_id_, edge_count,
-            static_cast<double>(total_active_)/static_cast<double>(denom),
-            static_cast<double>(total_candidates_)/static_cast<double>(denom),
-            total_created_, total_split_, total_merged_, total_pruned_,
-            cold, warm, mature, dormant, stale_bucket_refs_skipped_, stale_edge_refs_skipped_, bytes};
-}
-
-Dataset generate_hidden_fsm(std::size_t length, std::uint32_t alphabet,
-                            std::uint32_t states, std::uint64_t seed) {
-    Dataset dataset{alphabet, {}};
-    if (length == 0 || alphabet == 0 || states == 0) return dataset;
-    std::uint64_t state_rng = seed;
-    std::vector<std::uint32_t> transition(static_cast<std::size_t>(states) * alphabet);
-    for (auto& x : transition) x = static_cast<std::uint32_t>(next_random(state_rng) % states);
-    std::vector<std::uint32_t> emit(states);
-    for (auto& x : emit) x = static_cast<std::uint32_t>(next_random(state_rng) % alphabet);
-    auto state = static_cast<std::uint32_t>(next_random(state_rng) % states);
-    auto x = static_cast<std::uint32_t>(next_random(state_rng) % alphabet);
-    dataset.sequence.reserve(length);
-    dataset.sequence.push_back(x);
-    for (std::size_t t = 0; t + 1U < length; ++t) {
-        const auto branch = static_cast<std::uint32_t>((x ^ static_cast<std::uint32_t>(t * 3U) ^ (state >> 1U)) % alphabet);
-        state = transition[static_cast<std::size_t>(state) * alphabet + branch];
-        x = emit[state];
-        dataset.sequence.push_back(x);
-    }
-    return dataset;
-}
-
-void save_dataset(const Dataset& dataset, const std::string& path) {
-    std::ofstream out(path, std::ios::binary);
-    if (!out) throw std::runtime_error("cannot open dataset for writing: " + path);
-    out.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
-    write_pod(out, kDatasetVersion);
-    write_pod(out, dataset.alphabet_size);
-    const auto count = static_cast<std::uint64_t>(dataset.sequence.size());
-    write_pod(out, count);
-    const auto hash = hash_dataset(dataset);
-    write_pod(out, hash);
-    out.write(reinterpret_cast<const char*>(dataset.sequence.data()),
-              static_cast<std::streamsize>(dataset.sequence.size() * sizeof(std::uint32_t)));
-    if (!out) throw std::runtime_error("dataset payload write failed");
-}
-
-Dataset load_dataset(const std::string& path) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) throw std::runtime_error("cannot open dataset: " + path);
-    std::array<char,8> magic{};
-    in.read(magic.data(), static_cast<std::streamsize>(magic.size()));
-    if (magic != kMagic) throw std::runtime_error("invalid dataset magic");
-    const auto version = read_pod<std::uint32_t>(in);
-    if (version != kDatasetVersion) throw std::runtime_error("unsupported dataset version");
-    Dataset d;
-    d.alphabet_size = read_pod<std::uint32_t>(in);
-    const auto count = read_pod<std::uint64_t>(in);
-    const auto expected_hash = read_pod<std::uint64_t>(in);
-    if (count > (1ULL << 34U)) throw std::runtime_error("dataset too large");
-    d.sequence.resize(static_cast<std::size_t>(count));
-    in.read(reinterpret_cast<char*>(d.sequence.data()), static_cast<std::streamsize>(count * sizeof(std::uint32_t)));
-    if (!in) throw std::runtime_error("truncated dataset payload");
-    if (hash_dataset(d) != expected_hash) throw std::runtime_error("dataset checksum mismatch");
     return d;
 }
+void save_dataset(const VectorDataset& d,const std::string&p){std::ofstream o(p,std::ios::binary);if(!o)throw std::runtime_error("cannot open dataset for writing");o.write(kMagic.data(),8);write_pod(o,kDatasetVersion);write_pod(o,d.token_alphabet);write_pod(o,d.vector_dim);auto n=(std::uint64_t)d.tokens.size();write_pod(o,n);auto h=hash_dataset(d);write_pod(o,h);o.write((char*)d.tokens.data(),(std::streamsize)(n*4));o.write((char*)d.targets.data(),(std::streamsize)(n*d.vector_dim*4));if(!o)throw std::runtime_error("dataset write failed");}
+VectorDataset load_dataset(const std::string&p){std::ifstream i(p,std::ios::binary);if(!i)throw std::runtime_error("cannot open dataset");std::array<char,8>m{};i.read(m.data(),8);if(m!=kMagic)throw std::runtime_error("invalid dataset magic");if(read_pod<std::uint32_t>(i)!=kDatasetVersion)throw std::runtime_error("unsupported dataset version");VectorDataset d;d.token_alphabet=read_pod<std::uint32_t>(i);d.vector_dim=read_pod<std::uint32_t>(i);auto n=read_pod<std::uint64_t>(i);auto expected=read_pod<std::uint64_t>(i);if(n>(1ULL<<34))throw std::runtime_error("dataset too large");d.tokens.resize((std::size_t)n);d.targets.resize((std::size_t)n*d.vector_dim);i.read((char*)d.tokens.data(),(std::streamsize)(n*4));i.read((char*)d.targets.data(),(std::streamsize)(n*d.vector_dim*4));if(!i||hash_dataset(d)!=expected)throw std::runtime_error("dataset corrupt");return d;}
 
-ExperimentResult run_experiment(const Dataset& dataset, std::size_t warmup,
-                                std::uint64_t seed, bool strict_freeze,
-                                std::size_t prefill, std::size_t prune_interval,
-                                std::size_t merge_interval) {
-    if (dataset.sequence.size() < 2) throw std::invalid_argument("dataset needs at least two symbols");
-    const std::size_t steps = dataset.sequence.size() - 1U;
-    if (warmup > steps) throw std::invalid_argument("warmup exceeds dataset steps");
-    Config cfg;
-    cfg.alphabet_size = dataset.alphabet_size;
-    cfg.seed = seed;
-    cfg.allow_growth_when_frozen = !strict_freeze;
-    SparseBranchMachine model(cfg);
-    model.prefill_distractors(prefill);
-    std::uint64_t train_correct = 0, eval_correct = 0;
-    const auto start = std::chrono::steady_clock::now();
-    for (std::size_t i = 0; i < steps; ++i) {
-        const bool learn = i < warmup;
-        const auto stats = model.step(dataset.sequence[i], dataset.sequence[i+1U], learn);
-        if (learn) train_correct += stats.correct; else eval_correct += stats.correct;
-        if (learn && prune_interval > 0 && (i + 1U) % prune_interval == 0) (void)model.prune();
-        if (learn && merge_interval > 0 && (i + 1U) % merge_interval == 0) (void)model.merge_redundant();
-    }
-    const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
-    ExperimentResult r;
-    r.diagnostics = model.diagnostics();
-    r.train_accuracy = static_cast<double>(train_correct) / static_cast<double>(std::max<std::size_t>(1, warmup));
-    r.eval_accuracy = static_cast<double>(eval_correct) / static_cast<double>(std::max<std::size_t>(1, steps - warmup));
-    r.steps_per_second = static_cast<double>(steps) / elapsed;
-    r.elapsed_seconds = elapsed;
-    r.strict_freeze = strict_freeze;
-    r.dataset_hash = hash_dataset(dataset);
-    return r;
-}
-
-std::string to_json(const ExperimentResult& r) {
-    std::ostringstream o; o.setf(std::ios::fixed); o.precision(8);
-    o << "{\n"
-      << "  \"steps\": " << r.diagnostics.steps << ",\n"
-      << "  \"live_nodes\": " << r.diagnostics.live_nodes << ",\n"
-      << "  \"logical_ids_issued\": " << r.diagnostics.logical_ids_issued << ",\n"
-      << "  \"edges\": " << r.diagnostics.edges << ",\n"
-      << "  \"avg_active\": " << r.diagnostics.avg_active << ",\n"
-      << "  \"avg_candidates\": " << r.diagnostics.avg_candidates << ",\n"
-      << "  \"created_total\": " << r.diagnostics.created_total << ",\n"
-      << "  \"split_total\": " << r.diagnostics.split_total << ",\n"
-      << "  \"merged_total\": " << r.diagnostics.merged_total << ",\n"
-      << "  \"pruned_total\": " << r.diagnostics.pruned_total << ",\n"
-      << "  \"cold_nodes\": " << r.diagnostics.cold_nodes << ",\n"
-      << "  \"warm_nodes\": " << r.diagnostics.warm_nodes << ",\n"
-      << "  \"mature_nodes\": " << r.diagnostics.mature_nodes << ",\n"
-      << "  \"dormant_nodes\": " << r.diagnostics.dormant_nodes << ",\n"
-      << "  \"stale_bucket_refs_skipped\": " << r.diagnostics.stale_bucket_refs_skipped << ",\n"
-      << "  \"stale_edge_refs_skipped\": " << r.diagnostics.stale_edge_refs_skipped << ",\n"
-      << "  \"estimated_bytes\": " << r.diagnostics.estimated_bytes << ",\n"
-      << "  \"train_accuracy\": " << r.train_accuracy << ",\n"
-      << "  \"eval_accuracy\": " << r.eval_accuracy << ",\n"
-      << "  \"steps_per_second\": " << r.steps_per_second << ",\n"
-      << "  \"elapsed_seconds\": " << r.elapsed_seconds << ",\n"
-      << "  \"strict_freeze\": " << (r.strict_freeze ? "true" : "false") << ",\n"
-      << "  \"dataset_hash\": " << r.dataset_hash << "\n}\n";
-    return o.str();
-}
-
+ExperimentResult run_experiment(const VectorDataset& d,std::size_t warmup,std::uint64_t seed,bool strict,std::size_t prefill,std::size_t pi,std::size_t mi){if(d.tokens.size()<2||d.targets.size()!=d.tokens.size()*d.vector_dim)throw std::invalid_argument("invalid dataset");if(warmup>d.tokens.size())throw std::invalid_argument("warmup too large");Config c;c.token_alphabet=d.token_alphabet;c.vector_dim=d.vector_dim;c.seed=seed;c.allow_growth_when_frozen=!strict;SparseBranchMachine model(c);model.prefill_distractors(prefill);
+    std::vector<double> mean(d.vector_dim,0);for(std::size_t t=0;t<warmup;++t)for(std::uint32_t j=0;j<d.vector_dim;++j)mean[j]+=d.targets[t*d.vector_dim+j];for(auto&v:mean)v/=std::max<std::size_t>(1,warmup);
+    struct Acc { double se=0, te=0, cos=0, base=0; std::uint64_t vectors=0; };
+    Acc tr, ev;
+    auto start=std::chrono::steady_clock::now();
+    for(std::size_t t=0;t<d.tokens.size();++t){bool learn=t<warmup;auto target=d.target(t);auto st=model.step(d.tokens[t],target,learn);auto pred=model.last_prediction();double se=sqdistv(pred.data(),target.data(),d.vector_dim),te=dotv(target.data(),target.data(),d.vector_dim),be=0;for(std::uint32_t j=0;j<d.vector_dim;++j){double x=target[j]-mean[j];be+=x*x;}auto&a=learn?tr:ev;a.se+=se;a.te+=te;a.cos+=st.cosine;a.base+=be;++a.vectors;if(learn&&pi&&(t+1)%pi==0)(void)model.prune();if(learn&&mi&&(t+1)%mi==0)(void)model.merge_redundant();}
+    auto elapsed=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+    auto metric=[](const Acc&a){VectorMetrics m;m.normalized_rmse=std::sqrt(a.se/std::max(a.te,1e-12));m.cosine=a.cos/std::max<double>(1.0,static_cast<double>(a.vectors));m.r2=1.0-a.se/std::max(a.base,1e-12);return m;};ExperimentResult r;r.diagnostics=model.diagnostics();r.train=metric(tr);r.eval=metric(ev);r.mean_baseline_eval={1.0,0.0,0.0};r.steps_per_second=d.tokens.size()/elapsed;r.elapsed_seconds=elapsed;r.strict_freeze=strict;r.dataset_hash=hash_dataset(d);r.vector_dim=d.vector_dim;r.token_alphabet=d.token_alphabet;return r;}
+std::string to_json(const ExperimentResult&r){std::ostringstream o;o.setf(std::ios::fixed);o.precision(8);o<<"{\n  \"task\": \"token_conditioned_vector_prediction\",\n  \"steps\": "<<r.diagnostics.steps<<",\n  \"vector_dim\": "<<r.vector_dim<<",\n  \"token_alphabet\": "<<r.token_alphabet<<",\n  \"live_nodes\": "<<r.diagnostics.live_nodes<<",\n  \"edges\": "<<r.diagnostics.edges<<",\n  \"avg_active\": "<<r.diagnostics.avg_active<<",\n  \"avg_candidates\": "<<r.diagnostics.avg_candidates<<",\n  \"created_total\": "<<r.diagnostics.created_total<<",\n  \"merged_total\": "<<r.diagnostics.merged_total<<",\n  \"pruned_total\": "<<r.diagnostics.pruned_total<<",\n  \"estimated_bytes\": "<<r.diagnostics.estimated_bytes<<",\n  \"simd_enabled\": "<<(r.diagnostics.simd_enabled?"true":"false")<<",\n  \"train_nrmse\": "<<r.train.normalized_rmse<<",\n  \"train_cosine\": "<<r.train.cosine<<",\n  \"train_r2\": "<<r.train.r2<<",\n  \"eval_nrmse\": "<<r.eval.normalized_rmse<<",\n  \"eval_cosine\": "<<r.eval.cosine<<",\n  \"eval_r2\": "<<r.eval.r2<<",\n  \"steps_per_second\": "<<r.steps_per_second<<",\n  \"elapsed_seconds\": "<<r.elapsed_seconds<<",\n  \"strict_freeze\": "<<(r.strict_freeze?"true":"false")<<",\n  \"dataset_hash\": "<<r.dataset_hash<<"\n}\n";return o.str();}
 
 } // namespace sbm

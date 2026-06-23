@@ -31,3 +31,52 @@ On the same deterministic dataset:
 - about 4 active nodes and 18.4 examined candidates per step.
 
 This is still below the v2 accuracy baseline. The branch is therefore an architectural research branch, not a replacement release. The regression is explicit and should be resolved by improving specialization selection rather than reverting to unconstrained growth or hiding the result.
+
+## 2026-06-23 — vector-prediction-v4
+
+Replaced the categorical hidden-FSM benchmark with token-conditioned continuous
+vector prediction. The change was made in-place on the existing repository and
+preserves stable logical IDs, SoA node storage, hot/cold indexes, sparse control
+edges and lifecycle machinery.
+
+### Failed calibration A: hidden stochastic dynamics
+
+The first vector generator included a hidden continuously evolving state and
+random token innovations that influenced future state. With 40k learning steps,
+the model created nearly 40k nodes and frozen R2 was negative. This task mixed
+learnable structure with irreducible hidden randomness and was rejected.
+
+### Failed calibration B: address under-segmentation
+
+The first locality-preserving signature placed older tokens in the most
+significant bits. Only 18 nodes formed and R2 remained near zero. The byte order
+was corrected so the most recent token dominates the address region.
+
+### Failed calibration C: edge candidates displaced exact-address candidates
+
+Incoming edge candidates could fill the budget before exact bucket residents
+were considered. This caused 25k+ nodes despite only a small number of useful
+address regions. Candidate ordering now guarantees exact-region retrieval first,
+then learned edges, then nearby-region exploration.
+
+### Accepted baseline
+
+The final generator is stationary and observationally learnable. Targets combine
+current and delayed token embeddings, a history-derived regime, nonlinear feature
+interactions and weak Gaussian noise. Structure growth is triggered by address
+novelty rather than individual high-loss samples.
+
+Seed 7, 120k steps, 40k learning / 80k strict freeze:
+
+- 256 live nodes
+- 8,192 sparse edges
+- 5.9995 active nodes per step
+- 35.28 candidates per step
+- train R2 0.4009
+- frozen evaluation R2 0.3995
+- frozen evaluation cosine 0.7664
+- frozen evaluation NRMSE 0.7625
+
+AVX2/FMA runtime dispatch is active for vector dot, distance, aggregation and
+local update kernels. Performance is recorded only as a diagnostic; v4 remains
+an architecture/algorithm iteration, not a performance-optimization phase.
