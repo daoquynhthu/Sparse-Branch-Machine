@@ -35,6 +35,7 @@ add_library(sbm_core SHARED
 sbm_configure_target(sbm_core)
 
 add_library(sbm_machine SHARED
+  src/modules/implicit_output.cpp
   src/modules/machine_storage.cpp
   src/modules/machine_topology.cpp
   src/modules/machine_routing.cpp
@@ -119,6 +120,8 @@ if(SBM_BUILD_TESTS)
   sbm_enable_test_assertions(sbm_scaling_tests)
   add_test(NAME sbm_scaling_report COMMAND sbm_scaling_tests report)
   add_test(NAME sbm_scaling_address COMMAND sbm_scaling_tests address)
+  add_test(NAME sbm_scaling_implicit_output COMMAND sbm_scaling_tests implicit)
+  add_test(NAME sbm_scaling_output_memory COMMAND sbm_scaling_tests output)
 
   if(SBM_BUILD_PYTHON_SMOKE_TEST)
     find_package(Python3 COMPONENTS Interpreter)

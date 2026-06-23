@@ -1,10 +1,12 @@
 #pragma once
 
 #include "sbm/types.hpp"
+#include "sbm/detail/implicit_output.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <optional>
 #include <span>
 #include <unordered_map>
 #include <utility>
@@ -70,14 +72,6 @@ private:
         std::uint32_t decision{};
         float logit{};
     };
-    struct OutputTreeNode {
-        std::uint32_t left_ref{};
-        std::uint32_t right_ref{};
-    };
-    struct TokenPathStep {
-        std::uint32_t decision{};
-        bool right{};
-    };
     struct TraceFrame {
         std::vector<NodeId> route;
         std::vector<float> contribution;
@@ -92,7 +86,6 @@ private:
 
     [[nodiscard]] std::uint32_t bucket(std::uint64_t signature) const noexcept;
     [[nodiscard]] bool uses_sparse_token_output() const noexcept;
-    void build_output_tree();
     [[nodiscard]] float sparse_logit(std::size_t slot, std::uint32_t decision) const noexcept;
     float& mutable_sparse_logit(std::size_t slot, std::uint32_t decision);
     [[nodiscard]] float aggregate_sparse_logit(std::span<const ScoredNode> active,
@@ -172,10 +165,8 @@ private:
     std::vector<NodeId> parents_;
     std::vector<float> output_vectors_;
     std::vector<std::vector<SparseOutputEntry>> sparse_outputs_;
-    std::vector<OutputTreeNode> output_tree_;
-    std::vector<std::uint32_t> token_path_offsets_;
-    std::vector<TokenPathStep> token_path_steps_;
-    std::uint32_t output_root_ref_{};
+    std::optional<detail::ImplicitOutputTree> implicit_output_;
+    std::vector<detail::ImplicitDecision> token_path_scratch_;
     std::vector<std::vector<Edge>> edges_;
 
     std::vector<std::uint32_t> id_to_slot_;

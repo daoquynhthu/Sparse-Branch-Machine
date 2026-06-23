@@ -1,6 +1,7 @@
 #include "sbm/machine.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <stdexcept>
 
 namespace sbm {
@@ -103,7 +104,9 @@ SparseBranchMachine::SparseBranchMachine(Config config)
         if (config_.vector_dim < 2U) {
             throw std::invalid_argument("hierarchical token output requires vocabulary >= 2");
         }
-        build_output_tree();
+        implicit_output_.emplace(config_.vector_dim, config_.seed);
+        token_path_scratch_.reserve(
+            static_cast<std::size_t>(std::bit_width(config_.vector_dim - 1U)) + 1U);
     }
 }
 

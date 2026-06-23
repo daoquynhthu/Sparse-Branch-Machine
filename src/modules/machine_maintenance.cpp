@@ -253,9 +253,8 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
             (sizeof(std::pair<const std::size_t, BucketState>) + 2U * sizeof(void*)) +
         bucket_capacity * sizeof(NodeId);
     const std::uint64_t output_structure_bytes =
-        output_tree_.capacity() * sizeof(OutputTreeNode) +
-        token_path_offsets_.capacity() * sizeof(std::uint32_t) +
-        token_path_steps_.capacity() * sizeof(TokenPathStep);
+        (implicit_output_.has_value() ? sizeof(detail::ImplicitOutputTree) : 0U) +
+        token_path_scratch_.capacity() * sizeof(detail::ImplicitDecision);
     const auto denominator = std::max<std::uint64_t>(1, total_steps_);
     const std::uint64_t bytes =
         ids_.capacity() * sizeof(NodeId) +

@@ -1,33 +1,16 @@
 #include "sbm/machine.hpp"
 #include "sbm/math.hpp"
-
 #include <algorithm>
 #include <bit>
 #include <cmath>
 #include <cstdint>
-#include <functional>
 #include <limits>
-#include <queue>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
 namespace sbm {
 namespace {
-
-constexpr std::uint32_t kLeafMask = 0x80000000U;
-
-[[nodiscard]] bool is_leaf(std::uint32_t ref) noexcept {
-    return (ref & kLeafMask) != 0U;
-}
-
-[[nodiscard]] std::uint32_t leaf_ref(std::uint32_t token) noexcept {
-    return kLeafMask | token;
-}
-
-[[nodiscard]] std::uint32_t leaf_token(std::uint32_t ref) noexcept {
-    return ref & ~kLeafMask;
-}
 
 [[nodiscard]] float softplus(float value) noexcept {
     if (value > 20.0F) return value;
@@ -54,53 +37,6 @@ constexpr std::uint32_t kLeafMask = 0x80000000U;
 }
 
 } // namespace
-
-void SparseBranchMachine::build_output_tree() {
-    output_tree_.clear();
-    token_path_offsets_.assign(static_cast<std::size_t>(config_.vector_dim) + 1U, 0U);
-    token_path_steps_.clear();
-    std::vector<std::vector<TokenPathStep>> paths(config_.vector_dim);
-    std::vector<TokenPathStep> path;
-    std::vector<std::uint32_t> leaf_order(config_.vector_dim);
-    for (std::uint32_t token = 0U; token < config_.vector_dim; ++token) {
-        leaf_order[token] = token;
-    }
-    std::sort(leaf_order.begin(), leaf_order.end(), [&](std::uint32_t left,
-                                                        std::uint32_t right) {
-        const auto left_key = mix64(config_.seed ^
-            (static_cast<std::uint64_t>(left) + 1U) * 0x9E3779B97F4A7C15ULL);
-        const auto right_key = mix64(config_.seed ^
-            (static_cast<std::uint64_t>(right) + 1U) * 0x9E3779B97F4A7C15ULL);
-        return left_key == right_key ? left < right : left_key < right_key;
-    });
-
-    std::function<std::uint32_t(std::uint32_t, std::uint32_t)> build =
-        [&](std::uint32_t begin, std::uint32_t end) -> std::uint32_t {
-            if (end - begin == 1U) {
-                const auto token = leaf_order[begin];
-                paths[token] = path;
-                return leaf_ref(token);
-            }
-            const auto decision = static_cast<std::uint32_t>(output_tree_.size());
-            output_tree_.push_back({});
-            const auto middle = begin + (end - begin) / 2U;
-            path.push_back({decision, false});
-            const auto left = build(begin, middle);
-            path.back().right = true;
-            const auto right = build(middle, end);
-            path.pop_back();
-            output_tree_[decision] = {left, right};
-            return decision;
-        };
-
-    output_root_ref_ = build(0U, config_.vector_dim);
-    for (std::uint32_t token = 0; token < config_.vector_dim; ++token) {
-        token_path_offsets_[token] = static_cast<std::uint32_t>(token_path_steps_.size());
-        token_path_steps_.insert(token_path_steps_.end(), paths[token].begin(), paths[token].end());
-    }
-    token_path_offsets_[config_.vector_dim] =
-        static_cast<std::uint32_t>(token_path_steps_.size());
-}
 
 float SparseBranchMachine::sparse_logit(std::size_t slot,
                                         std::uint32_t decision) const noexcept {
@@ -212,15 +148,14 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     }
 
     auto [active, examined] = select_route(signatures);
-    const auto path_begin = token_path_offsets_[target_token];
-    const auto path_end = token_path_offsets_[target_token + 1U];
+    auto& output_tree = *implicit_output_;
+    output_tree.target_path(target_token, token_path_scratch_);
     const float temperature = std::max(config_.softmax_temperature, 1e-5F);
     std::vector<float> path_logits;
-    path_logits.reserve(path_end - path_begin);
+    path_logits.reserve(token_path_scratch_.size());
     float cross_entropy = 0.0F;
-    for (std::uint32_t index = path_begin; index < path_end; ++index) {
-        const auto& step = token_path_steps_[index];
-        const float logit = aggregate_sparse_logit(active, step.decision);
+    for (const auto& step : token_path_scratch_) {
+        const float logit = aggregate_sparse_logit(active, step.id);
         path_logits.push_back(logit);
         cross_entropy += branch_loss(logit / temperature, step.right);
     }
@@ -230,9 +165,10 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
 
     struct SearchItem {
         float log_probability{};
-        std::uint32_t ref{};
+        std::uint32_t lo{};
+        std::uint32_t hi{};
     };
-    std::vector<SearchItem> frontier{{0.0F, output_root_ref_}};
+    std::vector<SearchItem> frontier{{0.0F, 0U, config_.vector_dim}};
     const auto decoder_beam = std::max(config_.sparse_output_topk,
                                        config_.sparse_output_beam_width);
     const auto maximum_depth = static_cast<std::uint32_t>(
@@ -242,19 +178,20 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         std::vector<SearchItem> expanded;
         expanded.reserve(frontier.size() * 2U);
         for (const auto& item : frontier) {
-            if (is_leaf(item.ref)) {
+            if (item.hi - item.lo == 1U) {
                 expanded.push_back(item);
                 continue;
             }
             all_leaves = false;
-            const auto& decision = output_tree_[item.ref];
-            const float logit = aggregate_sparse_logit(active, item.ref) / temperature;
+            const auto decision = output_tree.split(item.lo, item.hi);
+            const float logit = aggregate_sparse_logit(
+                active, decision.decision_id) / temperature;
             expanded.push_back({item.log_probability +
                                     log_branch_probability(logit, false),
-                                decision.left_ref});
+                                item.lo, decision.middle});
             expanded.push_back({item.log_probability +
                                     log_branch_probability(logit, true),
-                                decision.right_ref});
+                                decision.middle, item.hi});
         }
         if (all_leaves) break;
         const auto keep = std::min<std::size_t>(decoder_beam, expanded.size());
@@ -272,8 +209,8 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     std::vector<std::uint32_t> top_tokens;
     top_tokens.reserve(config_.sparse_output_topk);
     for (const auto& item : frontier) {
-        if (!is_leaf(item.ref)) continue;
-        top_tokens.push_back(leaf_token(item.ref));
+        if (item.hi - item.lo != 1U) continue;
+        top_tokens.push_back(output_tree.token_from_rank(item.lo));
         if (top_tokens.size() >= config_.sparse_output_topk) break;
     }
 
@@ -295,17 +232,17 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             if (!channel_enabled(channel) || channel_members[channel] == 0U) continue;
             float without_loss = 0.0F;
             std::size_t path_position = 0U;
-            for (std::uint32_t index = path_begin; index < path_end; ++index, ++path_position) {
-                const auto& step = token_path_steps_[index];
+            for (const auto& step : token_path_scratch_) {
                 float removed = 0.0F;
                 for (const auto& node : active) {
                     if (node.channel != channel) continue;
                     const auto slot = slot_of(node.id);
                     if (slot == SIZE_MAX) continue;
-                    removed += node.responsibility * sparse_logit(slot, step.decision);
+                    removed += node.responsibility * sparse_logit(slot, step.id);
                 }
                 without_loss += branch_loss(
                     (path_logits[path_position] - removed) / temperature, step.right);
+                ++path_position;
             }
             channel_credit_buffer_[channel] = without_loss - cross_entropy;
         }
@@ -322,12 +259,12 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             }
             float without_loss = 0.0F;
             std::size_t path_position = 0U;
-            for (std::uint32_t index = path_begin; index < path_end; ++index, ++path_position) {
-                const auto& step = token_path_steps_[index];
+            for (const auto& step : token_path_scratch_) {
                 const float removed = node.responsibility *
-                    sparse_logit(slot, step.decision);
+                    sparse_logit(slot, step.id);
                 without_loss += branch_loss(
                     (path_logits[path_position] - removed) / temperature, step.right);
+                ++path_position;
             }
             node.contribution = without_loss - cross_entropy;
         }
@@ -364,15 +301,15 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 std::sqrt(static_cast<float>(std::max(1U, address_visits_[slot])));
             const float rate = base_rate * schedule * node.responsibility / temperature;
             std::size_t path_position = 0U;
-            for (std::uint32_t index = path_begin; index < path_end; ++index, ++path_position) {
-                const auto& step = token_path_steps_[index];
+            for (const auto& step : token_path_scratch_) {
                 const float probability_right = sigmoid(path_logits[path_position] / temperature);
                 const float target_right = step.right
                     ? 1.0F - 0.5F * config_.label_smoothing
                     : 0.5F * config_.label_smoothing;
-                float& local = mutable_sparse_logit(slot, step.decision);
+                float& local = mutable_sparse_logit(slot, step.id);
                 local = (1.0F - config_.logit_decay) * local +
                         rate * (target_right - probability_right);
+                ++path_position;
             }
             loss_ema_[slot] = 0.96F * loss_ema_[slot] + 0.04F * normalized_loss;
             address_loss_ema_[slot] = 0.96F * address_loss_ema_[slot] +

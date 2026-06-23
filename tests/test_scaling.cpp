@@ -1,4 +1,5 @@
 #include "sparse_branch_machine.hpp"
+#include "sbm/detail/implicit_output.hpp"
 
 #include <cassert>
 #include <algorithm>
@@ -64,6 +65,29 @@ double address_p95_microseconds(std::size_t nodes) {
     return samples[static_cast<std::size_t>(samples.size() * 95U / 100U)];
 }
 
+void verify_implicit_output(std::uint32_t vocabulary) {
+    sbm::detail::ImplicitOutputTree tree(vocabulary, 29U);
+    std::vector<sbm::detail::ImplicitDecision> path;
+    const std::uint32_t stride = std::max(1U, vocabulary / 997U);
+    for (std::uint32_t token = 0U; token < vocabulary; token += stride) {
+        const auto rank = tree.rank_from_token(token);
+        assert(rank < vocabulary);
+        assert(tree.token_from_rank(rank) == token);
+        tree.target_path(token, path);
+        std::uint32_t lo = 0U;
+        std::uint32_t hi = vocabulary;
+        for (const auto& decision : path) {
+            const auto split = tree.split(lo, hi);
+            assert(decision.id == split.decision_id);
+            assert(decision.id < vocabulary - 1U);
+            if (decision.right) lo = split.middle;
+            else hi = split.middle;
+        }
+        assert(hi - lo == 1U);
+        assert(lo == rank);
+    }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -74,6 +98,13 @@ int main(int argc, char** argv) {
         std::cout << "address_p95_us_100k=" << p95_100k
                   << " address_p95_us_1m=" << p95_1m
                   << " ratio=" << p95_1m / p95_100k << '\n';
+        return 0;
+    }
+    if (mode == "implicit") {
+        for (const auto vocabulary : {2U, 3U, 4096U, 50257U, 250000U}) {
+            verify_implicit_output(vocabulary);
+        }
+        std::cout << "implicit output tests passed\n";
         return 0;
     }
     const auto address_10 = address_bytes(10U);
