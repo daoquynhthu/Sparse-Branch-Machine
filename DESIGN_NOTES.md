@@ -36,3 +36,36 @@ This is evidence that bounded work is feasible, not evidence of general intellig
 - Long-horizon routing without beam explosion.
 - Learned physical locality and NUMA placement.
 - Fair quality-to-energy comparison against neural baselines.
+
+## v5 addressing and learning invariants
+
+The address prefix must use the information capacity of the token alphabet rather
+than a fixed byte representation. For alphabet size A, each recent token occupies
+`ceil(log2(A))` bits in the locality prefix. Mixed lower bits retain longer-context
+discrimination.
+
+Prediction is causally ordered:
+
+1. select route from information available before the target;
+2. fix prediction and evaluation metrics;
+3. compute target-dependent counterfactual credit;
+4. update local state and optionally create structure.
+
+Target-dependent creation must never alter the prediction being scored for the
+same step.
+
+Node learning uses two distinct statistics:
+
+- global visits/loss for lifecycle and general utility;
+- address-local visits/loss for structural specialization.
+
+Only address-local evidence may justify splitting an address region.
+
+Candidate aggregation is hierarchical. Exact content-addressed nodes receive a
+reserved responsibility mass; control edges and neighboring regions receive a
+bounded residual mass. This preserves exploration without allowing several weak
+candidates to overwhelm one precise content match.
+
+Every structural or routing mechanism must be judged against simple conditional
+centroid baselines. A model score above the global mean is not sufficient when a
+single-token or token-pair table explains most of the target.

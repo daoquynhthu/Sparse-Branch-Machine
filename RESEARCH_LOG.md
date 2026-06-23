@@ -80,3 +80,84 @@ Seed 7, 120k steps, 40k learning / 80k strict freeze:
 AVX2/FMA runtime dispatch is active for vector dot, distance, aggregation and
 local update kernels. Performance is recorded only as a diagnostic; v4 remains
 an architecture/algorithm iteration, not a performance-optimization phase.
+
+## 2026-06-23 — vector-prediction-v5
+
+v5 was developed incrementally from `vector-prediction-v4`; no replacement
+project was created.
+
+### Correctness defect: target leakage
+
+v4 initialized a newly created node from the current target, inserted it into the
+active set, recomputed the prediction and then recorded the training metric. The
+current target therefore improved its own prediction. v5 fixes the prediction
+before any target-dependent creation or update. A regression test compares two
+fresh models receiving opposite first targets and requires identical zero first
+predictions.
+
+### Experimental defect: trivial token baseline
+
+The accepted v4 task was still too simple. On re-evaluation with proper
+baselines, the current-token centroid reached R2 about 0.955 and the token-pair
+centroid about 0.975. The reported model R2 therefore did not establish learning
+of a medium-complexity relation.
+
+The generator now uses a broad-support token process and balances current and
+delayed token contributions. Seed-7 baseline R2 values are approximately 0.303
+for current token and 0.520 for the previous/current pair.
+
+### Address defect: wasted symbol bits
+
+The v4 locality signature reserved eight bits per token. With a 64-symbol
+alphabet, two bits per token were always zero. A 12-bit bucket consequently
+encoded only the current token and the upper two meaningful bits of the previous
+token. v5 packs symbols using the alphabet bit width; 12 bits now represent the
+complete previous/current pair.
+
+### Credit and mixture defects
+
+v4 updated nearly every beam member toward the target, even when the member had
+little responsibility or harmed the aggregate. It also averaged exact, edge and
+neighbor candidates in one softmax. v5 adds:
+
+- exact-region reserved responsibility mass;
+- leave-one-out contribution estimates;
+- responsibility-weighted local learning;
+- no update for weak non-exact candidates without positive contribution;
+- bounded positive edge reinforcement and source-local decay;
+- edge strength as a routing prior.
+
+A pure exact-region ablation (`exact_region_mass = 1`) produced seed-7 R2 about
+0.460, versus about 0.480 at the accepted 0.86 mass. Sparse historical routes are
+therefore useful in the current task, although they do not yet surpass the pair
+centroid baseline.
+
+### False structural splitting
+
+Node visit counts included occasions when a node appeared through an incoming
+edge or neighboring bucket. Those counts were incorrectly treated as evidence
+that the node's own address region needed specialization. v5 adds address-local
+visit and residual statistics. With conservative defaults, the seed-7 model
+stabilizes at 4096 nodes rather than 5366 false specializations.
+
+An aggressive local split trial (minimum six local visits and lower residual
+threshold) created 8325 nodes. Seen-context R2 rose to about 0.506, but unseen-
+context R2 fell to about 0.456 and overall R2 fell to about 0.463. The trial was
+rejected and recorded as evidence that local multimodality must be justified by
+out-of-sample gain, not training conflict alone.
+
+### Accepted multi-seed result
+
+Seeds 7, 11 and 19, each with 40k learning and 80k strict-freeze steps:
+
+- mean model evaluation R2: 0.4805;
+- mean current-token baseline R2: 0.3031;
+- mean token-pair baseline R2: 0.5210;
+- mean seen-three-token-context R2: 0.5178;
+- mean unseen-three-token-context R2: 0.4744;
+- 4096 live nodes for each seed;
+- about 72.4k sparse edges on average.
+
+The accepted interpretation is limited: v5 repairs several invalidating defects
+and shows useful sparse historical correction, but it has not yet exceeded a full
+pair lookup baseline or demonstrated compositional abstraction.

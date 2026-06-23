@@ -29,22 +29,29 @@ struct Config {
     std::uint32_t bucket_scan_limit{32};
     std::uint32_t edge_scan_limit{8};
     std::uint32_t max_edges_per_node{32};
+    std::uint32_t edge_reinforce_width{2};
+    std::uint32_t max_specializations_per_bucket{4};
+    std::uint32_t split_min_visits{48};
+    std::uint32_t split_cooldown{128};
 
-    double create_similarity{0.48};
-    float create_loss_threshold{1.75F};
+    double split_context_similarity{0.78};
+    float split_loss_threshold{0.72F};
     bool allow_growth_when_frozen{false};
 
     std::uint32_t trace_horizon{8};
     float trace_decay{0.80F};
-    float positive_credit{1.0F};
-    float negative_credit{0.30F};
     float edge_decay{0.999F};
+    float edge_learning_rate{0.08F};
+    float edge_score_weight{0.16F};
+    float edge_min_contribution{0.004F};
+    float responsibility_temperature{3.0F};
+    float exact_region_mass{0.86F};
+    float min_update_responsibility{0.01F};
     std::uint32_t warm_visits{12};
     std::uint32_t mature_visits{96};
     float dormant_utility{-0.30F};
     float node_learning_rate{0.12F};
     float mature_learning_rate{0.035F};
-    float utility_loss_scale{1.0F};
     float merge_similarity{0.95F};
     float merge_vector_distance{0.08F};
 
@@ -92,6 +99,12 @@ struct ExperimentResult {
     VectorMetrics train;
     VectorMetrics eval;
     VectorMetrics mean_baseline_eval;
+    VectorMetrics token_baseline_eval;
+    VectorMetrics pair_baseline_eval;
+    VectorMetrics seen_context_eval;
+    VectorMetrics unseen_context_eval;
+    std::uint64_t seen_context_vectors{};
+    std::uint64_t unseen_context_vectors{};
     double steps_per_second{};
     double elapsed_seconds{};
     bool strict_freeze{};
@@ -114,6 +127,9 @@ struct VectorDataset {
 std::uint64_t mix64(std::uint64_t x) noexcept;
 std::uint64_t rolling_signature(std::span<const std::uint32_t> window,
                                 std::uint64_t seed = 0x9E3779B97F4A7C15ULL) noexcept;
+std::uint64_t token_context_signature(std::span<const std::uint32_t> window,
+                                      std::uint32_t alphabet,
+                                      std::uint64_t seed = 0x9E3779B97F4A7C15ULL) noexcept;
 double hamming_similarity(std::uint64_t a, std::uint64_t b) noexcept;
 std::uint64_t hash_dataset(const VectorDataset& dataset) noexcept;
 bool simd_available() noexcept;
@@ -138,27 +154,49 @@ public:
     [[nodiscard]] std::span<const float> last_prediction() const noexcept { return prediction_buffer_; }
 
 private:
-    struct ScoredNode { double score{}; NodeId id{kInvalidNode}; };
-    struct TraceFrame { std::vector<NodeId> route; float loss{}; };
+    struct CandidateNode {
+        NodeId id{kInvalidNode};
+        float edge_prior{};
+    };
+    struct ScoredNode {
+        double score{};
+        NodeId id{kInvalidNode};
+        float responsibility{};
+        float contribution{};
+        bool exact_region{};
+    };
+    struct TraceFrame {
+        std::vector<NodeId> route;
+        std::vector<float> contribution;
+        float loss{};
+    };
 
     [[nodiscard]] std::uint32_t bucket(std::uint64_t signature) const noexcept;
     [[nodiscard]] NodeId new_node(std::uint64_t signature, std::span<const float> initial,
                                   NodeId parent = kInvalidNode);
     [[nodiscard]] std::size_t slot_of(NodeId id) const noexcept;
-    [[nodiscard]] std::vector<NodeId> candidate_ids(std::uint64_t signature);
-    [[nodiscard]] double score(std::size_t slot, std::uint64_t signature) const noexcept;
+    [[nodiscard]] std::vector<CandidateNode> candidate_ids(std::uint64_t signature);
+    [[nodiscard]] double score(std::size_t slot, std::uint64_t signature,
+                               float edge_prior) const noexcept;
     [[nodiscard]] std::pair<std::vector<ScoredNode>, std::uint32_t>
         select_route(std::uint64_t signature);
+    void assign_responsibilities(std::vector<ScoredNode>& active) const;
     void aggregate(const std::vector<ScoredNode>& active, std::span<float> output) const;
+    void compute_counterfactual_contributions(std::vector<ScoredNode>& active,
+                                              std::span<const float> target,
+                                              float target_energy,
+                                              float full_loss) const;
     [[nodiscard]] double output_distance(std::size_t a, std::size_t b) const noexcept;
     [[nodiscard]] NodePhase phase_of_slot(std::size_t slot) const noexcept;
 
     void reinforce_edge(NodeId source, NodeId destination, float delta);
+    void decay_edges(NodeId source);
     void apply_trace_credit(float normalized_loss);
     void update_phase(std::size_t slot);
     void absorb_node(std::size_t survivor_slot, std::size_t victim_slot);
     void erase_slot(std::size_t slot);
-    [[nodiscard]] bool push_unique(std::vector<NodeId>& values, NodeId id) const noexcept;
+    [[nodiscard]] bool push_candidate(std::vector<CandidateNode>& values, NodeId id,
+                                      float edge_prior) const noexcept;
 
     Config config_;
     std::uint64_t rng_state_{};
@@ -166,8 +204,10 @@ private:
     std::vector<NodeId> ids_;
     std::vector<std::uint64_t> prototypes_;
     std::vector<std::uint32_t> visits_;
+    std::vector<std::uint32_t> address_visits_;
     std::vector<float> utility_ema_;
     std::vector<float> loss_ema_;
+    std::vector<float> address_loss_ema_;
     std::vector<std::uint8_t> phases_;
     std::vector<std::uint8_t> hot_indexed_;
     std::vector<NodeId> parents_;
@@ -179,7 +219,9 @@ private:
 
     std::vector<std::vector<NodeId>> buckets_;
     std::vector<std::vector<NodeId>> hot_buckets_;
+    std::vector<std::uint64_t> bucket_last_split_step_;
     std::vector<NodeId> previous_route_;
+    std::vector<float> previous_responsibilities_;
     std::deque<TraceFrame> trace_;
     std::deque<std::uint32_t> history_;
     std::vector<float> prediction_buffer_;
