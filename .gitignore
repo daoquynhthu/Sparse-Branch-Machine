@@ -2,3 +2,7 @@ build*/
 *.bin
 *.json
 run_*.txt
+__pycache__/
+*.pyc
+tuning_*.json
+best_config*.json

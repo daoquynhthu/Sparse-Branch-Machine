@@ -95,32 +95,66 @@ distance, aggregation and vector updates. A scalar fallback remains available.
 SIMD accelerates only the small active vectors; the architecture remains driven
 by addressing and branch control rather than dense matrix throughput.
 
-## Build and run
+## Engineering interface
+
+The implementation is distributed as a shared-library stack rather than one
+monolithic executable:
+
+```text
+sbm_core -> sbm_machine / sbm_dataset -> sbm_experiment -> sbm_api
+                                                        -> sbm_cli
+                                                        -> Python ctypes
+```
+
+`sbm_api` is a versioned C ABI with opaque configuration and dataset handles.
+The command-line program links only this API and performs no model computation
+itself. Python calls the same library in-process, so a dataset can be generated
+once and reused across automated trials.
+
+Build and test:
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j2
 ctest --test-dir build --output-on-failure
-./build/sbm_benchmark --length 120000 --warmup 40000 \
-  --seed 7 --output results_multiscale_v6.json
 ```
 
-Runtime research parameters can be changed without recompilation:
+Run from the thin CLI:
 
 ```bash
-./build/sbm_benchmark \
-  --exact-region-mass 0.88 \
-  --residual-gain 1.0 \
-  --residual-pseudocount 0.75 \
-  --edge-score-weight 0.32
+./build/sbm_cli --length 120000 --warmup 40000 --seed 7 \
+  --set exact_region_mass=0.88 \
+  --output results.json
 ```
 
-Dataset persistence remains supported:
+Discover every runtime parameter and its search metadata:
 
 ```bash
-./build/sbm_benchmark --write-dataset vector_task.bin
-./build/sbm_benchmark --dataset vector_task.bin
+./build/sbm_cli --describe-parameters
 ```
+
+Run through Python without spawning the CLI:
+
+```bash
+export SBM_LIBRARY="$PWD/build/libsbm_api.so"
+python scripts/run_python_api.py --length 20000 --warmup 7000
+```
+
+Repeated hyperparameter tuning is automated rather than performed by editing
+headers or manually launching grids:
+
+```bash
+python scripts/tune.py \
+  --library build/libsbm_api.so \
+  --trials 27 \
+  --seeds 7,11,19 \
+  --jobs 3 \
+  --best-config best_config.json
+```
+
+The tuner reads its ranges from `sbm_parameter_schema_json()`, uses repeated-seed
+successive halving, records invalid configurations, and checkpoints after every
+stage. See `BUILDING.md` and `API.md` for the full contract.
 
 ## Current limits
 

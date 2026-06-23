@@ -222,3 +222,36 @@ Negative routing experiments were retained:
 The accepted implementation therefore keeps bounded two-position edge
 reinforcement. Runtime mixture parameters are now exposed through the CLI so
 future sweeps do not trigger full header recompilation.
+
+## 2026-06-23 — shared-library API and automated calibration hygiene
+
+Work continued on the existing `modular-build-v5` branch. No additional branch
+was created because this is an engineering-interface change rather than a model
+architecture change.
+
+The previous executable linked the C++ experiment stack directly and maintained
+its own list of selected hyperparameter flags. It has been replaced by a thin
+`sbm_cli` that includes only the stable C header and links directly only to
+`sbm_api`. The runtime is now split into shared libraries for core SIMD/signature
+operations, machine logic, datasets, experiments and the C ABI facade.
+
+The C ABI uses opaque config and dataset handles. Python loads it with a
+standard-library-only `ctypes` wrapper, allowing immutable datasets to be reused
+across many in-process experiments. C++, C ABI and Python smoke/regression tests
+all pass.
+
+All current `Config` fields are exposed through a generic `name=value` registry.
+The same registry returns JSON metadata containing defaults, types, ranges and
+search policy. CLI and Python therefore no longer maintain separate parameter
+setter lists.
+
+Manual repeated calibration is replaced by `scripts/tune.py`. The script samples
+ranges returned by the shared library, evaluates many candidates on one seed,
+uses successive halving across additional seeds, checkpoints after each stage and
+writes a directly reusable best-config JSON file. A short four-candidate/two-seed
+smoke search completed through the in-process API.
+
+A fixed 20,000-step seed-7 semantic regression was executed before and after the
+DLL/API conversion. Ignoring only wall-clock fields, the result JSON had zero
+field differences. `ldd` confirms that the CLI directly depends on `sbm_api`; the
+remaining model libraries are transitive shared-library dependencies.
