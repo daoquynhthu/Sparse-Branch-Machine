@@ -1,188 +1,224 @@
-# Theory alignment: validated sparse address programs
+# Theory alignment and unresolved architecture
 
-This branch began at the tokenizer-aligned baseline `b47713b`.  Version 9 made
-address topology mutable, but its proposal space still consisted only of
-single temporal lags.  The current version replaces that task-shaped object
-with a minimal address-program language.
+> **Document role:** This document defines the theoretical target, states which
+> parts of the current machine align with it, and records the unresolved theory.
+> It does not define the next work schedule; use `ROADMAP_REAL_DATA.md` for that.
+> It does not serve as an experiment diary; use `RESEARCH_LOG.md`.
 
-The intended learning loop is now:
+## 1. The theoretical target
 
-```text
-prediction error
-    -> propose a sparse address program
-    -> adapt only its local nodes
-    -> freeze the candidate
-    -> measure exact counterfactual loss
-    -> accept, reject, or later retire it
-```
-
-## Minimal address-program language
-
-An address program is an ordered, duplicate-free set of one or two positive
-history offsets.  The current token is implicit.  Examples are:
-
-```text
-[1]       current token + token at lag 1
-[1, 4]    current token + tokens at lags 1 and 4
-[2, 4]    current token + tokens at lags 2 and 4
-```
-
-The language deliberately contains no arithmetic operators, semantic labels,
-task-specific lag list, learned matrix, or nested program tree.  Its only
-meta-rule is sparse selection of historical positions.
-
-Programs are proposed in increasing temporal/structural complexity:
-
-```text
-[2], [1,2], [3], [1,3], [2,3], [4], [1,4], ...
-```
-
-The order does not encode the mathematical generator's known dependencies.
-Every program must survive the same predictive-credit lifecycle.
-
-## Coarse-to-fine addressing
-
-For a two-offset program, the current token and earlier program operand form
-the coarse address region; the remaining selected history and longer context
-remain in the full prototype used for bucket-local discrimination.  This is a
-bounded hierarchy rather than a flat joint table.
-
-An attempted alternative hashed every operand directly into the top-level
-bucket.  Across seeds 7, 11 and 19 it worsened mean frozen NLL from 3.3664 to
-3.4277.  The joint address became too sparse for the available sample count.
-That version was rejected rather than retained as a superficially cleaner
-implementation.
-
-## Structural lifecycle
-
-Every proposed program passes through the same six stages:
-
-1. **Proposal** — allocate a real channel, address namespace and local nodes.
-2. **Adaptation** — update only candidate-local parameters.
-3. **Frozen validation** — stop candidate learning during the validation tail.
-4. **Exact channel ablation** — remove the complete channel contribution and
-   recompute loss.
-5. **Selection** — retain only positive mean validation credit.
-6. **Mature audit** — retire an accepted non-seed program if sustained credit
-   becomes sufficiently negative.
-
-For token cross-entropy, credit is
+The project is investigating a learning machine whose dominant computation is:
 
 \[
-C_c=L(z-z_c,y)-L(z,y),
+\text{address}
+\rightarrow
+\text{read local state}
+\rightarrow
+\text{branch}
+\rightarrow
+\text{small local computation}
+\rightarrow
+\text{local structural update}.
 \]
 
-where \(z_c\) is the complete active logit contribution of program \(c\).
-For vector regression, the corresponding normalized-MSE difference is used.
+The desired properties are:
 
-Rejected or retired programs are physically reclaimed: their nodes are
-removed, indexes rebuilt, stale route state cleared, and unrelated logical node
-IDs remain stable.
+- persistent capacity much larger than the active working set;
+- content- and state-dependent execution paths;
+- local learning without a dense global backward pass;
+- structures that can be proposed, evaluated, retained and erased;
+- a small set of auditable meta-rules rather than a hand-written cognitive
+  ontology;
+- eventual support for binding, relation-following and reusable computation;
+- CPU suitability through bounded branches, irregular memory access and sparse
+  work rather than dense matrix throughput.
 
-## Strict freeze semantics
+The target is not merely a sparse neural network and not merely a faster lookup
+table. The central theoretical question is whether reusable computation can
+emerge from local prediction pressure and structural reuse.
 
-The training/evaluation boundary now explicitly freezes topology.  An unfinished
-probe is rejected using training observations only.  During evaluation the
-system no longer:
+## 2. What the current system has established
 
-- proposes, accepts, rejects or retires programs;
-- updates topology credit;
-- computes node counterfactual credit used only for learning.
+### 2.1 Sparse execution and persistent storage
 
-Thus frozen evaluation is both structurally and statistically read-only.
+The implementation has stable logical node IDs, movable physical storage,
+bounded candidate selection, sparse active nodes and learned control edges. The
+stored graph may grow while the active beam remains bounded.
 
-## Main result
+This establishes an executable CPU-first sparse substrate. It does not by itself
+establish abstraction or language capability.
 
-Default task: 32-token mathematical next-token prediction, 64 independent
-sequences of length 2,048, 80,000 training examples, then strict evaluation.
+### 2.2 Auditable structural lifecycle
 
-| model/control | mean frozen NLL, seeds 7/11/19 |
-|---|---:|
-| adaptive sparse programs, arity <= 2 | **3.36642** |
-| fixed multiscale conditional-table baseline | 3.39199 |
-| fixed singleton channels `[1,2,4]` | 3.41819 |
-| adaptive singleton-only topology | 3.42692 |
-| previous v9 lag-only adaptive topology | 3.41847 |
-| unigram baseline | about 3.4658 |
-| mathematical generator oracle | about 2.9143 |
+An address-program candidate follows:
 
-The adaptive program model improves over the strong fixed multiscale table by
-about 0.0256 nats/token and over the previous lag-only topology by about 0.0520
-nats/token.
+```text
+proposal -> local adaptation -> frozen validation -> counterfactual ablation
+         -> acceptance/rejection -> mature audit -> possible retirement
+```
 
-Learned final programs are not identical across seeds, but all three runs retain
-interaction programs involving recent history.  Common retained structures are
-`[1,2]`, `[1,3]` and `[1,4]`; additional accepted programs differ by seed and
-remain subject to mature auditing.
+Rejected or retired structures can be physically reclaimed while unrelated
+logical node IDs remain stable. Topology events are recorded in experiment
+output.
 
-This is the first experiment in the project where learned topology outperforms
-a hand-constructed statistical control that knows the generator's three stated
-time scales.
+This is a meaningful advance over fixed topology, but the current credit rule is
+known to be sensitive to objective and data distribution.
 
-## Performance work that preserves semantics
+### 2.3 Token-aligned objective
 
-The following optimizations were accepted only after result equality checks:
+The model can consume token IDs, predict a categorical next-token distribution
+and train under cross-entropy. This aligns the data/loss contract with language
+training.
 
-- reusable signature, channel-credit and zero-output buffers;
-- contiguous fixed-capacity token history instead of allocating a window each
-  step;
-- direct log-sum-exp counterfactual loss without materializing a probability
-  vector for every ablation;
-- reuse of channel ablation when a channel has one active node;
-- AVX2/FMA dense logit update in the softmax null-space;
-- periodic rather than per-update logit recentering;
-- no counterfactual work during frozen evaluation;
-- thin CLI compiled at low optimization because it is not on the model path.
+Token interface compatibility is not language competence. Until real text is
+used, all language-level interpretations remain hypotheses.
 
-On seed 7, removing frozen-evaluation credit work raised observed throughput
-from roughly 68k to roughly 89k steps/s in the direct before/after run, with
-identical train/evaluation NLL, graph size and routes.  Repeated runs remain
-noisy; the three-seed full-task mean for the adaptive-program model is about
-71.8k steps/s because learned topology and graph size vary by seed.
+### 2.4 Sparse output experiment
 
-## Vocabulary scaling
+The current branch includes an experimental hierarchical token output. Target
+NLL can be computed along a binary path and per-node output storage depends on
+observed decisions rather than one full vocabulary vector.
 
-A short 32-sequence scaling probe produced:
+This addresses a genuine large-vocabulary scaling problem, but it is not yet an
+accepted final design:
 
-| vocabulary | steps/s | estimated model bytes |
-|---:|---:|---:|
-| 32 | 151k | 5.9 MB |
-| 128 | 89.9k | 6.2 MB |
-| 512 | 29.4k | 18.8 MB |
+- on the small mathematical vocabulary it currently loses quality relative to
+  dense output;
+- candidate top-k decoding is approximate under a fixed beam;
+- the tree partition is generic rather than semantically learned;
+- real-corpus behavior has not been measured.
 
-The dense local-logit representation therefore remains the next major scaling
-limit.  Replacing it requires a separate output-addressing design; sampled or
-hierarchical normalization has not been added merely to improve this benchmark.
+### 2.5 Computable address experiment
 
-## Automated calibration
+The current branch also contains an experimental generic modular-difference
+address form. It asks whether selected token values can be transformed rather
+than only copied into an address.
 
-A 12-candidate, three-seed successive-halving search covered program arity,
-probe duration, validation duration, acceptance threshold and retirement
-threshold.  The unmodified default configuration was selected as best.  No
-manually chosen parameter override was accepted.
+This does not solve content-conditioned addressing. It remains tied to selected
+positions and cannot bind an item whose distance changes with sentence structure.
 
+## 3. What the current address language cannot express
 
-## Retained vector-objective limitation
+The accepted address-program core is still dominated by sparse selection of a
+small number of historical positions. A program such as `[1,4]` represents a
+joint positional condition. It does not express:
 
-The topology lifecycle is currently calibrated on token cross-entropy.  On the
-retained vector benchmark, adaptive sparse programs keep only `[1]` and reach
-approximately `R2=0.528`, while the fixed singleton control `[1,2,4]` remains
-approximately `R2=0.805`.  The token result therefore does not yet establish a
-task-independent topology criterion.  No vector-specific acceptance threshold
-or hand-written proposal order was introduced to conceal this gap.
+- “find the earlier item matching this content”;
+- “bind the selected item and reuse it later”;
+- “follow the relation learned between two persistent states”;
+- “return to an event or entity regardless of its token distance”;
+- “call a reusable subprogram with local bindings.”
 
-## Remaining theoretical gap
+Natural-language dependencies are often relations over content, not fixed lags.
+For example, an agreement or reference relation may persist while arbitrary
+material is inserted between the related items. Increasing positional arity or
+adding arithmetic transforms does not resolve this limitation.
 
-The model now learns *which sparse history selections exist*, but not yet:
+The next program-language redesign therefore requires a content-conditioned
+selection and binding model. Candidate minimal concepts include `Bind`, `Match`
+and `Follow`, but these are not yet approved instructions. They must be derived
+with explicit state, lineage, dependency and rollback semantics.
 
-- transformations over selected values;
-- variable binding or reusable operators;
-- program calls and returns;
-- learned proposal distributions;
-- sparse large-vocabulary output normalization;
-- a task-independent criterion for when address-program arity should exceed two.
+## 4. Lifecycle challenge under compositional programs
 
-The next step should not add a library of hand-written operators.  A defensible
-extension would allow one additional generic operation only if it can be
-proposed, validated and erased by the same lifecycle and if a simpler address
-program cannot explain the gain.
+Whole-channel ablation is tractable because a channel has a clear additive
+output contribution. A compositional program is harder:
+
+- one fragment may produce a binding consumed by several callers;
+- deleting a prerequisite disables downstream fragments;
+- observed loss change cannot be assigned entirely to one shared dependency;
+- programs may have option value before they have direct predictive value;
+- a fragment may be useful only through reuse in several contexts.
+
+To preserve traceability, future programs should be created by local typed graph
+edits, not arbitrary program search. Each fragment will need:
+
+- explicit input and output state;
+- parent/lineage information;
+- caller and dependency tracking;
+- a versioned execution meaning;
+- rollback semantics;
+- validation that separates direct contribution from dependent contribution.
+
+Whether the present lifecycle can be generalized without combinatorial
+explosion is unresolved.
+
+## 5. Task-sensitive structure value
+
+The same lifecycle parameters did not transfer from token cross-entropy to the
+retained vector-regression task. This is not treated as a tuning bug. Raw credit
+is affected by:
+
+- loss scale and output dimension;
+- source entropy and noise;
+- event frequency;
+- local learner convergence rate;
+- validation-window length;
+- structural sparsity and reuse.
+
+Natural language is much more heterogeneous than either synthetic objective.
+A fixed threshold on raw loss improvement cannot be assumed task-agnostic.
+
+The intended direction is a codelength account:
+
+\[
+S(P)=\Delta C_{heldout}(P)-C_{describe}(P)-\lambda C_{execute}(P),
+\]
+
+where predictive gain and structural complexity are measured in comparable
+units. Prequential nats or bits provide a common output metric for categorical
+and probabilistic regression objectives.
+
+This does not create a universal threshold automatically. It makes assumptions
+and costs explicit and allows common, rare, fast-learning and slow-learning
+structures to be compared more honestly.
+
+## 6. Why real language data is now required
+
+The mathematical generator is transparent and reproducible, but its dependency
+structure is known and low-dimensional. It cannot reveal which content
+relations real language actually requires, how often they occur, or whether a
+candidate program transfers across documents and domains.
+
+The current cloud environment lacks a real natural-language corpus. Therefore:
+
+- further synthetic improvements are engineering/regression evidence only;
+- program-language expansion should pause unless needed for a concrete real-data
+  diagnostic;
+- lifecycle and output designs must be re-evaluated on real held-out text;
+- the next normative work is defined in `ROADMAP_REAL_DATA.md`.
+
+## 7. Current theoretical claims that are justified
+
+It is justified to say that the repository contains:
+
+- a working sparse addressable learning substrate;
+- bounded dynamic execution over persistent state;
+- local categorical and vector learning;
+- a traceable lifecycle for relatively independent address programs;
+- a tokenizer-aligned training contract;
+- experimental sparse output and computable addressing.
+
+It is not justified to say that it has demonstrated:
+
+- emergent syntax or semantics;
+- variable binding;
+- content-dependent relation traversal;
+- a task-independent topology criterion;
+- general language modeling capability;
+- CPU superiority at matched quality.
+
+## 8. Next theoretical gates
+
+Theory work should resume in this order after real data is available:
+
+1. establish real-corpus baselines and failure diagnostics;
+2. express structural value in prequential codelength and explicit complexity;
+3. identify failures not explained by bounded positional programs;
+4. propose one minimal content-conditioned primitive;
+5. define lineage, dependency-aware ablation and rollback;
+6. test transfer across documents, shards and seeds;
+7. only then consider composition, calls or deeper program graphs.
+
+The project should prefer one falsifiable primitive over a broad hand-written
+instruction set.

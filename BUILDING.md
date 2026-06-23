@@ -1,5 +1,8 @@
 # Build and linkage layout
 
+> **Document role:** This document is authoritative only for build, test, install and linkage procedures. Research plans belong in `ROADMAP_REAL_DATA.md`; interface semantics belong in `API.md`.
+
+
 The project is separated into shared libraries.  Windows produces DLLs, Linux
 `.so` files and macOS `.dylib` files.
 
@@ -104,3 +107,10 @@ cmake --install build --prefix install
 
 The installed CLI uses a relative `../lib` RPATH.  The installed Python wrapper
 also searches the installation prefix's `lib` directory.
+
+
+## Build-time discipline
+
+Use target-level incremental builds during research. Do not clean and rebuild every shared library after a local algorithm edit. Build directories and generated libraries are not source artifacts and must not be committed or included in source packages.
+
+Real-corpus tooling should be separate targets (for example acquisition/tokenization utilities and shard readers) so that model edits do not rebuild data tooling and data-format edits do not rebuild the learning core.

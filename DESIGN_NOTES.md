@@ -1,4 +1,7 @@
-# Design notes and current findings
+# Design notes and architecture invariants
+
+> **Document role:** This document records implementation semantics and invariants that code changes must preserve. It is not the next-phase plan and should not duplicate full experiment histories. Use `ROADMAP_REAL_DATA.md` for planned work and `RESEARCH_LOG.md` for chronological results.
+
 
 ## Architectural invariant
 
@@ -126,10 +129,7 @@ conditional distribution is fully determined by visible token history; the only
 irreducible uncertainty is the categorical sample.  Oracle NLL is stored so that
 model error can be separated from source entropy.
 
-The current full-vocabulary local logit vector is intentionally a correctness
-implementation.  It must not be mistaken for a final large-vocabulary output
-architecture.  Hierarchical, adaptive or sampled normalization will be required
-before 30k+ vocabularies are memory-efficient.
+The repository retains a dense full-vocabulary logit path as a correctness control and includes an experimental hierarchical sparse output path. The sparse path stores observed binary decisions and computes target NLL along a tree path, but it is not yet the accepted final output architecture. Output designs must be compared on held-out quality, bytes, target-NLL cost and candidate decoding cost, especially on real tokenized text.
 
 ## Sparse address programs
 
@@ -147,3 +147,19 @@ rejected because it produced sample-starved addresses.
 Evaluation is strictly read-only. `freeze_topology()` rejects incomplete probes
 at the training boundary, and counterfactual credit is not accumulated on
 evaluation examples.
+
+## Real-corpus invariants
+
+The next phase is governed by `ROADMAP_REAL_DATA.md`. Any real-corpus implementation must preserve these design invariants:
+
+- documents are explicit units and reset transient execution state;
+- tokenization and split membership are immutable experiment inputs;
+- data are streamed or memory-mapped rather than loaded as one monolithic vector;
+- checkpoint state includes the exact corpus cursor and RNG state;
+- stored capacity, active work and output work are reported separately;
+- validation/test examples never update parameters, topology or credit;
+- synthetic mathematical data remain a regression fixture, not evidence of language capability.
+
+## Program-language boundary
+
+Current programs remain primarily positional selectors, with an experimental generic modular-difference variant. This must not be described as content-conditioned relation learning. A future binding or relation primitive requires explicit state, local lineage, dependency-aware ablation and complete rollback. It may not encode linguistic labels or rely on an unbounded search over arbitrary programs.

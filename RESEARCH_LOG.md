@@ -370,3 +370,28 @@ task-independent.
 A deterministic `scripts/theory_ablation.py` runner now reproduces the three
 accepted architecture controls through the shared C API, so future comparisons
 do not depend on manually assembled CLI commands.
+
+## 2026-06-23 — documentation consolidation and real-data transition
+
+The project reached a data-availability boundary rather than a conclusion about
+synthetic tasks. The current cloud workspace lacks a real natural-language
+corpus, so mathematical token experiments can no longer support the next theory
+claims. They remain deterministic regression fixtures.
+
+Documentation responsibilities were consolidated:
+
+- `README.md` is the entry point and current-status summary;
+- `ROADMAP_REAL_DATA.md` is the normative plan for acquiring and training on real
+  corpora;
+- `THEORY_ALIGNMENT.md` contains theory and unresolved architecture;
+- `DESIGN_NOTES.md` contains implementation invariants;
+- `TOKEN_TASK.md` defines token objectives and data contracts;
+- `API.md` and `BUILDING.md` contain interface and tooling contracts;
+- `RESEARCH_LOG.md` remains chronological and non-normative;
+- `Agent.md` defines mandatory agent constraints and workflow.
+
+The next primary milestone is a pinned real corpus, tokenizer trained on the
+training split only, versioned document-aware token shards, streaming dataset
+access, exact checkpoint/resume, strong statistical baselines and held-out
+language experiments. Further improvements limited to the mathematical token
+benchmark are not considered language or theory milestones.

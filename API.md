@@ -1,10 +1,13 @@
 # Stable API contract
 
+> **Document role:** This is the authoritative public C/Python ABI and ownership specification. It does not define research priorities or experiment interpretation.
+
+
 ## C ABI
 
 The public ABI is declared in `include/sbm/api.h`.  It exposes opaque handles and
 plain C types only; C++ classes and STL containers do not cross the boundary.
-The current feature version is 2.
+The current ABI major version is 4.
 
 Ownership rules:
 
@@ -131,3 +134,8 @@ contains a `lags` array rather than one scalar lag. The compatibility field
 
 The runtime parameter `topology_max_arity` is exposed through the same schema
 and currently accepts 1 or 2. Changing it does not require recompilation.
+
+
+## Real-corpus streaming status
+
+`sbm_token_dataset_from_ids` is an in-memory interoperability API. It is not a streaming corpus implementation. Versioned token shards, memory-mapped iteration, manifests and exact checkpoint cursors are planned in `ROADMAP_REAL_DATA.md`. Their addition must preserve the opaque-handle ABI and document ownership and lifetime rules here.
