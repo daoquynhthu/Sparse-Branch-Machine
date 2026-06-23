@@ -19,6 +19,13 @@ extern "C" {
 
 typedef struct sbm_config_handle sbm_config_handle;
 typedef struct sbm_dataset_handle sbm_dataset_handle;
+typedef struct sbm_token_shard_handle sbm_token_shard_handle;
+
+typedef struct sbm_token_shard_cursor {
+    uint64_t shard_index;
+    uint64_t sequence_index;
+    uint64_t token_offset;
+} sbm_token_shard_cursor;
 
 typedef enum sbm_dataset_kind {
     SBM_DATASET_VECTOR_REGRESSION = 1,
@@ -72,6 +79,26 @@ SBM_API uint32_t sbm_dataset_alphabet(const sbm_dataset_handle* dataset);
 SBM_API uint32_t sbm_dataset_vocab_size(const sbm_dataset_handle* dataset);
 SBM_API size_t sbm_dataset_sequence_count(const sbm_dataset_handle* dataset);
 SBM_API size_t sbm_dataset_example_count(const sbm_dataset_handle* dataset);
+
+/* Versioned memory-mapped token shards. These functions are additive to ABI v4. */
+SBM_API int sbm_token_shard_write(
+    const sbm_dataset_handle* dataset,
+    const char* path);
+SBM_API sbm_token_shard_handle* sbm_token_shard_open(
+    const char* path,
+    uint64_t shard_index,
+    int verify_payload);
+SBM_API void sbm_token_shard_destroy(sbm_token_shard_handle* shard);
+SBM_API uint32_t sbm_token_shard_vocab_size(const sbm_token_shard_handle* shard);
+SBM_API uint64_t sbm_token_shard_token_count(const sbm_token_shard_handle* shard);
+SBM_API uint64_t sbm_token_shard_sequence_count(const sbm_token_shard_handle* shard);
+SBM_API uint64_t sbm_token_shard_dataset_hash(const sbm_token_shard_handle* shard);
+/* Returns 1 for an example, 0 at end of shard and -1 on error. */
+SBM_API int sbm_token_shard_next(
+    const sbm_token_shard_handle* shard,
+    sbm_token_shard_cursor* cursor,
+    uint32_t* input,
+    uint32_t* target);
 
 /* Returns a malloc-compatible UTF-8 JSON string, or NULL on failure. */
 SBM_API char* sbm_run_experiment_json(

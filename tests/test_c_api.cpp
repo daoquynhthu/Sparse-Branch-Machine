@@ -1,6 +1,7 @@
 #include "sbm/api.h"
 
 #include <cassert>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <string_view>
@@ -64,6 +65,28 @@ int main() {
     assert(external != nullptr);
     assert(sbm_dataset_sequence_count(external) == 2U);
     assert(sbm_dataset_example_count(external) == 4U);
+    const char* shard_path = "sbm_c_api_shard.sbt";
+    std::remove(shard_path);
+    assert(sbm_token_shard_write(external, shard_path) == 0);
+    sbm_token_shard_handle* shard = sbm_token_shard_open(shard_path, 3U, 1);
+    assert(shard != nullptr);
+    assert(sbm_token_shard_vocab_size(shard) == 8U);
+    assert(sbm_token_shard_token_count(shard) == 6U);
+    assert(sbm_token_shard_sequence_count(shard) == 2U);
+    sbm_token_shard_cursor cursor{3U, 0U, 0U};
+    uint32_t input = 0U;
+    uint32_t target = 0U;
+    assert(sbm_token_shard_next(shard, &cursor, &input, &target) == 1);
+    assert(input == 1U && target == 2U);
+    assert(sbm_token_shard_next(shard, &cursor, &input, &target) == 1);
+    assert(input == 2U && target == 3U);
+    assert(sbm_token_shard_next(shard, &cursor, &input, &target) == 1);
+    assert(input == 1U && target == 2U);
+    assert(sbm_token_shard_next(shard, &cursor, &input, &target) == 1);
+    assert(input == 2U && target == 4U);
+    assert(sbm_token_shard_next(shard, &cursor, &input, &target) == 0);
+    sbm_token_shard_destroy(shard);
+    std::remove(shard_path);
     sbm_dataset_destroy(external);
 
     sbm_config_destroy(config);

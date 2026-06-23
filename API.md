@@ -136,6 +136,25 @@ The runtime parameter `topology_max_arity` is exposed through the same schema
 and currently accepts 1 or 2. Changing it does not require recompilation.
 
 
-## Real-corpus streaming status
+## Memory-mapped token shards
 
-`sbm_token_dataset_from_ids` is an in-memory interoperability API. It is not a streaming corpus implementation. Versioned token shards, memory-mapped iteration, manifests and exact checkpoint cursors are planned in `ROADMAP_REAL_DATA.md`. Their addition must preserve the opaque-handle ABI and document ownership and lifetime rules here.
+ABI v4 now includes additive `sbm_token_shard_*` functions. A shard handle owns
+a read-only file mapping and must be released with `sbm_token_shard_destroy`.
+`sbm_token_shard_open` can verify the complete payload hash without copying the
+payload. The format stores fixed little-endian token IDs, sequence offsets and a
+versioned 128-byte header.
+
+`sbm_token_shard_cursor` records shard index, sequence index and token offset.
+`sbm_token_shard_next` returns only within-sequence next-token pairs: `1` means
+an example was produced, `0` means end of shard and `-1` means an API error.
+Copying the cursor and reopening the same shard reproduces the identical next
+example.
+
+Python exposes the same ownership through `Runtime.open_token_shard()` and the
+`TokenShard` context manager. `Dataset.write_token_shard()` is intended for
+small in-memory fixtures. Large corpora are written incrementally by the data
+conversion utility rather than materialized as `TokenDataset`.
+
+Multi-shard training, manifest-owned iteration and model checkpoint state are
+not implemented yet. A shard cursor proves exact data replay but is not a full
+training checkpoint.

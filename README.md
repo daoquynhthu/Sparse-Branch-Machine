@@ -21,12 +21,12 @@ The repository currently supports:
 - runtime parameter discovery and automated multi-seed search;
 - strict frozen evaluation and deterministic synthetic regression fixtures.
 
-The current research blocker is **data availability**: this cloud workspace does
-not contain a real natural-language corpus. The next primary phase is therefore
-real corpus acquisition, tokenizer training, versioned sharding, streaming,
-checkpointing and held-out language experiments. The mathematical token task
-remains a correctness fixture; it is no longer sufficient evidence for language
-claims.
+The workspace now has a versioned memory-mapped shard layer and a compatibility
+converter for an existing tokenized FineWeb-Edu artifact. That artifact lacks
+recoverable source-document boundaries, a pinned source revision and a tokenizer
+artifact, so it does not pass the strict R0 reproducibility gate. It can support
+pipeline and compatibility experiments while acquisition of a fully traceable
+document-level corpus remains required.
 
 Read [`ROADMAP_REAL_DATA.md`](ROADMAP_REAL_DATA.md) before starting new model
 work.

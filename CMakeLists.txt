@@ -112,6 +112,10 @@ if(SBM_BUILD_TESTS)
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_python_api.py
                 --library $<TARGET_FILE:sbm_api>)
+      add_test(
+        NAME sbm_shard_tool
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_shard_tool.py)
     endif()
   endif()
 endif()
@@ -126,4 +130,5 @@ if(SBM_BUILD_CLI)
 endif()
 install(DIRECTORY include/ DESTINATION include)
 install(FILES python/sbm_runtime.py DESTINATION python)
-install(PROGRAMS scripts/tune.py scripts/run_python_api.py scripts/theory_ablation.py DESTINATION bin)
+install(PROGRAMS scripts/tune.py scripts/run_python_api.py scripts/theory_ablation.py
+  scripts/convert_naime_dataset.py DESTINATION bin)

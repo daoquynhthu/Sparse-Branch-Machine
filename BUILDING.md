@@ -114,3 +114,21 @@ also searches the installation prefix's `lib` directory.
 Use target-level incremental builds during research. Do not clean and rebuild every shared library after a local algorithm edit. Build directories and generated libraries are not source artifacts and must not be committed or included in source packages.
 
 Real-corpus tooling should be separate targets (for example acquisition/tokenization utilities and shard readers) so that model edits do not rebuild data tooling and data-format edits do not rebuild the learning core.
+
+## Existing NAIME data compatibility conversion
+
+The converter requires Hugging Face `datasets` and writes large artifacts
+outside the repository:
+
+```bash
+python scripts/convert_naime_dataset.py \
+  --dataset /data/fineweb_edu_1b_ctx1024 \
+  --output /data/sbm/fineweb_edu_compat \
+  --vocab-size 50257 \
+  --shard-tokens 16000000
+```
+
+Use `--max-tokens-per-split` for a deterministic smoke subset. The command emits
+one compact JSON status line; detailed provenance, hashes, counts and known data
+limitations are stored in `manifest.json`. Existing non-empty output directories
+and existing shard files are rejected.

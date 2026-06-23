@@ -292,6 +292,21 @@ fields equivalent to:
 
 The concrete schema should be versioned before D1 is accepted.
 
+### 5.4 Existing NAIME token-block artifact
+
+The local `fineweb_edu_1b_ctx1024` artifact may be reused for compatibility
+experiments through `scripts/convert_naime_dataset.py`. Its rows are fixed
+1025-token blocks. The converter treats every row as an independent sequence so
+that training never creates a target across two blocks.
+
+This artifact is not D1 and does not satisfy Phase R0. It does not retain source
+document IDs or true boundaries, a pinned FineWeb-Edu revision, a tokenizer
+artifact/checksum, a license record, or evidence of exact-content deduplication
+across splits. Generated manifests must retain `status=compatibility_only` and
+the limitation list. Results on it may establish pipeline behavior and early
+predictive baselines, but not document-level generalization or strict corpus
+reproducibility.
+
 ## 6. Model work required before large real-data runs
 
 ### 6.1 Sparse output must be treated as an enabling component

@@ -395,3 +395,26 @@ training split only, versioned document-aware token shards, streaming dataset
 access, exact checkpoint/resume, strong statistical baselines and held-out
 language experiments. Further improvements limited to the mathematical token
 benchmark are not considered language or theory milestones.
+
+## 2026-06-23 — mapped shards and NAIME compatibility audit
+
+A versioned little-endian token shard format, zero-copy memory-mapped reader and
+explicit `(shard, sequence, token)` cursor were added. C++, C and Python tests
+verify deterministic bytes, no cross-sequence targets and exact next-example
+replay after reopening a shard. Full payload verification scans mapped memory
+without materializing another token vector.
+
+The existing `fineweb_edu_1b_ctx1024` artifact was audited. It contains 975,610
+train rows and 8,908 validation rows of 1,025 tokens, with observed GPT-2-sized
+token IDs. The preparation record identifies `HuggingFaceFW/fineweb-edu` and
+`sample-10BT`, but the saved artifact does not retain source document IDs,
+original boundaries, source revision, tokenizer files/checksum, license, or
+cross-split deduplication evidence. It is therefore classified
+`compatibility_only`, not accepted as Phase R0 or D1.
+
+A 20,500-token-per-split smoke conversion was run twice in clean external
+directories. Both runs produced manifest SHA-256
+`9408851cc48f92ea19673ec73391d687e86fd93296aaf3943b83389de3a6eea7`, and every
+shard hash matched byte-for-byte. The C++ shared library opened and payload-
+verified all four Python-generated shards. This validates the conversion and
+cross-language format contract; it is not a model-quality experiment.

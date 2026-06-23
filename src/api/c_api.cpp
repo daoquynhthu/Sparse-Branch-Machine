@@ -30,6 +30,10 @@ struct sbm_dataset_handle {
     std::variant<sbm::VectorDataset, sbm::TokenDataset> value;
 };
 
+struct sbm_token_shard_handle {
+    sbm::MappedTokenShard value;
+};
+
 namespace {
 thread_local std::string g_last_error;
 
@@ -603,6 +607,83 @@ size_t sbm_dataset_example_count(const sbm_dataset_handle* dataset) {
         return token->example_count();
     }
     return std::get<sbm::VectorDataset>(dataset->value).tokens.size();
+}
+
+int sbm_token_shard_write(const sbm_dataset_handle* dataset, const char* path) {
+    clear_error();
+    try {
+        if (dataset == nullptr || path == nullptr) {
+            throw std::invalid_argument("dataset and path must be non-null");
+        }
+        const auto* token = std::get_if<sbm::TokenDataset>(&dataset->value);
+        if (token == nullptr) {
+            throw std::invalid_argument("token shard requires a token dataset");
+        }
+        sbm::write_token_shard(*token, path);
+        return 0;
+    } catch (const std::exception& error) {
+        set_error(error.what());
+        return -1;
+    } catch (...) {
+        set_error("unknown C++ exception");
+        return -1;
+    }
+}
+
+sbm_token_shard_handle* sbm_token_shard_open(const char* path,
+                                              uint64_t shard_index,
+                                              int verify_payload) {
+    return guarded([&] {
+        if (path == nullptr) throw std::invalid_argument("path is null");
+        return new sbm_token_shard_handle{
+            sbm::MappedTokenShard(path, shard_index, verify_payload != 0)};
+    });
+}
+
+void sbm_token_shard_destroy(sbm_token_shard_handle* shard) { delete shard; }
+
+uint32_t sbm_token_shard_vocab_size(const sbm_token_shard_handle* shard) {
+    return shard == nullptr ? 0U : shard->value.vocab_size();
+}
+
+uint64_t sbm_token_shard_token_count(const sbm_token_shard_handle* shard) {
+    return shard == nullptr ? 0U : shard->value.token_count();
+}
+
+uint64_t sbm_token_shard_sequence_count(const sbm_token_shard_handle* shard) {
+    return shard == nullptr ? 0U : shard->value.sequence_count();
+}
+
+uint64_t sbm_token_shard_dataset_hash(const sbm_token_shard_handle* shard) {
+    return shard == nullptr ? 0U : shard->value.dataset_hash();
+}
+
+int sbm_token_shard_next(const sbm_token_shard_handle* shard,
+                         sbm_token_shard_cursor* cursor,
+                         uint32_t* input,
+                         uint32_t* target) {
+    clear_error();
+    try {
+        if (shard == nullptr || cursor == nullptr || input == nullptr || target == nullptr) {
+            throw std::invalid_argument("shard, cursor, input and target must be non-null");
+        }
+        sbm::TokenShardCursor cpp_cursor{
+            cursor->shard_index, cursor->sequence_index, cursor->token_offset};
+        sbm::TokenExample example{};
+        if (!shard->value.next(cpp_cursor, example)) return 0;
+        cursor->shard_index = cpp_cursor.shard_index;
+        cursor->sequence_index = cpp_cursor.sequence_index;
+        cursor->token_offset = cpp_cursor.token_offset;
+        *input = example.input;
+        *target = example.target;
+        return 1;
+    } catch (const std::exception& error) {
+        set_error(error.what());
+        return -1;
+    } catch (...) {
+        set_error("unknown C++ exception");
+        return -1;
+    }
 }
 
 char* sbm_run_experiment_json(const sbm_dataset_handle* dataset, size_t warmup,

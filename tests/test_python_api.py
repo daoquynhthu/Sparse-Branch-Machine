@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import math
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,5 +46,18 @@ assert token_result["objective"] == "token_cross_entropy"
 with runtime.token_dataset_from_ids([1, 2, 3, 1, 2, 4], 8, [0, 3, 6]) as external:
     assert external.sequence_count == 2
     assert external.example_count == 4
+    with tempfile.TemporaryDirectory() as directory:
+        shard_path = Path(directory) / "python_api.sbt"
+        external.write_token_shard(shard_path)
+        with runtime.open_token_shard(shard_path, shard_index=5) as shard:
+            assert shard.vocab_size == 8
+            assert shard.token_count == 6
+            assert shard.sequence_count == 2
+            assert shard.next_example() == (1, 2)
+            resume = shard.cursor
+            assert shard.next_example() == (2, 3)
+        with runtime.open_token_shard(shard_path, shard_index=5) as replay:
+            replay.seek(resume)
+            assert replay.next_example() == (2, 3)
 
 print("Python API tests passed")

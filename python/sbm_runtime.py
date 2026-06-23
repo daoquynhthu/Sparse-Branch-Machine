@@ -19,6 +19,14 @@ class SBMError(RuntimeError):
     pass
 
 
+class _TokenShardCursor(ctypes.Structure):
+    _fields_ = [
+        ("shard_index", ctypes.c_uint64),
+        ("sequence_index", ctypes.c_uint64),
+        ("token_offset", ctypes.c_uint64),
+    ]
+
+
 def _candidate_library_names() -> list[str]:
     system = platform.system()
     if system == "Windows":
@@ -161,6 +169,31 @@ class Runtime:
         lib.sbm_dataset_example_count.argtypes = [ctypes.c_void_p]
         lib.sbm_dataset_example_count.restype = ctypes.c_size_t
 
+        lib.sbm_token_shard_write.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+        lib.sbm_token_shard_write.restype = ctypes.c_int
+        lib.sbm_token_shard_open.argtypes = [
+            ctypes.c_char_p,
+            ctypes.c_uint64,
+            ctypes.c_int,
+        ]
+        lib.sbm_token_shard_open.restype = ctypes.c_void_p
+        lib.sbm_token_shard_destroy.argtypes = [ctypes.c_void_p]
+        lib.sbm_token_shard_vocab_size.argtypes = [ctypes.c_void_p]
+        lib.sbm_token_shard_vocab_size.restype = ctypes.c_uint32
+        lib.sbm_token_shard_token_count.argtypes = [ctypes.c_void_p]
+        lib.sbm_token_shard_token_count.restype = ctypes.c_uint64
+        lib.sbm_token_shard_sequence_count.argtypes = [ctypes.c_void_p]
+        lib.sbm_token_shard_sequence_count.restype = ctypes.c_uint64
+        lib.sbm_token_shard_dataset_hash.argtypes = [ctypes.c_void_p]
+        lib.sbm_token_shard_dataset_hash.restype = ctypes.c_uint64
+        lib.sbm_token_shard_next.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(_TokenShardCursor),
+            ctypes.POINTER(ctypes.c_uint32),
+            ctypes.POINTER(ctypes.c_uint32),
+        ]
+        lib.sbm_token_shard_next.restype = ctypes.c_int
+
         lib.sbm_run_experiment_json.argtypes = [
             ctypes.c_void_p,
             ctypes.c_size_t,
@@ -271,6 +304,19 @@ class Runtime:
         if not pointer:
             raise self._error("load dataset")
         return Dataset(self, pointer)
+
+    def open_token_shard(
+        self,
+        path: str | os.PathLike[str],
+        shard_index: int = 0,
+        verify_payload: bool = True,
+    ) -> "TokenShard":
+        pointer = self.lib.sbm_token_shard_open(
+            os.fsencode(path), shard_index, int(verify_payload)
+        )
+        if not pointer:
+            raise self._error("open token shard")
+        return TokenShard(self, pointer, shard_index)
 
 
 class Config:
@@ -394,6 +440,10 @@ class Dataset:
         if self.runtime.lib.sbm_dataset_save(self.pointer, os.fsencode(path)) != 0:
             raise self.runtime._error("save dataset")
 
+    def write_token_shard(self, path: str | os.PathLike[str]) -> None:
+        if self.runtime.lib.sbm_token_shard_write(self.pointer, os.fsencode(path)) != 0:
+            raise self.runtime._error("write token shard")
+
     def run(
         self,
         config: Config,
@@ -413,3 +463,69 @@ class Dataset:
             merge_interval,
         )
         return self.runtime._take_json(pointer, "run experiment")
+
+
+class TokenShard:
+    def __init__(self, runtime: Runtime, pointer: int, shard_index: int):
+        self.runtime = runtime
+        self.pointer = pointer
+        self._cursor = _TokenShardCursor(shard_index, 0, 0)
+
+    def close(self) -> None:
+        if self.pointer:
+            self.runtime.lib.sbm_token_shard_destroy(self.pointer)
+            self.pointer = None
+
+    def __enter__(self) -> "TokenShard":
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass
+
+    @property
+    def vocab_size(self) -> int:
+        return int(self.runtime.lib.sbm_token_shard_vocab_size(self.pointer))
+
+    @property
+    def token_count(self) -> int:
+        return int(self.runtime.lib.sbm_token_shard_token_count(self.pointer))
+
+    @property
+    def sequence_count(self) -> int:
+        return int(self.runtime.lib.sbm_token_shard_sequence_count(self.pointer))
+
+    @property
+    def dataset_hash(self) -> int:
+        return int(self.runtime.lib.sbm_token_shard_dataset_hash(self.pointer))
+
+    @property
+    def cursor(self) -> tuple[int, int, int]:
+        return (
+            int(self._cursor.shard_index),
+            int(self._cursor.sequence_index),
+            int(self._cursor.token_offset),
+        )
+
+    def seek(self, cursor: tuple[int, int, int]) -> None:
+        self._cursor = _TokenShardCursor(*cursor)
+
+    def next_example(self) -> Optional[tuple[int, int]]:
+        input_token = ctypes.c_uint32()
+        target_token = ctypes.c_uint32()
+        status = self.runtime.lib.sbm_token_shard_next(
+            self.pointer,
+            ctypes.byref(self._cursor),
+            ctypes.byref(input_token),
+            ctypes.byref(target_token),
+        )
+        if status < 0:
+            raise self.runtime._error("read token shard")
+        if status == 0:
+            return None
+        return int(input_token.value), int(target_token.value)
