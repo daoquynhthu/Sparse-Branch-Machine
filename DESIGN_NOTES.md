@@ -69,3 +69,31 @@ candidates to overwhelm one precise content match.
 Every structural or routing mechanism must be judged against simple conditional
 centroid baselines. A model score above the global mean is not sufficient when a
 single-token or token-pair table explains most of the target.
+
+## Multiscale additive addressing
+
+A single convex mixture was structurally mismatched to the current vector task:
+independent delayed factors must be added, not averaged. The machine therefore
+uses independent lag-1, lag-2 and lag-4 address namespaces. Channel zero is an
+anchor; later channels are additive residual memories. The lag sequence is a
+generic exponentially spaced temporal sketch, not a semantic decomposition of
+the task.
+
+Each channel receives an exact-address candidate before control-edge or neighbor
+candidates can consume the beam. Responsibilities are normalized per channel,
+so a busy address view cannot erase another view. The active work remains bounded
+by the beam even though total capacity triples.
+
+Address-local vectors are immutable under foreign-context retrieval. A control
+edge may alter selection probability, but it cannot rewrite the destination's
+stored centroid from the source context. This separates local knowledge from
+routing credit.
+
+Exact nodes learn sequential local residual means. Fixed EMA rates were rejected:
+with roughly ten samples per address they remained strongly biased toward node
+initialization. The anchor uses `1/n`; residual stages use a mild recency
+pseudocount to track the still-changing upstream estimates.
+
+The benchmark includes a fixed multiscale residual-table control with the same
+lags. The learned machine must be compared against this control, not only against
+a token or token-pair centroid.

@@ -13,6 +13,11 @@ namespace sbm {
     std::span<const std::uint32_t> window,
     std::uint32_t alphabet,
     std::uint64_t seed = 0x9E3779B97F4A7C15ULL) noexcept;
+[[nodiscard]] std::uint64_t lagged_token_signature(
+    std::span<const std::uint32_t> window,
+    std::uint32_t alphabet,
+    std::uint32_t lag,
+    std::uint64_t seed = 0x9E3779B97F4A7C15ULL) noexcept;
 [[nodiscard]] double hamming_similarity(std::uint64_t a, std::uint64_t b) noexcept;
 [[nodiscard]] bool simd_available() noexcept;
 

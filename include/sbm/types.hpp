@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -7,6 +9,7 @@ namespace sbm {
 
 using NodeId = std::uint32_t;
 inline constexpr NodeId kInvalidNode = UINT32_MAX;
+inline constexpr std::size_t kAddressChannelCount = 3U;
 
 enum class NodePhase : std::uint8_t { Cold, Warm, Mature, Dormant };
 
@@ -38,11 +41,18 @@ struct Config {
     float trace_decay{0.80F};
     float edge_decay{0.999F};
     float edge_learning_rate{0.08F};
-    float edge_score_weight{0.16F};
+    float edge_score_weight{0.32F};
     float edge_min_contribution{0.004F};
     float responsibility_temperature{3.0F};
-    float exact_region_mass{0.86F};
+    float exact_region_mass{0.88F};
     float min_update_responsibility{0.01F};
+    // Generic exponentially spaced temporal address views.  Channel zero is
+    // the primary prediction anchor; later channels store additive residuals.
+    std::array<std::uint32_t, kAddressChannelCount> address_lags{1U, 2U, 4U};
+    float residual_channel_gain{1.0F};
+    float residual_learning_rate{0.10F};
+    float residual_mature_learning_rate{0.030F};
+    float residual_recency_pseudocount{0.75F};
     std::uint32_t warm_visits{12};
     std::uint32_t mature_visits{96};
     float dormant_utility{-0.30F};
@@ -78,6 +88,8 @@ struct Diagnostics {
     std::uint64_t warm_nodes{};
     std::uint64_t mature_nodes{};
     std::uint64_t dormant_nodes{};
+    std::uint64_t anchor_nodes{};
+    std::uint64_t residual_nodes{};
     std::uint64_t stale_bucket_refs_skipped{};
     std::uint64_t stale_edge_refs_skipped{};
     std::uint64_t estimated_bytes{};

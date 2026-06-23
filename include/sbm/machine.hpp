@@ -43,6 +43,7 @@ private:
         float responsibility{};
         float contribution{};
         bool exact_region{};
+        std::uint8_t channel{};
     };
     struct TraceFrame {
         std::vector<NodeId> route;
@@ -51,14 +52,19 @@ private:
     };
 
     [[nodiscard]] std::uint32_t bucket(std::uint64_t signature) const noexcept;
+    [[nodiscard]] std::size_t bucket_index(std::uint8_t channel,
+                                           std::uint64_t signature) const noexcept;
     [[nodiscard]] NodeId new_node(std::uint64_t signature, std::span<const float> initial,
-                                  NodeId parent = kInvalidNode);
+                                  NodeId parent = kInvalidNode,
+                                  std::uint8_t channel = 0U);
     [[nodiscard]] std::size_t slot_of(NodeId id) const noexcept;
-    [[nodiscard]] std::vector<CandidateNode> candidate_ids(std::uint64_t signature);
-    [[nodiscard]] double score(std::size_t slot, std::uint64_t signature,
+    [[nodiscard]] std::vector<CandidateNode> candidate_ids(
+        std::span<const std::uint64_t> signatures);
+    [[nodiscard]] double score(std::size_t slot,
+                               std::span<const std::uint64_t> signatures,
                                float edge_prior) const noexcept;
     [[nodiscard]] std::pair<std::vector<ScoredNode>, std::uint32_t>
-        select_route(std::uint64_t signature);
+        select_route(std::span<const std::uint64_t> signatures);
     void assign_responsibilities(std::vector<ScoredNode>& active) const;
     void aggregate(const std::vector<ScoredNode>& active, std::span<float> output) const;
     void compute_counterfactual_contributions(std::vector<ScoredNode>& active,
@@ -88,6 +94,7 @@ private:
     std::vector<float> loss_ema_;
     std::vector<float> address_loss_ema_;
     std::vector<std::uint8_t> phases_;
+    std::vector<std::uint8_t> channels_;
     std::vector<std::uint8_t> hot_indexed_;
     std::vector<NodeId> parents_;
     std::vector<float> output_vectors_;

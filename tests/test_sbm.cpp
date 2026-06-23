@@ -25,6 +25,11 @@ int main() {
     const auto signature_b = sbm::token_context_signature(context_b, 64);
     assert((signature_a >> 52U) != (signature_b >> 52U));
 
+    const std::array<std::uint32_t, 5> lag_context{3, 9, 17, 25, 31};
+    const auto lag_one = sbm::lagged_token_signature(lag_context, 64, 1);
+    const auto lag_two = sbm::lagged_token_signature(lag_context, 64, 2);
+    assert((lag_one >> 52U) != (lag_two >> 52U));
+
     auto dataset = sbm::generate_vector_process(8000, 32, 16, 20, 9);
     assert(dataset.tokens.size() == 8000);
     assert(dataset.targets.size() == 8000 * 16);
@@ -71,15 +76,22 @@ int main() {
         (void)machine.step(dataset.tokens[i], dataset.target(i), false);
     }
     assert(machine.live_nodes() == frozen_nodes);
+    const auto diagnostics = machine.diagnostics();
+    assert(diagnostics.anchor_nodes > 0);
+    assert(diagnostics.residual_nodes > 0);
+    assert(diagnostics.anchor_nodes + diagnostics.residual_nodes == diagnostics.live_nodes);
 
     const auto result = sbm::run_experiment(dataset, 3000, 9, true, 1000, 0, 0);
     assert(std::isfinite(result.eval.normalized_rmse));
     assert(std::isfinite(result.token_baseline_eval.r2));
     assert(std::isfinite(result.pair_baseline_eval.r2));
+    assert(std::isfinite(result.pair_lag2_baseline_eval.r2));
+    assert(std::isfinite(result.multiscale_baseline_eval.r2));
     assert(std::abs(result.mean_baseline_eval.r2) < 1e-5);
     assert(result.token_baseline_eval.r2 < 0.85);
     assert(result.pair_baseline_eval.r2 < 0.90);
     assert(result.seen_context_vectors + result.unseen_context_vectors == 5000);
+    assert(result.address_lags == sbm::Config{}.address_lags);
     assert(result.diagnostics.steps == 8000);
 
     std::cout << "all tests passed; SIMD=" << sbm::simd_available() << '\n';

@@ -51,6 +51,30 @@ std::uint64_t token_context_signature(std::span<const std::uint32_t> window,
     const std::uint64_t low_mask=(std::uint64_t{1}<<(64U-used))-1U;
     return packed|(mixed&low_mask);
 }
+std::uint64_t lagged_token_signature(std::span<const std::uint32_t> window,
+                                     std::uint32_t alphabet,
+                                     std::uint32_t lag,
+                                     std::uint64_t seed) noexcept {
+    if (window.empty()) return mix64(seed ^ lag);
+    const auto current = window.back();
+    const auto previous = window.size() > lag
+        ? window[window.size() - 1U - static_cast<std::size_t>(lag)]
+        : current;
+    const std::uint32_t pair[]{previous, current};
+    const auto pair_signature = token_context_signature(pair, alphabet,
+        seed ^ mix64(static_cast<std::uint64_t>(lag) + 0xA0761D6478BD642FULL));
+
+    // Preserve the lagged pair in the high address bits while letting the
+    // lower bits distinguish longer contexts for future specialization.
+    const unsigned symbol_bits = std::max(
+        1U, static_cast<unsigned>(std::bit_width(alphabet > 0 ? alphabet - 1U : 0U)));
+    const unsigned address_bits = std::min(64U, 2U * symbol_bits);
+    if (address_bits == 64U) return pair_signature;
+    const std::uint64_t high_mask = ~((std::uint64_t{1} << (64U - address_bits)) - 1U);
+    const auto context_mix = token_context_signature(window, alphabet,
+        seed ^ mix64(static_cast<std::uint64_t>(lag) * 0xE7037ED1A0B428DBULL));
+    return (pair_signature & high_mask) | (context_mix & ~high_mask);
+}
 double hamming_similarity(std::uint64_t a,std::uint64_t b) noexcept { return 1.0-static_cast<double>(std::popcount(a^b))/64.0; }
 
 } // namespace sbm

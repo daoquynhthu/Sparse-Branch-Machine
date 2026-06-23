@@ -13,7 +13,7 @@
 namespace sbm {
 ExperimentResult run_experiment(const VectorDataset& dataset,
                                       std::size_t warmup,
-                                      std::uint64_t seed,
+                                      Config config,
                                       bool strict,
                                       std::size_t prefill,
                                       std::size_t prune_interval,
@@ -26,10 +26,8 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
         throw std::invalid_argument("warmup must leave non-empty train and eval partitions");
     }
 
-    Config config;
     config.token_alphabet = dataset.token_alphabet;
     config.vector_dim = dataset.vector_dim;
-    config.seed = seed;
     config.allow_growth_when_frozen = !strict;
     SparseBranchMachine model(config);
     model.prefill_distractors(prefill);
@@ -94,6 +92,60 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
         }
     }
 
+    // Strong fixed-table control matching the model's generic 1/2/4 temporal
+    // views.  Each later table learns only the residual left by earlier views.
+    std::vector<double> lag2_sum(alphabet * alphabet * dim, 0.0);
+    std::vector<std::uint64_t> lag2_count(alphabet * alphabet, 0);
+    for (std::size_t t = 2; t < warmup; ++t) {
+        const std::size_t current = dataset.tokens[t];
+        const std::size_t previous = dataset.tokens[t - 1U];
+        const std::size_t lagged = dataset.tokens[t - 2U];
+        const std::size_t base_key = previous * alphabet + current;
+        const std::size_t residual_key = lagged * alphabet + current;
+        ++lag2_count[residual_key];
+        const auto target = dataset.target(t);
+        for (std::size_t j = 0; j < dim; ++j) {
+            lag2_sum[residual_key * dim + j] +=
+                static_cast<double>(target[j] - pair_mean[base_key * dim + j]);
+        }
+    }
+    std::vector<float> lag2_mean(alphabet * alphabet * dim, 0.0F);
+    for (std::size_t key = 0; key < alphabet * alphabet; ++key) {
+        if (lag2_count[key] == 0) continue;
+        for (std::size_t j = 0; j < dim; ++j) {
+            lag2_mean[key * dim + j] = static_cast<float>(
+                lag2_sum[key * dim + j] / static_cast<double>(lag2_count[key]));
+        }
+    }
+
+    std::vector<double> lag4_sum(alphabet * alphabet * dim, 0.0);
+    std::vector<std::uint64_t> lag4_count(alphabet * alphabet, 0);
+    for (std::size_t t = 4; t < warmup; ++t) {
+        const std::size_t current = dataset.tokens[t];
+        const std::size_t previous = dataset.tokens[t - 1U];
+        const std::size_t lag2 = dataset.tokens[t - 2U];
+        const std::size_t lag4 = dataset.tokens[t - 4U];
+        const std::size_t base_key = previous * alphabet + current;
+        const std::size_t lag2_key = lag2 * alphabet + current;
+        const std::size_t lag4_key = lag4 * alphabet + current;
+        ++lag4_count[lag4_key];
+        const auto target = dataset.target(t);
+        for (std::size_t j = 0; j < dim; ++j) {
+            const float earlier = pair_mean[base_key * dim + j] +
+                                  lag2_mean[lag2_key * dim + j];
+            lag4_sum[lag4_key * dim + j] +=
+                static_cast<double>(target[j] - earlier);
+        }
+    }
+    std::vector<float> lag4_mean(alphabet * alphabet * dim, 0.0F);
+    for (std::size_t key = 0; key < alphabet * alphabet; ++key) {
+        if (lag4_count[key] == 0) continue;
+        for (std::size_t j = 0; j < dim; ++j) {
+            lag4_mean[key * dim + j] = static_cast<float>(
+                lag4_sum[key * dim + j] / static_cast<double>(lag4_count[key]));
+        }
+    }
+
     struct Accumulator {
         double squared_error{};
         double target_energy{};
@@ -127,10 +179,13 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
     Accumulator mean_acc;
     Accumulator token_acc;
     Accumulator pair_acc;
+    Accumulator pair_lag2_acc;
+    Accumulator multiscale_acc;
     Accumulator seen_acc;
     Accumulator unseen_acc;
 
     const auto start = std::chrono::steady_clock::now();
+    std::vector<float> fixed_prediction(dim, 0.0F);
     for (std::size_t t = 0; t < dataset.tokens.size(); ++t) {
         const bool learn = t < warmup;
         const auto target = dataset.target(t);
@@ -151,6 +206,31 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
                     std::span<const float>(pair_mean.data() + pair * dim, dim), target);
             } else {
                 add(pair_acc, global_mean, target);
+            }
+            if (t >= 2) {
+                const std::size_t current = dataset.tokens[t];
+                const std::size_t previous = dataset.tokens[t - 1U];
+                const std::size_t lagged = dataset.tokens[t - 2U];
+                const std::size_t base_key = previous * alphabet + current;
+                const std::size_t lag2_key = lagged * alphabet + current;
+                for (std::size_t j = 0; j < dim; ++j) {
+                    fixed_prediction[j] = pair_mean[base_key * dim + j] +
+                                          lag2_mean[lag2_key * dim + j];
+                }
+                add(pair_lag2_acc, fixed_prediction, target);
+                if (t >= 4) {
+                    const std::size_t lag4 = dataset.tokens[t - 4U];
+                    const std::size_t lag4_key = lag4 * alphabet + current;
+                    for (std::size_t j = 0; j < dim; ++j) {
+                        fixed_prediction[j] += lag4_mean[lag4_key * dim + j];
+                    }
+                    add(multiscale_acc, fixed_prediction, target);
+                } else {
+                    add(multiscale_acc, fixed_prediction, target);
+                }
+            } else {
+                add(pair_lag2_acc, global_mean, target);
+                add(multiscale_acc, global_mean, target);
             }
             if (training_contexts.contains(context_key(t))) add(seen_acc, prediction, target);
             else add(unseen_acc, prediction, target);
@@ -173,6 +253,8 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
     result.mean_baseline_eval = metrics(mean_acc);
     result.token_baseline_eval = metrics(token_acc);
     result.pair_baseline_eval = metrics(pair_acc);
+    result.pair_lag2_baseline_eval = metrics(pair_lag2_acc);
+    result.multiscale_baseline_eval = metrics(multiscale_acc);
     result.seen_context_eval = metrics(seen_acc);
     result.unseen_context_eval = metrics(unseen_acc);
     result.seen_context_vectors = seen_acc.vectors;
@@ -183,7 +265,25 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
     result.dataset_hash = hash_dataset(dataset);
     result.vector_dim = dataset.vector_dim;
     result.token_alphabet = dataset.token_alphabet;
+    result.address_lags = config.address_lags;
+    result.exact_region_mass = config.exact_region_mass;
+    result.residual_channel_gain = config.residual_channel_gain;
+    result.residual_recency_pseudocount = config.residual_recency_pseudocount;
+    result.edge_score_weight = config.edge_score_weight;
     return result;
+}
+
+ExperimentResult run_experiment(const VectorDataset& dataset,
+                                std::size_t warmup,
+                                std::uint64_t seed,
+                                bool strict,
+                                std::size_t prefill,
+                                std::size_t prune_interval,
+                                std::size_t merge_interval) {
+    Config config;
+    config.seed = seed;
+    return run_experiment(dataset, warmup, config, strict, prefill,
+                          prune_interval, merge_interval);
 }
 std::string to_json(const ExperimentResult& result) {
     std::ostringstream out;
@@ -195,10 +295,17 @@ std::string to_json(const ExperimentResult& result) {
             << "  \"" << prefix << "_r2\": " << metrics.r2 << ",\n";
     };
     out << "{\n"
-        << "  \"task\": \"token_conditioned_vector_prediction\",\n"
+        << "  \"task\": \"multiscale_token_vector_prediction\",\n"
         << "  \"steps\": " << result.diagnostics.steps << ",\n"
         << "  \"vector_dim\": " << result.vector_dim << ",\n"
         << "  \"token_alphabet\": " << result.token_alphabet << ",\n"
+        << "  \"address_lags\": [" << result.address_lags[0] << ", "
+        << result.address_lags[1] << ", " << result.address_lags[2] << "],\n"
+        << "  \"exact_region_mass\": " << result.exact_region_mass << ",\n"
+        << "  \"residual_channel_gain\": " << result.residual_channel_gain << ",\n"
+        << "  \"residual_recency_pseudocount\": "
+        << result.residual_recency_pseudocount << ",\n"
+        << "  \"edge_score_weight\": " << result.edge_score_weight << ",\n"
         << "  \"live_nodes\": " << result.diagnostics.live_nodes << ",\n"
         << "  \"edges\": " << result.diagnostics.edges << ",\n"
         << "  \"avg_active\": " << result.diagnostics.avg_active << ",\n"
@@ -206,6 +313,8 @@ std::string to_json(const ExperimentResult& result) {
         << "  \"created_total\": " << result.diagnostics.created_total << ",\n"
         << "  \"merged_total\": " << result.diagnostics.merged_total << ",\n"
         << "  \"pruned_total\": " << result.diagnostics.pruned_total << ",\n"
+        << "  \"anchor_nodes\": " << result.diagnostics.anchor_nodes << ",\n"
+        << "  \"residual_nodes\": " << result.diagnostics.residual_nodes << ",\n"
         << "  \"estimated_bytes\": " << result.diagnostics.estimated_bytes << ",\n"
         << "  \"simd_enabled\": " << (result.diagnostics.simd_enabled ? "true" : "false") << ",\n";
     emit_metrics("train", result.train);
@@ -213,6 +322,8 @@ std::string to_json(const ExperimentResult& result) {
     emit_metrics("mean_baseline_eval", result.mean_baseline_eval);
     emit_metrics("token_baseline_eval", result.token_baseline_eval);
     emit_metrics("pair_baseline_eval", result.pair_baseline_eval);
+    emit_metrics("pair_lag2_baseline_eval", result.pair_lag2_baseline_eval);
+    emit_metrics("multiscale_baseline_eval", result.multiscale_baseline_eval);
     emit_metrics("seen_context_eval", result.seen_context_eval);
     emit_metrics("unseen_context_eval", result.unseen_context_eval);
     out << "  \"seen_context_vectors\": " << result.seen_context_vectors << ",\n"

@@ -176,3 +176,49 @@ Touching only `machine_learning.cpp` rebuilt one translation unit plus archive a
 executable relinks; dataset, SIMD, signatures and experiment sources were not
 recompiled. On the current workspace this incremental build completed in about
 3.6 seconds, well below the 120-second execution ceiling.
+
+## 2026-06-23 — multiscale additive vector architecture
+
+Work continued directly on `modular-build-v5`; no new branch was created.
+
+The v5 model used one pair-address channel and a convex mixture of candidate
+vectors. That representation was structurally unable to add independent delayed
+factors. Three independent temporal views were introduced at lags 1, 2 and 4:
+the first stores the primary prediction, and the latter two store sequential
+additive residuals.
+
+A first gradient-style residual implementation reached seed-7 frozen R2 about
+0.699. A strong fixed-table control using the same lag-1/2/4 decomposition reached
+about 0.824, exposing underfitting rather than an addressing failure. Each node
+saw only about ten local samples, so the inherited fixed EMA learning rate was
+replaced by an online local mean. Residual stages receive a mild recency
+pseudocount to track moving upstream means.
+
+Another correctness issue was removed: a node reached through a foreign control
+edge was being updated toward that foreign context's target, corrupting the
+node's own address-local vector. Foreign nodes are now read-only and only the
+control edge receives credit.
+
+Accepted runtime calibration across seeds 7, 11 and 19:
+
+- exact-region mass: 0.88;
+- residual channel gain: 1.0;
+- residual recency pseudocount: 0.75;
+- edge score weight: 0.32.
+
+Frozen evaluation R2 values are 0.8058, 0.8108 and 0.8062, mean 0.8076. The fixed
+multiscale table scores 0.8240, 0.8273 and 0.8223. Unseen three-token-context R2
+remains above 0.803 for all three seeds.
+
+Negative routing experiments were retained:
+
+- forcing exact-region mass to 1.0 reduced seed-7 R2 by roughly 0.006, showing a
+  small positive contribution from sparse branch candidates;
+- reinforcing all three channels with same-channel-only edges increased graph
+  size and candidate count while reducing R2 to about 0.799;
+- widening unrestricted reinforcement from two to three route positions roughly
+  doubled edge count without measurable quality gain.
+
+The accepted implementation therefore keeps bounded two-position edge
+reinforcement. Runtime mixture parameters are now exposed through the CLI so
+future sweeps do not trigger full header recompilation.

@@ -40,3 +40,18 @@ ctest --test-dir build --output-on-failure
 The module boundary is intended to preserve algorithm iteration speed. Do not
 move task generation, benchmark baselines or JSON formatting into the machine
 library merely for convenience.
+
+## Runtime parameter sweeps
+
+Mixture and local-learning calibration no longer requires editing `types.hpp`.
+The benchmark accepts runtime overrides:
+
+```bash
+./build/sbm_benchmark --exact-region-mass 0.88 \
+  --residual-gain 1.0 \
+  --residual-pseudocount 0.75 \
+  --edge-score-weight 0.32
+```
+
+This avoids header-triggered full rebuilds during parameter sweeps. Structural
+changes still belong in the relevant module and should be covered by tests.

@@ -24,6 +24,8 @@ void usage() {
            "[--alphabet N] [--vector-dim N] [--hidden-dim N] "
            "[--dataset FILE] [--write-dataset FILE] [--prefill N] "
            "[--prune-interval N] [--merge-interval N] "
+           "[--exact-region-mass X] [--residual-gain X] "
+           "[--residual-pseudocount X] [--edge-score-weight X] "
            "[--allow-eval-growth] [--output FILE]\n";
 }
 } // namespace
@@ -43,6 +45,7 @@ int main(int argc, char** argv) {
         std::string dataset_path;
         std::string write_dataset_path;
         std::string output_path = "results_vector_v5.json";
+        sbm::Config model_config;
 
         for (int i = 1; i < argc; ++i) {
             const std::string_view argument(argv[i]);
@@ -65,6 +68,10 @@ int main(int argc, char** argv) {
             else if (argument == "--prefill") prefill = number<std::size_t>(value, "prefill");
             else if (argument == "--prune-interval") prune_interval = number<std::size_t>(value, "prune-interval");
             else if (argument == "--merge-interval") merge_interval = number<std::size_t>(value, "merge-interval");
+            else if (argument == "--exact-region-mass") model_config.exact_region_mass = number<float>(value, "exact-region-mass");
+            else if (argument == "--residual-gain") model_config.residual_channel_gain = number<float>(value, "residual-gain");
+            else if (argument == "--residual-pseudocount") model_config.residual_recency_pseudocount = number<float>(value, "residual-pseudocount");
+            else if (argument == "--edge-score-weight") model_config.edge_score_weight = number<float>(value, "edge-score-weight");
             else if (argument == "--dataset") dataset_path = value;
             else if (argument == "--write-dataset") write_dataset_path = value;
             else if (argument == "--output") output_path = value;
@@ -76,8 +83,10 @@ int main(int argc, char** argv) {
             : sbm::load_dataset(dataset_path);
         if (!write_dataset_path.empty()) sbm::save_dataset(dataset, write_dataset_path);
 
-        const auto result = sbm::run_experiment(dataset, warmup, seed, strict_freeze,
-                                                prefill, prune_interval, merge_interval);
+        model_config.seed = seed;
+        const auto result = sbm::run_experiment(dataset, warmup, model_config,
+                                                strict_freeze, prefill,
+                                                prune_interval, merge_interval);
         const auto json = sbm::to_json(result);
         std::ofstream output(output_path);
         if (!output) throw std::runtime_error("cannot open output");

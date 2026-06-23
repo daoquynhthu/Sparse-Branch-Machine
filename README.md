@@ -1,138 +1,118 @@
 # Sparse Branch Machine Research
 
-CPU-first sparse learning research platform. The current branch,
-`vector-prediction-v5`, keeps the v2/v3 logical-ID, sparse-addressing and local
-learning core, but fixes several correctness and experimental-design defects in
-v4.
+CPU-first sparse learning research platform. The current implementation predicts
+continuous vectors from discrete token streams without dense global matrices,
+autodiff or backpropagation. It retains stable logical node addresses, bounded
+candidate search, sparse branch edges and local updates.
 
 ## Current task
 
-Each step provides a discrete token and asks the model to predict a
-16-dimensional continuous vector. The target is a stationary nonlinear function
-of the current token, several delayed tokens, a history-derived regime and
-multiplicative feature interactions, plus weak observation noise.
+Each step provides a token from a 64-symbol alphabet and asks the model to predict
+a 16-dimensional vector. The stationary target depends on current and delayed
+tokens, a history-derived regime, nonlinear interactions and weak observation
+noise. The first 40,000 of 120,000 steps are learned; the remaining 80,000 are
+strictly frozen.
 
-The token stream now has broad transition support. The earlier v4 generator was
-nearly determined by the current token: a token-conditional mean baseline reached
-R2 above 0.95. That task was rejected. In v5, the default baselines are roughly:
+Simple frozen-evaluation controls on seed 7 are:
 
 - global mean: R2 = 0;
-- current-token mean: R2 = 0.30;
-- previous/current-token pair mean: R2 = 0.52.
+- current-token centroid: R2 = 0.303;
+- previous/current pair centroid: R2 = 0.520;
+- pair plus lag-2 residual table: R2 = 0.706;
+- fixed lag-1/2/4 residual tables: R2 = 0.824.
 
-The task is therefore neither saturated nor dominated by a single token lookup.
+The last control is intentionally strong: it distinguishes a working sparse
+machine from a task-specific collection of conditional means.
 
-Default dataset:
+## Current architecture
 
-- 64 token values;
-- 16-dimensional prediction target;
-- 24-dimensional synthetic feature bank;
-- 120,000 steps;
-- first 40,000 steps learn;
-- remaining 80,000 steps strictly frozen.
+The model now uses three generic temporal address views with lags 1, 2 and 4.
+Each view has an independent logical address namespace:
 
-## v5 corrections
+1. lag-1 nodes provide the primary vector prediction;
+2. lag-2 nodes store an additive residual;
+3. lag-4 nodes store the remaining additive residual.
 
-### No target leakage
+The prediction is therefore
 
-Prediction metrics are fixed before the target may initialize a new node or
-change an existing vector. v4 recomputed the current training prediction after a
-new node had been initialized from the target, which made training metrics
-optimistic.
+```text
+anchor(lag 1) + residual(lag 2) + residual(lag 4)
+```
 
-### Compact token addressing
+rather than a convex average of unrelated centroids. Every step still activates
+at most six nodes from roughly twelve thousand stored nodes.
 
-A 64-token alphabet needs six bits per symbol. v4 stored recent symbols as
-8-bit bytes, so a 12-bit bucket represented the current token and only two useful
-bits of the previous token. v5 packs symbols using `ceil(log2(alphabet))` bits;
-the default 12-bit region therefore identifies the complete previous/current
-pair.
+Exact address residents receive 88% of each channel's routing mass. Learned
+control edges and nearby regions share the remaining 12%. Removing this branch
+share reduced frozen R2 by roughly 0.006 on the seed-7 calibration, so the sparse
+route is useful but not yet the dominant source of capability.
 
-### Hierarchical responsibility
+## Learning rules
 
-Exact-region nodes receive a reserved share of prediction mass. Sparse edge and
-nearby-region candidates retain a bounded exploratory share instead of diluting
-content-addressed nodes equally.
+Prediction is fixed before the current target may alter state. New nodes cannot
+improve the score of the sample that created them.
 
-### Local counterfactual credit
+Each exact address node learns an online local mean. Residual stages are trained
+sequentially:
 
-For each active node, v5 computes the prediction loss with that node removed.
-The difference is used as a local contribution estimate. Node updates and edge
-reinforcement are weighted by responsibility and positive contribution rather
-than rank alone.
+```text
+lag-1 target = y
+lag-2 target = y - lag-1 prediction
+lag-4 target = y - lag-1 prediction - lag-2 prediction
+```
 
-### Address-local specialization evidence
+The lag-1 mean uses the unbiased `1/n` update. Later residual means use a small
+recency pseudocount because their upstream anchor estimates are still moving.
+Nodes recalled through foreign control edges are read-only; their own local
+vectors are not overwritten by another address context. Only edge credit learns
+from such retrieval.
 
-Total node visits no longer trigger structural splitting. v5 separately tracks
-visits and residual loss obtained while a node is serving its own address region.
-This removed thousands of false specializations caused by incidental edge or
-neighbor retrieval.
+## Current results
 
-### Bounded edge semantics
-
-Edge weights use bounded EMA updates, decay when their source is revisited, and
-are created only from positive counterfactual contribution. Edge strength now
-enters candidate scoring. A pure exact-address ablation performs worse, indicating
-that the sparse route contribution is useful rather than decorative.
-
-### Stronger baselines and diagnostics
-
-The benchmark reports:
-
-- global-mean baseline;
-- current-token mean baseline;
-- previous/current-token pair baseline;
-- model metrics on seen and unseen three-token contexts.
-
-## Default results
-
-Across seeds 7, 11 and 19:
+Seeds 7, 11 and 19, each with 40,000 learning steps and 80,000 strict-freeze
+steps:
 
 | Metric | Mean |
 |---|---:|
-| Model frozen-eval R2 | 0.4805 |
+| Model frozen-eval R2 | 0.8076 |
 | Current-token baseline R2 | 0.3031 |
 | Token-pair baseline R2 | 0.5210 |
-| Seen three-token context R2 | 0.5178 |
-| Unseen three-token context R2 | 0.4744 |
-| Live nodes | 4096 |
-| Mean sparse edges | 72,402 |
+| Fixed multiscale table R2 | 0.8246 |
+| Seen three-token context R2 | 0.8244 |
+| Unseen three-token context R2 | 0.8048 |
+| Live nodes | 12,287 |
+| Active nodes per step | 5.97 |
 
-The model now substantially exceeds the single-token baseline and approaches the
-full token-pair lookup baseline. It does not yet beat the pair baseline, so the
-current result is not evidence of superior abstraction. The seen/unseen context
-gap also remains real.
-
-## Architecture
-
-The model performs:
-
-1. compact recent-token signature construction;
-2. exact address-region lookup;
-3. sparse learned edge retrieval;
-4. fixed-width candidate competition;
-5. hierarchical responsibility assignment;
-6. local vector aggregation;
-7. counterfactual local credit;
-8. local prototype, lifecycle and sparse-edge updates.
-
-There is no tensor framework, dense global matrix, automatic differentiation or
-backpropagation.
+The model is now close to the fixed multiscale conditional-table control and
+substantially exceeds the pair baseline. It still does not surpass the fixed
+1/2/4 residual table, so the result is evidence for a functioning sparse
+multiscale architecture, not yet for superior abstraction.
 
 ## SIMD
 
-AVX2/FMA kernels are selected at runtime on supported x86-64 CPUs for vector dot
-products, squared distance, weighted aggregation and local centroid updates. A
-scalar fallback remains available.
+AVX2/FMA kernels are selected at runtime for local dot products, squared
+distance, aggregation and vector updates. A scalar fallback remains available.
+SIMD accelerates only the small active vectors; the architecture remains driven
+by addressing and branch control rather than dense matrix throughput.
 
 ## Build and run
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
+cmake --build build -j2
 ctest --test-dir build --output-on-failure
 ./build/sbm_benchmark --length 120000 --warmup 40000 \
-  --seed 7 --output results_vector_v5.json
+  --seed 7 --output results_multiscale_v6.json
+```
+
+Runtime research parameters can be changed without recompilation:
+
+```bash
+./build/sbm_benchmark \
+  --exact-region-mass 0.88 \
+  --residual-gain 1.0 \
+  --residual-pseudocount 0.75 \
+  --edge-score-weight 0.32
 ```
 
 Dataset persistence remains supported:
@@ -144,12 +124,12 @@ Dataset persistence remains supported:
 
 ## Current limits
 
-- The default node population still behaves largely as a learned pair-address
-  table with sparse historical correction.
-- Conservative multi-prototype splitting is implemented, but the default task
-  does not provide enough repeated evidence per exact pair for it to help.
-- An aggressive split calibration increased nodes from 4096 to 8325 and reduced
-  frozen R2 from about 0.480 to 0.463; it improved seen contexts while harming
-  unseen contexts, so it was rejected as overfitting.
-- The system has not yet demonstrated variable binding, reusable subprograms or
-  systematic extrapolation.
+- The three temporal views are fixed meta-structure rather than learned address
+  projections.
+- Control edges currently provide routing priors only; they do not yet carry a
+  learned vector transformation or residual payload.
+- Conservative specialization rarely triggers because each exact pair receives
+  few samples. Aggressive splitting previously improved seen contexts while
+  harming unseen contexts.
+- The current task does not test variable binding, reusable subprograms,
+  recursive execution or systematic extrapolation.
