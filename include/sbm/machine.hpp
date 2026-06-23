@@ -196,6 +196,7 @@ private:
     std::uint64_t total_pruned_{};
     mutable std::uint64_t stale_bucket_refs_skipped_{};
     mutable std::uint64_t stale_edge_refs_skipped_{};
+    std::uint64_t max_bucket_candidates_inspected_{};
 };
 
 } // namespace sbm

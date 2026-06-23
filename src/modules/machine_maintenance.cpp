@@ -223,10 +223,21 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     }
     std::uint64_t sparse_entries = 0U;
     std::uint64_t sparse_capacity = 0U;
+    std::uint64_t max_sparse_entries = 0U;
     for (const auto& entries : sparse_outputs_) {
         sparse_entries += entries.size();
         sparse_capacity += entries.capacity();
+        max_sparse_entries = std::max<std::uint64_t>(max_sparse_entries, entries.size());
     }
+    const std::uint64_t address_index_bytes =
+        buckets_.capacity() * sizeof(std::vector<NodeId>) +
+        hot_buckets_.capacity() * sizeof(std::vector<NodeId>) +
+        bucket_last_split_step_.capacity() * sizeof(std::uint64_t) +
+        bucket_capacity * sizeof(NodeId);
+    const std::uint64_t output_structure_bytes =
+        output_tree_.capacity() * sizeof(OutputTreeNode) +
+        token_path_offsets_.capacity() * sizeof(std::uint32_t) +
+        token_path_steps_.capacity() * sizeof(TokenPathStep);
     const auto denominator = std::max<std::uint64_t>(1, total_steps_);
     const std::uint64_t bytes =
         ids_.capacity() * sizeof(NodeId) +
@@ -244,7 +255,7 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         sparse_capacity * sizeof(SparseOutputEntry) +
         id_to_slot_.capacity() * sizeof(std::uint32_t) +
         edge_capacity * sizeof(Edge) +
-        bucket_capacity * sizeof(NodeId);
+        address_index_bytes + output_structure_bytes;
     std::uint64_t seed_channels = 0U;
     std::uint64_t probe_channels = 0U;
     std::uint64_t active_channels = 0U;
@@ -257,7 +268,7 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
             case ChannelPhase::Retired: ++retired_channels; break;
         }
     }
-    return {total_steps_, ids_.size(), next_id_, edge_count,
+    Diagnostics result{total_steps_, ids_.size(), next_id_, edge_count,
             static_cast<double>(total_active_) / static_cast<double>(denominator),
             static_cast<double>(total_candidates_) / static_cast<double>(denominator),
             total_created_, total_merged_, total_pruned_, cold, warm, mature, dormant,
@@ -265,6 +276,11 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
             bytes, sparse_entries, topology_proposals_, topology_accepted_, topology_rejected_,
             topology_pruned_, seed_channels, probe_channels, active_channels, retired_channels,
             simd_available()};
+    result.address_index_bytes = address_index_bytes;
+    result.output_structure_bytes = output_structure_bytes;
+    result.max_bucket_candidates_inspected = max_bucket_candidates_inspected_;
+    result.max_sparse_entries_per_node = max_sparse_entries;
+    return result;
 }
 
 } // namespace sbm

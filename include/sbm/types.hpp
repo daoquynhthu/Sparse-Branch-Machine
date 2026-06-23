@@ -180,6 +180,10 @@ struct Diagnostics {
     std::uint64_t active_channels{};
     std::uint64_t retired_channels{};
     bool simd_enabled{};
+    std::uint64_t address_index_bytes{};
+    std::uint64_t output_structure_bytes{};
+    std::uint64_t max_bucket_candidates_inspected{};
+    std::uint64_t max_sparse_entries_per_node{};
 };
 
 } // namespace sbm

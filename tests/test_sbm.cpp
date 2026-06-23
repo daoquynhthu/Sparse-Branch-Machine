@@ -238,6 +238,7 @@ int main() {
     topology_config.beam_width = 3U;
     topology_config.topology_probe_interval = 8U;
     topology_config.topology_probe_steps = 48U;
+    topology_config.topology_probe_warmup = 8U;
     topology_config.topology_validation_steps = 16U;
     topology_config.topology_min_observations = 8U;
     topology_config.topology_accept_credit = 10.0F;

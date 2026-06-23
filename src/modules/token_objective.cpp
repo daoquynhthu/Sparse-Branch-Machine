@@ -94,7 +94,9 @@ StepStats SparseBranchMachine::step_token_dense(std::uint32_t token,
         double nearest_similarity = -1.0;
         float nearest_persistent_loss = std::numeric_limits<float>::infinity();
         std::uint32_t nearest_visits = 0U;
+        std::uint64_t bucket_candidates = 0U;
         for (const NodeId id : buckets_[exact_bucket]) {
+            ++bucket_candidates;
             const auto slot = slot_of(id);
             if (slot == SIZE_MAX || channels_[slot] != channel) continue;
             ++exact_count;
@@ -106,6 +108,8 @@ StepStats SparseBranchMachine::step_token_dense(std::uint32_t token,
                 nearest_persistent_loss = address_loss_ema_[slot];
             }
         }
+        max_bucket_candidates_inspected_ = std::max(
+            max_bucket_candidates_inspected_, bucket_candidates);
         const bool cooldown_ready = total_steps_ >=
             bucket_last_split_step_[exact_bucket] + config_.split_cooldown;
         const bool persistent_conflict = nearest_exact != kInvalidNode &&
