@@ -99,6 +99,14 @@ SBM_API int sbm_token_shard_next(
     sbm_token_shard_cursor* cursor,
     uint32_t* input,
     uint32_t* target);
+SBM_API char* sbm_run_token_shard_experiment_json(
+    const sbm_token_shard_handle* shard,
+    size_t warmup,
+    const sbm_config_handle* config,
+    int strict_freeze,
+    size_t prefill,
+    size_t prune_interval,
+    size_t merge_interval);
 
 /* Returns a malloc-compatible UTF-8 JSON string, or NULL on failure. */
 SBM_API char* sbm_run_experiment_json(

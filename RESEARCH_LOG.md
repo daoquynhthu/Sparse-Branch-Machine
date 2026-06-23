@@ -418,3 +418,17 @@ directories. Both runs produced manifest SHA-256
 shard hash matched byte-for-byte. The C++ shared library opened and payload-
 verified all four Python-generated shards. This validates the conversion and
 cross-language format contract; it is not a model-quality experiment.
+
+The mapped training path was then exercised on one 10,250-token train shard with
+8,000 training and 2,240 frozen-evaluation examples, fixed topology and sparse
+token output. It completed without materializing the shard. Model-only
+throughput was 5,443 token/s, with 602 live nodes, 5,000 edges, mean 5.99 active
+nodes, 38.51 candidates and 1.53 MB estimated model state.
+
+This smoke result is predictively poor: evaluation NLL was 10.7596 versus 8.5245
+for the unigram control. It is not accepted evidence for the architecture. The
+full command took about 26 seconds while measured model time was 1.88 seconds;
+dense 50,257-way statistical baseline evaluation dominates current end-to-end
+smoke latency and must not be confused with learner throughput. Proper corpus
+experiments still require separate train/validation shard sets and persistent
+multi-shard model state.

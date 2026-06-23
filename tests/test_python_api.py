@@ -56,6 +56,10 @@ with runtime.token_dataset_from_ids([1, 2, 3, 1, 2, 4], 8, [0, 3, 6]) as externa
             assert shard.next_example() == (1, 2)
             resume = shard.cursor
             assert shard.next_example() == (2, 3)
+            with runtime.config({"bucket_bits": 6}) as shard_config:
+                shard_result = shard.run(shard_config, warmup=2)
+            assert shard_result["task"] == "real_corpus_next_token_cross_entropy"
+            assert shard_result["eval_examples"] == 2
         with runtime.open_token_shard(shard_path, shard_index=5) as replay:
             replay.seek(resume)
             assert replay.next_example() == (2, 3)

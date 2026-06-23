@@ -110,7 +110,23 @@ std::uint64_t pair_key(std::uint32_t previous, std::uint32_t current) {
     return (static_cast<std::uint64_t>(previous) << 32U) | current;
 }
 
-std::uint32_t token_at_lag(const TokenDataset& dataset,
+struct TokenDataView {
+    std::uint32_t vocab_size{};
+    std::span<const std::uint32_t> tokens;
+    std::span<const std::uint64_t> sequence_offsets;
+    std::span<const float> oracle_nll;
+    std::uint64_t dataset_hash{};
+    const char* task{};
+
+    [[nodiscard]] std::size_t sequence_count() const noexcept {
+        return sequence_offsets.empty() ? 0U : sequence_offsets.size() - 1U;
+    }
+    [[nodiscard]] std::size_t example_count() const noexcept {
+        return tokens.size() - sequence_count();
+    }
+};
+
+std::uint32_t token_at_lag(const TokenDataView& dataset,
                            std::size_t sequence_start,
                            std::size_t position,
                            std::size_t lag) {
@@ -132,13 +148,13 @@ void normalize_logits(std::span<float> values) {
 
 } // namespace
 
-TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
-                                           std::size_t warmup_examples,
-                                           Config config,
-                                           bool strict_freeze,
-                                           std::size_t prefill,
-                                           std::size_t prune_interval,
-                                           std::size_t merge_interval) {
+static TokenExperimentResult run_token_view(const TokenDataView& dataset,
+                                            std::size_t warmup_examples,
+                                            Config config,
+                                            bool strict_freeze,
+                                            std::size_t prefill,
+                                            std::size_t prune_interval,
+                                            std::size_t merge_interval) {
     if (dataset.vocab_size < 2U || dataset.sequence_offsets.size() < 2U) {
         throw std::invalid_argument("invalid token dataset");
     }
@@ -274,6 +290,7 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
     const double elapsed = std::max(model_elapsed, 1e-12);
 
     TokenExperimentResult result;
+    result.task = dataset.task;
     result.diagnostics = model.diagnostics();
     result.train = finish(train_accumulator);
     result.eval = finish(eval_accumulator);
@@ -290,7 +307,7 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
     result.steps_per_second = static_cast<double>(total_examples) / elapsed;
     result.elapsed_seconds = elapsed;
     result.strict_freeze = strict_freeze;
-    result.dataset_hash = hash_dataset(dataset);
+    result.dataset_hash = dataset.dataset_hash;
     result.vocab_size = dataset.vocab_size;
     result.train_examples = warmup_examples;
     result.eval_examples = total_examples - warmup_examples;
@@ -307,6 +324,35 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
     result.label_smoothing = config.label_smoothing;
     result.sparse_token_output = config.sparse_token_output;
     return result;
+}
+
+TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
+                                           std::size_t warmup_examples,
+                                           Config config,
+                                           bool strict_freeze,
+                                           std::size_t prefill,
+                                           std::size_t prune_interval,
+                                           std::size_t merge_interval) {
+    const TokenDataView view{
+        dataset.vocab_size, dataset.tokens, dataset.sequence_offsets,
+        dataset.oracle_nll, hash_dataset(dataset),
+        "mathematical_next_token_cross_entropy"};
+    return run_token_view(view, warmup_examples, std::move(config), strict_freeze,
+                          prefill, prune_interval, merge_interval);
+}
+
+TokenExperimentResult run_token_experiment(const MappedTokenShard& shard,
+                                           std::size_t warmup_examples,
+                                           Config config,
+                                           bool strict_freeze,
+                                           std::size_t prefill,
+                                           std::size_t prune_interval,
+                                           std::size_t merge_interval) {
+    const TokenDataView view{
+        shard.vocab_size(), shard.tokens(), shard.sequence_offsets(), {},
+        shard.dataset_hash(), "real_corpus_next_token_cross_entropy"};
+    return run_token_view(view, warmup_examples, std::move(config), strict_freeze,
+                          prefill, prune_interval, merge_interval);
 }
 
 std::string to_json(const TokenExperimentResult& result) {
@@ -326,7 +372,7 @@ std::string to_json(const TokenExperimentResult& result) {
         out << '\n';
     };
     out << "{\n"
-        << "  \"task\": \"mathematical_next_token_cross_entropy\",\n"
+        << "  \"task\": \"" << result.task << "\",\n"
         << "  \"objective\": \"token_cross_entropy\",\n"
         << "  \"vocab_size\": " << result.vocab_size << ",\n"
         << "  \"sequence_count\": " << result.sequence_count << ",\n"

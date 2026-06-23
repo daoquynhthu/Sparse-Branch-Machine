@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <vector>
 
 namespace {
@@ -144,6 +145,17 @@ int main() {
         assert(shard.sequence_count() == 2U);
         assert(shard.dataset_hash() == sbm::hash_dataset(shard_dataset));
 
+        sbm::Config shard_config;
+        shard_config.objective = sbm::ObjectiveKind::TokenCrossEntropy;
+        shard_config.token_alphabet = 32U;
+        shard_config.vector_dim = 32U;
+        shard_config.bucket_bits = 6U;
+        const auto shard_result = sbm::run_token_experiment(
+            shard, 2U, shard_config, true, 0U, 0U, 0U);
+        assert(shard_result.task == "real_corpus_next_token_cross_entropy");
+        assert(shard_result.train_examples == 2U);
+        assert(shard_result.eval_examples == 1U);
+
         sbm::TokenShardCursor cursor{7U, 0U, 0U};
         sbm::TokenExample example{};
         assert(shard.next(cursor, example));
@@ -154,6 +166,10 @@ int main() {
         assert(shard.next(cursor, example));
         assert(example.input == 20U && example.target == 21U);
         assert(!shard.next(cursor, example));
+        sbm::TokenShardCursor malformed_cursor{
+            7U, 0U, std::numeric_limits<std::uint64_t>::max()};
+        assert(shard.next(malformed_cursor, example));
+        assert(example.input == 20U && example.target == 21U);
 
         sbm::MappedTokenShard reopened(shard_path_a, 7U);
         auto replay_cursor = resume_cursor;

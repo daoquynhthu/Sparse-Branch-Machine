@@ -57,6 +57,7 @@ struct ExperimentResult {
 };
 
 struct TokenExperimentResult {
+    std::string task{"mathematical_next_token_cross_entropy"};
     Diagnostics diagnostics;
     TokenMetrics train;
     TokenMetrics eval;
@@ -107,6 +108,15 @@ struct TokenExperimentResult {
 
 [[nodiscard]] TokenExperimentResult run_token_experiment(
     const TokenDataset& dataset,
+    std::size_t warmup_examples,
+    Config config,
+    bool strict_freeze = true,
+    std::size_t prefill = 0,
+    std::size_t prune_interval = 0,
+    std::size_t merge_interval = 0);
+
+[[nodiscard]] TokenExperimentResult run_token_experiment(
+    const MappedTokenShard& shard,
     std::size_t warmup_examples,
     Config config,
     bool strict_freeze = true,

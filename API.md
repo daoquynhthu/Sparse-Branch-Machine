@@ -155,6 +155,12 @@ Python exposes the same ownership through `Runtime.open_token_shard()` and the
 small in-memory fixtures. Large corpora are written incrementally by the data
 conversion utility rather than materialized as `TokenDataset`.
 
+`sbm_run_token_shard_experiment_json` and `TokenShard.run()` execute the existing
+C++ learner directly over mapped spans; Python does not iterate tokens. This is
+a single-shard smoke/diagnostic interface: its `warmup` count splits examples
+inside that shard and therefore is not a substitute for manifest-defined train
+and validation splits.
+
 Multi-shard training, manifest-owned iteration and model checkpoint state are
 not implemented yet. A shard cursor proves exact data replay but is not a full
 training checkpoint.

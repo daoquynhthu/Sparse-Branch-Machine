@@ -307,6 +307,12 @@ std::uint32_t MappedTokenShard::vocab_size() const noexcept { return impl_->voca
 std::uint64_t MappedTokenShard::token_count() const noexcept { return impl_->token_count; }
 std::uint64_t MappedTokenShard::sequence_count() const noexcept { return impl_->sequence_count; }
 std::uint64_t MappedTokenShard::dataset_hash() const noexcept { return impl_->dataset_hash; }
+std::span<const std::uint32_t> MappedTokenShard::tokens() const noexcept {
+    return {impl_->tokens, static_cast<std::size_t>(impl_->token_count)};
+}
+std::span<const std::uint64_t> MappedTokenShard::sequence_offsets() const noexcept {
+    return {impl_->offsets, static_cast<std::size_t>(impl_->sequence_count + 1U)};
+}
 
 bool MappedTokenShard::next(TokenShardCursor& cursor, TokenExample& example) const {
     if (cursor.shard_index != impl_->shard_index) {
@@ -315,7 +321,8 @@ bool MappedTokenShard::next(TokenShardCursor& cursor, TokenExample& example) con
     while (cursor.sequence_index < impl_->sequence_count) {
         const auto start = impl_->offsets[cursor.sequence_index];
         const auto end = impl_->offsets[cursor.sequence_index + 1U];
-        if (cursor.token_offset + 1U < end - start) {
+        const auto length = end - start;
+        if (cursor.token_offset < length - 1U) {
             const auto position = start + cursor.token_offset;
             example.input = impl_->tokens[position];
             example.target = impl_->tokens[position + 1U];

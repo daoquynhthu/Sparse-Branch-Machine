@@ -85,6 +85,13 @@ int main() {
     assert(sbm_token_shard_next(shard, &cursor, &input, &target) == 1);
     assert(input == 2U && target == 4U);
     assert(sbm_token_shard_next(shard, &cursor, &input, &target) == 0);
+    char* shard_result = sbm_run_token_shard_experiment_json(
+        shard, 2U, config, 1, 0U, 0U, 0U);
+    assert(shard_result != nullptr);
+    assert(std::string_view(shard_result).find(
+        "\"task\": \"real_corpus_next_token_cross_entropy\"") !=
+        std::string_view::npos);
+    sbm_string_free(shard_result);
     sbm_token_shard_destroy(shard);
     std::remove(shard_path);
     sbm_dataset_destroy(external);

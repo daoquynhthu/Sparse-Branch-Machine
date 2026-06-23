@@ -132,3 +132,7 @@ Use `--max-tokens-per-split` for a deterministic smoke subset. The command emits
 one compact JSON status line; detailed provenance, hashes, counts and known data
 limitations are stored in `manifest.json`. Existing non-empty output directories
 and existing shard files are rejected.
+
+`Runtime.open_token_shard(...).run(...)` is available for a small single-shard
+smoke. It splits that shard by example count and is not the corpus experiment
+interface for separate train and validation manifests.

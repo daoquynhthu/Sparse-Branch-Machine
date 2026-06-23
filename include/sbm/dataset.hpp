@@ -72,6 +72,8 @@ public:
     [[nodiscard]] std::uint64_t token_count() const noexcept;
     [[nodiscard]] std::uint64_t sequence_count() const noexcept;
     [[nodiscard]] std::uint64_t dataset_hash() const noexcept;
+    [[nodiscard]] std::span<const std::uint32_t> tokens() const noexcept;
+    [[nodiscard]] std::span<const std::uint64_t> sequence_offsets() const noexcept;
     [[nodiscard]] bool next(TokenShardCursor& cursor, TokenExample& example) const;
 
 private:

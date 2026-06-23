@@ -193,6 +193,16 @@ class Runtime:
             ctypes.POINTER(ctypes.c_uint32),
         ]
         lib.sbm_token_shard_next.restype = ctypes.c_int
+        lib.sbm_run_token_shard_experiment_json.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_size_t,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+        ]
+        lib.sbm_run_token_shard_experiment_json.restype = ctypes.c_void_p
 
         lib.sbm_run_experiment_json.argtypes = [
             ctypes.c_void_p,
@@ -529,3 +539,23 @@ class TokenShard:
         if status == 0:
             return None
         return int(input_token.value), int(target_token.value)
+
+    def run(
+        self,
+        config: Config,
+        warmup: int,
+        strict_freeze: bool = True,
+        prefill: int = 0,
+        prune_interval: int = 0,
+        merge_interval: int = 0,
+    ) -> Dict[str, Any]:
+        pointer = self.runtime.lib.sbm_run_token_shard_experiment_json(
+            self.pointer,
+            warmup,
+            config.pointer,
+            int(strict_freeze),
+            prefill,
+            prune_interval,
+            merge_interval,
+        )
+        return self.runtime._take_json(pointer, "run token shard experiment")
