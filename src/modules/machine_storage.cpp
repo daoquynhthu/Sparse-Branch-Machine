@@ -5,6 +5,11 @@
 
 namespace sbm {
 
+bool SparseBranchMachine::uses_sparse_token_output() const noexcept {
+    return config_.objective == ObjectiveKind::TokenCrossEntropy &&
+           config_.sparse_token_output;
+}
+
 SparseBranchMachine::SparseBranchMachine(Config config)
     : config_(config),
       rng_state_(config.seed),
@@ -12,11 +17,20 @@ SparseBranchMachine::SparseBranchMachine(Config config)
       hot_buckets_(static_cast<std::size_t>(config.max_address_channels) * (std::size_t{1} << config.bucket_bits)),
       bucket_last_split_step_(static_cast<std::size_t>(config.max_address_channels) *
                               (std::size_t{1} << config.bucket_bits), 0),
-      prediction_buffer_(config.vector_dim, 0.0F),
-      logit_buffer_(config.vector_dim, 0.0F),
-      zero_output_buffer_(config.vector_dim, 0.0F),
-      channel_output_buffer_(static_cast<std::size_t>(config.max_address_channels) *
-                             config.vector_dim, 0.0F),
+      prediction_buffer_(config.objective == ObjectiveKind::TokenCrossEntropy &&
+                                 config.sparse_token_output ? 0U : config.vector_dim,
+                             0.0F),
+      logit_buffer_(config.objective == ObjectiveKind::TokenCrossEntropy &&
+                          config.sparse_token_output ? 0U : config.vector_dim,
+                    0.0F),
+      zero_output_buffer_(config.objective == ObjectiveKind::TokenCrossEntropy &&
+                                config.sparse_token_output ? 0U : config.vector_dim,
+                          0.0F),
+      channel_output_buffer_(config.objective == ObjectiveKind::TokenCrossEntropy &&
+                                   config.sparse_token_output ? 0U :
+                             static_cast<std::size_t>(config.max_address_channels) *
+                                 config.vector_dim,
+                             0.0F),
       channel_credit_buffer_(config.max_address_channels, 0.0F),
       signature_buffer_(config.max_address_channels, 0U) {
     if (config.token_alphabet == 0 || config.vector_dim == 0) {
@@ -88,6 +102,12 @@ SparseBranchMachine::SparseBranchMachine(Config config)
         proposed_program_keys_.push_back(address_program_key(program));
     }
     next_probe_step_ = config.topology_probe_interval;
+    if (uses_sparse_token_output()) {
+        if (config_.vector_dim < 2U) {
+            throw std::invalid_argument("hierarchical token output requires vocabulary >= 2");
+        }
+        build_output_tree();
+    }
 }
 
 void SparseBranchMachine::reset_sequence() {
@@ -142,7 +162,10 @@ NodeId SparseBranchMachine::new_node(std::uint64_t signature,
     channels_.push_back(channel);
     hot_indexed_.push_back(0);
     parents_.push_back(parent);
-    output_vectors_.insert(output_vectors_.end(), initial.begin(), initial.end());
+    if (!uses_sparse_token_output()) {
+        output_vectors_.insert(output_vectors_.end(), initial.begin(), initial.end());
+    }
+    sparse_outputs_.emplace_back();
     edges_.emplace_back();
     edges_.back().reserve(config_.max_edges_per_node);
     buckets_[bucket_index(channel, signature)].push_back(id);

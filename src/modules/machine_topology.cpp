@@ -11,20 +11,29 @@ namespace {
 
 std::optional<AddressProgram> proposal_at(std::uint64_t ordinal,
                                           std::uint32_t max_lag,
-                                          std::uint32_t max_arity) {
+                                          std::uint32_t max_arity,
+                                          bool enable_delta) {
     for (std::uint32_t outer = 2U; outer <= max_lag; ++outer) {
-        if (ordinal == 0U) return singleton_address_program(outer);
-        --ordinal;
-        if (max_arity < 2U) continue;
-        for (std::uint32_t inner = 1U; inner < outer; ++inner) {
-            if (ordinal == 0U) {
+        const auto visit = [&](AddressOp op) -> std::optional<AddressProgram> {
+            AddressProgram singleton = singleton_address_program(outer);
+            singleton.op = op;
+            if (ordinal == 0U) return singleton;
+            --ordinal;
+            if (max_arity < 2U) return std::nullopt;
+            for (std::uint32_t inner = 1U; inner < outer; ++inner) {
                 AddressProgram program;
                 program.lags[0] = inner;
                 program.lags[1] = outer;
                 program.arity = 2U;
-                return program;
+                program.op = op;
+                if (ordinal == 0U) return program;
+                --ordinal;
             }
-            --ordinal;
+            return std::nullopt;
+        };
+        if (auto value = visit(AddressOp::Tuple); value.has_value()) return value;
+        if (enable_delta) {
+            if (auto value = visit(AddressOp::DeltaMod); value.has_value()) return value;
         }
     }
     return std::nullopt;
@@ -58,6 +67,7 @@ std::span<const std::uint64_t> SparseBranchMachine::make_signatures(
         signature_buffer_[channel] = address_program_signature(
             window, config_.token_alphabet,
             std::span<const std::uint32_t>(program.lags.data(), program.arity),
+            program.op,
             config_.seed ^ mix64(address_program_key(program) +
                                  0x9E3779B97F4A7C15ULL));
     }
@@ -175,7 +185,8 @@ void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
     std::optional<AddressProgram> proposal;
     while (true) {
         const auto candidate = proposal_at(proposal_cursor_++, config_.topology_max_lag,
-                                           config_.topology_max_arity);
+                                           config_.topology_max_arity,
+                                           config_.topology_enable_delta);
         if (!candidate.has_value()) break;
         const auto key = address_program_key(*candidate);
         if (std::find(proposed_program_keys_.begin(), proposed_program_keys_.end(), key) ==

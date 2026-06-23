@@ -42,6 +42,14 @@ void add_distribution(TokenAccumulator& accumulator,
     ++accumulator.examples;
 }
 
+void add_step(TokenAccumulator& accumulator, const StepStats& stats) {
+    accumulator.cross_entropy += static_cast<double>(stats.cross_entropy);
+    accumulator.target_probability += static_cast<double>(stats.target_probability);
+    accumulator.top1 += stats.top1_correct ? 1U : 0U;
+    accumulator.top5 += stats.top5_correct ? 1U : 0U;
+    ++accumulator.examples;
+}
+
 TokenMetrics finish(const TokenAccumulator& accumulator) {
     TokenMetrics result;
     if (accumulator.examples == 0U) return result;
@@ -57,7 +65,7 @@ TokenMetrics finish(const TokenAccumulator& accumulator) {
 
 struct CountRow {
     std::uint64_t total{};
-    std::vector<std::uint32_t> counts;
+    std::unordered_map<std::uint32_t, std::uint32_t> counts;
 };
 
 class ConditionalTable {
@@ -66,7 +74,7 @@ public:
 
     void observe(std::uint64_t key, std::uint32_t target) {
         auto [iterator, inserted] = rows_.try_emplace(key);
-        if (inserted) iterator->second.counts.assign(vocabulary_, 0U);
+        (void)inserted;
         ++iterator->second.total;
         ++iterator->second.counts[target];
     }
@@ -83,8 +91,10 @@ public:
         const auto& row = iterator->second;
         const double denominator = static_cast<double>(row.total) + smoothing;
         for (std::uint32_t token = 0; token < vocabulary_; ++token) {
+            const auto count = row.counts.find(token);
+            const auto observed = count == row.counts.end() ? 0U : count->second;
             output[token] = static_cast<float>(
-                (static_cast<double>(row.counts[token]) +
+                (static_cast<double>(observed) +
                  smoothing * static_cast<double>(fallback[token])) /
                 denominator);
         }
@@ -200,7 +210,7 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
     std::vector<float> multiscale_probability(vocabulary, 0.0F);
 
     std::size_t example_index = 0U;
-    const auto start_time = std::chrono::steady_clock::now();
+    double model_elapsed = 0.0;
     for (std::size_t sequence = 0; sequence < dataset.sequence_count(); ++sequence) {
         const auto start = static_cast<std::size_t>(dataset.sequence_offsets[sequence]);
         const auto end = static_cast<std::size_t>(dataset.sequence_offsets[sequence + 1U]);
@@ -212,11 +222,11 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
             }
             const auto current = dataset.tokens[position];
             const auto target = dataset.tokens[position + 1U];
+            const auto model_start = std::chrono::steady_clock::now();
             const auto stats = model.step_token(current, target, learn);
-            (void)stats;
-            const auto prediction = model.last_prediction();
-            add_distribution(learn ? train_accumulator : eval_accumulator,
-                             prediction, target);
+            model_elapsed += std::chrono::duration<double>(
+                std::chrono::steady_clock::now() - model_start).count();
+            add_step(learn ? train_accumulator : eval_accumulator, stats);
 
             if (!learn) {
                 add_distribution(unigram_accumulator, unigram, target);
@@ -261,8 +271,7 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
             ++example_index;
         }
     }
-    const double elapsed = std::chrono::duration<double>(
-        std::chrono::steady_clock::now() - start_time).count();
+    const double elapsed = std::max(model_elapsed, 1e-12);
 
     TokenExperimentResult result;
     result.diagnostics = model.diagnostics();
@@ -296,6 +305,7 @@ TokenExperimentResult run_token_experiment(const TokenDataset& dataset,
     result.edge_score_weight = config.edge_score_weight;
     result.softmax_temperature = config.softmax_temperature;
     result.label_smoothing = config.label_smoothing;
+    result.sparse_token_output = config.sparse_token_output;
     return result;
 }
 
@@ -343,6 +353,11 @@ std::string to_json(const TokenExperimentResult& result) {
         }
         out << ']';
     }
+    out << "],\n  \"learned_address_operations\": [";
+    for (std::size_t i = 0; i < result.learned_address_programs.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_address_programs[i].op);
+    }
     out << "],\n  \"learned_channel_credit\": [";
     for (std::size_t i = 0; i < result.learned_channel_credit.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -362,7 +377,8 @@ std::string to_json(const TokenExperimentResult& result) {
             if (j != 0U) out << ',';
             out << event.program.lags[j];
         }
-        out << "],\"decision\":" << static_cast<unsigned>(event.decision)
+        out << "],\"op\":" << static_cast<unsigned>(event.program.op)
+            << ",\"decision\":" << static_cast<unsigned>(event.decision)
             << ",\"credit\":" << event.credit << "}";
     }
     out << "],\n"
@@ -370,12 +386,16 @@ std::string to_json(const TokenExperimentResult& result) {
         << "  \"edge_score_weight\": " << result.edge_score_weight << ",\n"
         << "  \"softmax_temperature\": " << result.softmax_temperature << ",\n"
         << "  \"label_smoothing\": " << result.label_smoothing << ",\n"
+        << "  \"sparse_token_output\": "
+        << (result.sparse_token_output ? "true" : "false") << ",\n"
         << "  \"live_nodes\": " << result.diagnostics.live_nodes << ",\n"
         << "  \"edges\": " << result.diagnostics.edges << ",\n"
         << "  \"avg_active\": " << result.diagnostics.avg_active << ",\n"
         << "  \"avg_candidates\": " << result.diagnostics.avg_candidates << ",\n"
         << "  \"created_total\": " << result.diagnostics.created_total << ",\n"
         << "  \"estimated_bytes\": " << result.diagnostics.estimated_bytes << ",\n"
+        << "  \"sparse_output_entries\": "
+        << result.diagnostics.sparse_output_entries << ",\n"
         << "  \"topology_proposals\": " << result.diagnostics.topology_proposals << ",\n"
         << "  \"topology_accepted\": " << result.diagnostics.topology_accepted << ",\n"
         << "  \"topology_rejected\": " << result.diagnostics.topology_rejected << ",\n"

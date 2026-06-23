@@ -24,9 +24,12 @@ void SparseBranchMachine::erase_slot(std::size_t slot) {
         channels_[slot] = channels_[last];
         hot_indexed_[slot] = hot_indexed_[last];
         parents_[slot] = parents_[last];
-        std::copy_n(output_vectors_.data() + last * config_.vector_dim,
-                    config_.vector_dim,
-                    output_vectors_.data() + slot * config_.vector_dim);
+        if (!uses_sparse_token_output()) {
+            std::copy_n(output_vectors_.data() + last * config_.vector_dim,
+                        config_.vector_dim,
+                        output_vectors_.data() + slot * config_.vector_dim);
+        }
+        sparse_outputs_[slot] = std::move(sparse_outputs_[last]);
         edges_[slot] = std::move(edges_[last]);
         id_to_slot_[ids_[slot]] = static_cast<std::uint32_t>(slot);
     }
@@ -41,7 +44,10 @@ void SparseBranchMachine::erase_slot(std::size_t slot) {
     channels_.pop_back();
     hot_indexed_.pop_back();
     parents_.pop_back();
-    output_vectors_.resize(ids_.size() * config_.vector_dim);
+    if (!uses_sparse_token_output()) {
+        output_vectors_.resize(ids_.size() * config_.vector_dim);
+    }
+    sparse_outputs_.pop_back();
     edges_.pop_back();
     id_to_slot_[victim] = UINT32_MAX;
 }
@@ -62,10 +68,34 @@ std::size_t SparseBranchMachine::prune(std::uint32_t min_visits,
 
 double SparseBranchMachine::output_distance(std::size_t a,
                                              std::size_t b) const noexcept {
-    return std::sqrt(detail::squared_distance(
-        output_vectors_.data() + a * config_.vector_dim,
-        output_vectors_.data() + b * config_.vector_dim,
-        config_.vector_dim) / static_cast<float>(config_.vector_dim));
+    if (!uses_sparse_token_output()) {
+        return std::sqrt(detail::squared_distance(
+            output_vectors_.data() + a * config_.vector_dim,
+            output_vectors_.data() + b * config_.vector_dim,
+            config_.vector_dim) / static_cast<float>(config_.vector_dim));
+    }
+    const auto& left = sparse_outputs_[a];
+    const auto& right = sparse_outputs_[b];
+    std::size_t i = 0U;
+    std::size_t j = 0U;
+    double squared = 0.0;
+    std::size_t count = 0U;
+    while (i < left.size() || j < right.size()) {
+        if (j >= right.size() || (i < left.size() && left[i].decision < right[j].decision)) {
+            squared += static_cast<double>(left[i].logit) * left[i].logit;
+            ++i;
+        } else if (i >= left.size() || right[j].decision < left[i].decision) {
+            squared += static_cast<double>(right[j].logit) * right[j].logit;
+            ++j;
+        } else {
+            const double delta = static_cast<double>(left[i].logit) - right[j].logit;
+            squared += delta * delta;
+            ++i;
+            ++j;
+        }
+        ++count;
+    }
+    return count == 0U ? 0.0 : std::sqrt(squared / static_cast<double>(count));
 }
 
 void SparseBranchMachine::absorb_node(std::size_t survivor_slot,
@@ -73,11 +103,19 @@ void SparseBranchMachine::absorb_node(std::size_t survivor_slot,
     const float survivor_weight = static_cast<float>(std::max(1U, visits_[survivor_slot]));
     const float victim_weight = static_cast<float>(std::max(1U, visits_[victim_slot]));
     const float inverse = 1.0F / (survivor_weight + victim_weight);
-    float* survivor = output_vectors_.data() + survivor_slot * config_.vector_dim;
-    const float* victim = output_vectors_.data() + victim_slot * config_.vector_dim;
-    for (std::uint32_t component = 0; component < config_.vector_dim; ++component) {
-        survivor[component] = (survivor_weight * survivor[component] +
-                               victim_weight * victim[component]) * inverse;
+    if (!uses_sparse_token_output()) {
+        float* survivor = output_vectors_.data() + survivor_slot * config_.vector_dim;
+        const float* victim = output_vectors_.data() + victim_slot * config_.vector_dim;
+        for (std::uint32_t component = 0; component < config_.vector_dim; ++component) {
+            survivor[component] = (survivor_weight * survivor[component] +
+                                   victim_weight * victim[component]) * inverse;
+        }
+    } else {
+        for (const auto& entry : sparse_outputs_[victim_slot]) {
+            float& destination = mutable_sparse_logit(survivor_slot, entry.decision);
+            destination = (survivor_weight * destination +
+                           victim_weight * entry.logit) * inverse;
+        }
     }
     visits_[survivor_slot] += visits_[victim_slot];
     address_visits_[survivor_slot] += address_visits_[victim_slot];
@@ -140,7 +178,7 @@ void SparseBranchMachine::rebuild_indexes() {
 }
 
 void SparseBranchMachine::prefill_distractors(std::size_t count) {
-    std::vector<float> value(config_.vector_dim);
+    std::vector<float> value(uses_sparse_token_output() ? 0U : config_.vector_dim);
     for (std::size_t index = 0; index < count; ++index) {
         for (auto& component : value) {
             const auto sample = static_cast<int>(detail::next_random(rng_state_) % 2001U) - 1000;
@@ -183,6 +221,12 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         if (channels_[slot] == 0U) ++anchor;
         else ++residual;
     }
+    std::uint64_t sparse_entries = 0U;
+    std::uint64_t sparse_capacity = 0U;
+    for (const auto& entries : sparse_outputs_) {
+        sparse_entries += entries.size();
+        sparse_capacity += entries.capacity();
+    }
     const auto denominator = std::max<std::uint64_t>(1, total_steps_);
     const std::uint64_t bytes =
         ids_.capacity() * sizeof(NodeId) +
@@ -197,6 +241,7 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         hot_indexed_.capacity() * sizeof(std::uint8_t) +
         parents_.capacity() * sizeof(NodeId) +
         output_vectors_.capacity() * sizeof(float) +
+        sparse_capacity * sizeof(SparseOutputEntry) +
         id_to_slot_.capacity() * sizeof(std::uint32_t) +
         edge_capacity * sizeof(Edge) +
         bucket_capacity * sizeof(NodeId);
@@ -217,7 +262,7 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
             static_cast<double>(total_candidates_) / static_cast<double>(denominator),
             total_created_, total_merged_, total_pruned_, cold, warm, mature, dormant,
             anchor, residual, stale_bucket_refs_skipped_, stale_edge_refs_skipped_,
-            bytes, topology_proposals_, topology_accepted_, topology_rejected_,
+            bytes, sparse_entries, topology_proposals_, topology_accepted_, topology_rejected_,
             topology_pruned_, seed_channels, probe_channels, active_channels, retired_channels,
             simd_available()};
 }

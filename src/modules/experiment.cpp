@@ -326,6 +326,11 @@ std::string to_json(const ExperimentResult& result) {
         }
         out << ']';
     }
+    out << "],\n  \"learned_address_operations\": [";
+    for (std::size_t i = 0; i < result.learned_address_programs.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_address_programs[i].op);
+    }
     out << "],\n  \"learned_channel_credit\": [";
     for (std::size_t i = 0; i < result.learned_channel_credit.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -345,7 +350,8 @@ std::string to_json(const ExperimentResult& result) {
             if (j != 0U) out << ',';
             out << event.program.lags[j];
         }
-        out << "],\"decision\":" << static_cast<unsigned>(event.decision)
+        out << "],\"op\":" << static_cast<unsigned>(event.program.op)
+            << ",\"decision\":" << static_cast<unsigned>(event.decision)
             << ",\"credit\":" << event.credit << "}";
     }
     out << "],\n"

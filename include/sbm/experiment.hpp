@@ -84,6 +84,7 @@ struct TokenExperimentResult {
     float edge_score_weight{};
     float softmax_temperature{};
     float label_smoothing{};
+    bool sparse_token_output{};
 };
 
 [[nodiscard]] ExperimentResult run_experiment(

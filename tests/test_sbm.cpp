@@ -34,9 +34,9 @@ int main() {
     const std::array<std::uint32_t, 5> program_context_a{3, 9, 17, 25, 31};
     const std::array<std::uint32_t, 5> program_context_b{7, 9, 17, 25, 31};
     const auto program_signature_a = sbm::address_program_signature(
-        program_context_a, 64, program_lags);
+        program_context_a, 64, program_lags, sbm::AddressOp::Tuple);
     const auto program_signature_b = sbm::address_program_signature(
-        program_context_b, 64, program_lags);
+        program_context_b, 64, program_lags, sbm::AddressOp::Tuple);
     assert(program_signature_a != program_signature_b);
 
     auto dataset = sbm::generate_vector_process(8000, 32, 16, 20, 9);
@@ -127,10 +127,9 @@ int main() {
         token_dataset.tokens[0], token_dataset.tokens[1], true);
     assert(std::isfinite(first_token_stats.cross_entropy));
     assert(first_token_stats.target_probability > 0.0F);
-    const auto first_prediction = token_machine.last_prediction();
-    float probability_sum = 0.0F;
-    for (const float probability : first_prediction) probability_sum += probability;
-    assert(close(probability_sum, 1.0F, 1e-5F));
+    assert(first_token_stats.predicted_token < token_config.vector_dim);
+    assert(first_token_stats.top5_correct || token_config.vector_dim > 5U);
+    assert(token_machine.last_prediction().empty());
 
     const auto token_result = sbm::run_token_experiment(
         token_dataset, 2500, token_config, true, 0, 0, 0);

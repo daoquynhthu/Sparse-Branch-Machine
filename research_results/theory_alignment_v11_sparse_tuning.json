@@ -1,0 +1,4389 @@
+{
+  "api_version": "4.0.0",
+  "base_config": {
+    "sparse_token_output": true,
+    "topology_enable_delta": false
+  },
+  "best": {
+    "config": {
+      "sparse_token_output": true,
+      "topology_enable_delta": false
+    },
+    "id": "62bd6ffa445c1a7e",
+    "mean_eval_cross_entropy": 3.4516859699999998,
+    "mean_eval_r2": null
+  },
+  "candidates": [
+    {
+      "config": {
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "62bd6ffa445c1a7e",
+      "mean_eval_cross_entropy": 3.4516859699999998,
+      "mean_score": -3.4516859699999998,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 1,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.73467269,
+            "avg_candidates": 17.2090254,
+            "created_total": 12167,
+            "current_token_baseline_eval_bits_per_token": 5.03813503,
+            "current_token_baseline_eval_cross_entropy": 3.49216909,
+            "current_token_baseline_eval_mean_target_probability": 0.03129085,
+            "current_token_baseline_eval_perplexity": 32.85714058,
+            "current_token_baseline_eval_top1_accuracy": 0.03074028,
+            "current_token_baseline_eval_top5_accuracy": 0.15934755,
+            "dataset_hash": 3318469508990414301,
+            "edge_score_weight": 0.31999999,
+            "edges": 17886,
+            "elapsed_seconds": 0.46522147,
+            "estimated_bytes": 4794704,
+            "eval_bits_per_token": 4.97515692,
+            "eval_cross_entropy": 3.44851599,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03260565,
+            "eval_perplexity": 31.45368004,
+            "eval_top1_accuracy": 0.05379548,
+            "eval_top5_accuracy": 0.22749373,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.53698268,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0,
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "learned_channel_credit": [
+              0.01815626,
+              0.00559671,
+              -0.00625471
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              3
+            ],
+            "live_nodes": 7818,
+            "multiscale_baseline_eval_bits_per_token": 5.54135812,
+            "multiscale_baseline_eval_cross_entropy": 3.84097676,
+            "multiscale_baseline_eval_mean_target_probability": 0.0462981,
+            "multiscale_baseline_eval_perplexity": 46.57094081,
+            "multiscale_baseline_eval_top1_accuracy": 0.0604611,
+            "multiscale_baseline_eval_top5_accuracy": 0.26137077,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91153331,
+            "pair_context_baseline_eval_bits_per_token": 6.54469991,
+            "pair_context_baseline_eval_cross_entropy": 4.53644029,
+            "pair_context_baseline_eval_mean_target_probability": 0.0500119,
+            "pair_context_baseline_eval_perplexity": 93.35788075,
+            "pair_context_baseline_eval_top1_accuracy": 0.06649937,
+            "pair_context_baseline_eval_top5_accuracy": 0.27156524,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 89446,
+            "sparse_token_output": true,
+            "steps_per_second": 70400.87810221,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 1,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.0048794,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.0059691,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": 0.00017116,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 2,
+            "train_bits_per_token": 4.98838208,
+            "train_cross_entropy": 3.45768297,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03192742,
+            "train_perplexity": 31.74334109,
+            "train_top1_accuracy": 0.0495,
+            "train_top5_accuracy": 0.2062,
+            "unigram_baseline_eval_bits_per_token": 5.00025833,
+            "unigram_baseline_eval_cross_entropy": 3.46591497,
+            "unigram_baseline_eval_mean_target_probability": 0.03127161,
+            "unigram_baseline_eval_perplexity": 32.00573055,
+            "unigram_baseline_eval_top1_accuracy": 0.03175972,
+            "unigram_baseline_eval_top5_accuracy": 0.16428795,
+            "vocab_size": 32
+          }
+        },
+        "19": {
+          "error": null,
+          "result": {
+            "active_channels": 1,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.74026014,
+            "avg_candidates": 17.26896067,
+            "created_total": 12116,
+            "current_token_baseline_eval_bits_per_token": 5.03087365,
+            "current_token_baseline_eval_cross_entropy": 3.48713588,
+            "current_token_baseline_eval_mean_target_probability": 0.03142628,
+            "current_token_baseline_eval_perplexity": 32.69217929,
+            "current_token_baseline_eval_top1_accuracy": 0.03379862,
+            "current_token_baseline_eval_top5_accuracy": 0.15926913,
+            "dataset_hash": 5631304141428135280,
+            "edge_score_weight": 0.31999999,
+            "edges": 18005,
+            "elapsed_seconds": 0.44732062,
+            "estimated_bytes": 4767640,
+            "eval_bits_per_token": 4.97753023,
+            "eval_cross_entropy": 3.45016105,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03255248,
+            "eval_perplexity": 31.50546579,
+            "eval_top1_accuracy": 0.054266,
+            "eval_top5_accuracy": 0.22310226,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.52239605,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0,
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "learned_channel_credit": [
+              0.01493732,
+              0.00940022,
+              -0.01309906
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              3
+            ],
+            "live_nodes": 7766,
+            "multiscale_baseline_eval_bits_per_token": 5.55634248,
+            "multiscale_baseline_eval_cross_entropy": 3.85136313,
+            "multiscale_baseline_eval_mean_target_probability": 0.04552396,
+            "multiscale_baseline_eval_perplexity": 47.05716443,
+            "multiscale_baseline_eval_top1_accuracy": 0.05803011,
+            "multiscale_baseline_eval_top5_accuracy": 0.25509724,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.927765,
+            "pair_context_baseline_eval_bits_per_token": 6.53068257,
+            "pair_context_baseline_eval_cross_entropy": 4.52672421,
+            "pair_context_baseline_eval_mean_target_probability": 0.05001119,
+            "pair_context_baseline_eval_perplexity": 92.45520062,
+            "pair_context_baseline_eval_top1_accuracy": 0.06626412,
+            "pair_context_baseline_eval_top5_accuracy": 0.27799561,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 89158,
+            "sparse_token_output": true,
+            "steps_per_second": 73218.17675129,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 1,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.00370463,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.0044532,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00846759,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 2,
+            "train_bits_per_token": 4.9871526,
+            "train_cross_entropy": 3.45683077,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03196626,
+            "train_perplexity": 31.71630066,
+            "train_top1_accuracy": 0.04885,
+            "train_top5_accuracy": 0.19745,
+            "unigram_baseline_eval_bits_per_token": 5.00041371,
+            "unigram_baseline_eval_cross_entropy": 3.46602266,
+            "unigram_baseline_eval_mean_target_probability": 0.03128499,
+            "unigram_baseline_eval_perplexity": 32.00917766,
+            "unigram_baseline_eval_top1_accuracy": 0.02995609,
+            "unigram_baseline_eval_top5_accuracy": 0.16460163,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.75564851,
+            "avg_candidates": 16.71876527,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 10400,
+            "elapsed_seconds": 0.65445635,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.98650354,
+            "eval_cross_entropy": 3.45638087,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03189775,
+            "eval_perplexity": 31.70203491,
+            "eval_top1_accuracy": 0.05285445,
+            "eval_top5_accuracy": 0.20592848,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.5442832,
+            "label_smoothing": 0.01,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00930348,
+              -0.01797327
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 50044.59036872,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.00272945,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": -0.00537399,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00554697,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99026829,
+            "train_cross_entropy": 3.4589904,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03176626,
+            "train_perplexity": 31.78487023,
+            "train_top1_accuracy": 0.04975,
+            "train_top5_accuracy": 0.19735,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "best"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.5651947098652399,
+        "classification_mature_learning_rate": 0.28322065808689095,
+        "label_smoothing": 0.18660648080143039,
+        "logit_decay": 0.008023878881024933,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "5bbe23dd03a8aecc",
+      "mean_eval_cross_entropy": 3.4531522199999998,
+      "mean_score": -3.4531522199999998,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 1,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.7992489,
+            "avg_candidates": 17.71097948,
+            "created_total": 12167,
+            "current_token_baseline_eval_bits_per_token": 5.03813503,
+            "current_token_baseline_eval_cross_entropy": 3.49216909,
+            "current_token_baseline_eval_mean_target_probability": 0.03129085,
+            "current_token_baseline_eval_perplexity": 32.85714058,
+            "current_token_baseline_eval_top1_accuracy": 0.03074028,
+            "current_token_baseline_eval_top5_accuracy": 0.15934755,
+            "dataset_hash": 3318469508990414301,
+            "edge_score_weight": 0.31999999,
+            "edges": 17993,
+            "elapsed_seconds": 0.59798037,
+            "estimated_bytes": 4794704,
+            "eval_bits_per_token": 4.97777583,
+            "eval_cross_entropy": 3.45033128,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03303644,
+            "eval_perplexity": 31.51082949,
+            "eval_top1_accuracy": 0.05497177,
+            "eval_top5_accuracy": 0.22678795,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.53879797,
+            "label_smoothing": 0.18660648,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0,
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "learned_channel_credit": [
+              0.01975398,
+              0.00372774,
+              -0.01020485
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              3
+            ],
+            "live_nodes": 7818,
+            "multiscale_baseline_eval_bits_per_token": 5.54135812,
+            "multiscale_baseline_eval_cross_entropy": 3.84097676,
+            "multiscale_baseline_eval_mean_target_probability": 0.0462981,
+            "multiscale_baseline_eval_perplexity": 46.57094081,
+            "multiscale_baseline_eval_top1_accuracy": 0.0604611,
+            "multiscale_baseline_eval_top5_accuracy": 0.26137077,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91153331,
+            "pair_context_baseline_eval_bits_per_token": 6.54469991,
+            "pair_context_baseline_eval_cross_entropy": 4.53644029,
+            "pair_context_baseline_eval_mean_target_probability": 0.0500119,
+            "pair_context_baseline_eval_perplexity": 93.35788075,
+            "pair_context_baseline_eval_top1_accuracy": 0.06649937,
+            "pair_context_baseline_eval_top5_accuracy": 0.27156524,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 89446,
+            "sparse_token_output": true,
+            "steps_per_second": 54771.02859619,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 1,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.00635087,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00073234,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00117307,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 2,
+            "train_bits_per_token": 4.99128967,
+            "train_cross_entropy": 3.45969836,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03214368,
+            "train_perplexity": 31.80738075,
+            "train_top1_accuracy": 0.0485,
+            "train_top5_accuracy": 0.2058,
+            "unigram_baseline_eval_bits_per_token": 5.00025833,
+            "unigram_baseline_eval_cross_entropy": 3.46591497,
+            "unigram_baseline_eval_mean_target_probability": 0.03127161,
+            "unigram_baseline_eval_perplexity": 32.00573055,
+            "unigram_baseline_eval_top1_accuracy": 0.03175972,
+            "unigram_baseline_eval_top5_accuracy": 0.16428795,
+            "vocab_size": 32
+          }
+        },
+        "19": {
+          "error": null,
+          "result": {
+            "active_channels": 1,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.74829018,
+            "avg_candidates": 17.68768319,
+            "created_total": 12116,
+            "current_token_baseline_eval_bits_per_token": 5.03087365,
+            "current_token_baseline_eval_cross_entropy": 3.48713588,
+            "current_token_baseline_eval_mean_target_probability": 0.03142628,
+            "current_token_baseline_eval_perplexity": 32.69217929,
+            "current_token_baseline_eval_top1_accuracy": 0.03379862,
+            "current_token_baseline_eval_top5_accuracy": 0.15926913,
+            "dataset_hash": 5631304141428135280,
+            "edge_score_weight": 0.31999999,
+            "edges": 18205,
+            "elapsed_seconds": 0.48055884,
+            "estimated_bytes": 4767640,
+            "eval_bits_per_token": 4.98145943,
+            "eval_cross_entropy": 3.45288456,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03294179,
+            "eval_perplexity": 31.59138816,
+            "eval_top1_accuracy": 0.05418758,
+            "eval_top5_accuracy": 0.22216123,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.52511956,
+            "label_smoothing": 0.18660648,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0,
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "learned_channel_credit": [
+              0.01425449,
+              0.00765741,
+              -0.0186869
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              3
+            ],
+            "live_nodes": 7766,
+            "multiscale_baseline_eval_bits_per_token": 5.55634248,
+            "multiscale_baseline_eval_cross_entropy": 3.85136313,
+            "multiscale_baseline_eval_mean_target_probability": 0.04552396,
+            "multiscale_baseline_eval_perplexity": 47.05716443,
+            "multiscale_baseline_eval_top1_accuracy": 0.05803011,
+            "multiscale_baseline_eval_top5_accuracy": 0.25509724,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.927765,
+            "pair_context_baseline_eval_bits_per_token": 6.53068257,
+            "pair_context_baseline_eval_cross_entropy": 4.52672421,
+            "pair_context_baseline_eval_mean_target_probability": 0.05001119,
+            "pair_context_baseline_eval_perplexity": 92.45520062,
+            "pair_context_baseline_eval_top1_accuracy": 0.06626412,
+            "pair_context_baseline_eval_top5_accuracy": 0.27799561,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 89158,
+            "sparse_token_output": true,
+            "steps_per_second": 68153.98505623,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 1,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.00876951,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00397036,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.01178287,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 2,
+            "train_bits_per_token": 4.98982795,
+            "train_cross_entropy": 3.45868518,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03218956,
+            "train_perplexity": 31.77517031,
+            "train_top1_accuracy": 0.0488,
+            "train_top5_accuracy": 0.1999,
+            "unigram_baseline_eval_bits_per_token": 5.00041371,
+            "unigram_baseline_eval_cross_entropy": 3.46602266,
+            "unigram_baseline_eval_mean_target_probability": 0.03128499,
+            "unigram_baseline_eval_perplexity": 32.00917766,
+            "unigram_baseline_eval_top1_accuracy": 0.02995609,
+            "unigram_baseline_eval_top5_accuracy": 0.16460163,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.74908403,
+            "avg_candidates": 17.25439668,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 10639,
+            "elapsed_seconds": 0.43539872,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.98630149,
+            "eval_cross_entropy": 3.45624082,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03211188,
+            "eval_perplexity": 31.69759536,
+            "eval_top1_accuracy": 0.05246236,
+            "eval_top5_accuracy": 0.20686951,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.54414315,
+            "label_smoothing": 0.18660648,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00971985,
+              -0.0181487
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 75223.0054808,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.00664241,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": -0.00933565,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00728822,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99198096,
+            "train_cross_entropy": 3.46017753,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03193388,
+            "train_perplexity": 31.82262539,
+            "train_top1_accuracy": 0.0493,
+            "train_top5_accuracy": 0.1978,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "active"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.23706575653044937,
+        "classification_mature_learning_rate": 0.0025246197055377173,
+        "label_smoothing": 0.0856441399268456,
+        "logit_decay": 0.015928743712506986,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "063ff3438d8d3126",
+      "mean_eval_cross_entropy": 3.45477674,
+      "mean_score": -3.45477674,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 2,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.72166585,
+            "avg_candidates": 16.66997435,
+            "created_total": 12775,
+            "current_token_baseline_eval_bits_per_token": 5.03813503,
+            "current_token_baseline_eval_cross_entropy": 3.49216909,
+            "current_token_baseline_eval_mean_target_probability": 0.03129085,
+            "current_token_baseline_eval_perplexity": 32.85714058,
+            "current_token_baseline_eval_top1_accuracy": 0.03074028,
+            "current_token_baseline_eval_top5_accuracy": 0.15934755,
+            "dataset_hash": 3318469508990414301,
+            "edge_score_weight": 0.31999999,
+            "edges": 17550,
+            "elapsed_seconds": 0.51254753,
+            "estimated_bytes": 6100368,
+            "eval_bits_per_token": 4.98012529,
+            "eval_cross_entropy": 3.45195981,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03209441,
+            "eval_perplexity": 31.56218752,
+            "eval_top1_accuracy": 0.05230552,
+            "eval_top5_accuracy": 0.21573087,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.5404265,
+            "label_smoothing": 0.08564414,
+            "learned_address_lags": [
+              1,
+              3
+            ],
+            "learned_address_operations": [
+              0,
+              0,
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                3
+              ]
+            ],
+            "learned_channel_credit": [
+              0.0141521,
+              0.00676091,
+              -0.00508751
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              2
+            ],
+            "live_nodes": 10601,
+            "multiscale_baseline_eval_bits_per_token": 5.54135812,
+            "multiscale_baseline_eval_cross_entropy": 3.84097676,
+            "multiscale_baseline_eval_mean_target_probability": 0.0462981,
+            "multiscale_baseline_eval_perplexity": 46.57094081,
+            "multiscale_baseline_eval_top1_accuracy": 0.0604611,
+            "multiscale_baseline_eval_top5_accuracy": 0.26137077,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91153331,
+            "pair_context_baseline_eval_bits_per_token": 6.54469991,
+            "pair_context_baseline_eval_cross_entropy": 4.53644029,
+            "pair_context_baseline_eval_mean_target_probability": 0.0500119,
+            "pair_context_baseline_eval_perplexity": 93.35788075,
+            "pair_context_baseline_eval_top1_accuracy": 0.06649937,
+            "pair_context_baseline_eval_top5_accuracy": 0.27156524,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 108638,
+            "sparse_token_output": true,
+            "steps_per_second": 63900.4147467,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 2,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.00111144,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00542045,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": 0.00071246,
+                "decision": 1,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 1,
+            "train_bits_per_token": 4.98887784,
+            "train_cross_entropy": 3.45802661,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03166304,
+            "train_perplexity": 31.75425117,
+            "train_top1_accuracy": 0.0492,
+            "train_top5_accuracy": 0.20425,
+            "unigram_baseline_eval_bits_per_token": 5.00025833,
+            "unigram_baseline_eval_cross_entropy": 3.46591497,
+            "unigram_baseline_eval_mean_target_probability": 0.03127161,
+            "unigram_baseline_eval_perplexity": 32.00573055,
+            "unigram_baseline_eval_top1_accuracy": 0.03175972,
+            "unigram_baseline_eval_top5_accuracy": 0.16428795,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.72975696,
+            "avg_candidates": 15.54985955,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 9822,
+            "elapsed_seconds": 0.43140873,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.98825324,
+            "eval_cross_entropy": 3.45759367,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03164136,
+            "eval_perplexity": 31.74050639,
+            "eval_top1_accuracy": 0.05238394,
+            "eval_top5_accuracy": 0.20577164,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.545496,
+            "label_smoothing": 0.08564414,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00825703,
+              -0.00945615
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 75918.72294323,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.00147497,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": -8.794e-05,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00344165,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99110624,
+            "train_cross_entropy": 3.45957122,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03156211,
+            "train_perplexity": 31.80333685,
+            "train_top1_accuracy": 0.04965,
+            "train_top5_accuracy": 0.19855,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_2"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.17569248993047956,
+        "classification_mature_learning_rate": 0.027010073125815395,
+        "label_smoothing": 0.15385476858508446,
+        "logit_decay": 0.013512942502097863,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "3c4c9a5e434096c1",
+      "mean_eval_cross_entropy": 3.456544795,
+      "mean_score": -3.456544795,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 2,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.71052149,
+            "avg_candidates": 16.26911334,
+            "created_total": 12775,
+            "current_token_baseline_eval_bits_per_token": 5.03813503,
+            "current_token_baseline_eval_cross_entropy": 3.49216909,
+            "current_token_baseline_eval_mean_target_probability": 0.03129085,
+            "current_token_baseline_eval_perplexity": 32.85714058,
+            "current_token_baseline_eval_top1_accuracy": 0.03074028,
+            "current_token_baseline_eval_top5_accuracy": 0.15934755,
+            "dataset_hash": 3318469508990414301,
+            "edge_score_weight": 0.31999999,
+            "edges": 17220,
+            "elapsed_seconds": 0.4730511,
+            "estimated_bytes": 6100368,
+            "eval_bits_per_token": 4.98271998,
+            "eval_cross_entropy": 3.45375831,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03182479,
+            "eval_perplexity": 31.61900324,
+            "eval_top1_accuracy": 0.05230552,
+            "eval_top5_accuracy": 0.21737767,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.542225,
+            "label_smoothing": 0.15385477,
+            "learned_address_lags": [
+              1,
+              3
+            ],
+            "learned_address_operations": [
+              0,
+              0,
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                3
+              ]
+            ],
+            "learned_channel_credit": [
+              0.01130526,
+              0.00542975,
+              -0.00303161
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              2
+            ],
+            "live_nodes": 10601,
+            "multiscale_baseline_eval_bits_per_token": 5.54135812,
+            "multiscale_baseline_eval_cross_entropy": 3.84097676,
+            "multiscale_baseline_eval_mean_target_probability": 0.0462981,
+            "multiscale_baseline_eval_perplexity": 46.57094081,
+            "multiscale_baseline_eval_top1_accuracy": 0.0604611,
+            "multiscale_baseline_eval_top5_accuracy": 0.26137077,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91153331,
+            "pair_context_baseline_eval_bits_per_token": 6.54469991,
+            "pair_context_baseline_eval_cross_entropy": 4.53644029,
+            "pair_context_baseline_eval_mean_target_probability": 0.0500119,
+            "pair_context_baseline_eval_perplexity": 93.35788075,
+            "pair_context_baseline_eval_top1_accuracy": 0.06649937,
+            "pair_context_baseline_eval_top5_accuracy": 0.27156524,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 108638,
+            "sparse_token_output": true,
+            "steps_per_second": 69235.64902558,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 2,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.00032644,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00445022,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": 0.00144166,
+                "decision": 1,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 1,
+            "train_bits_per_token": 4.99079426,
+            "train_cross_entropy": 3.45935497,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03153202,
+            "train_perplexity": 31.7964603,
+            "train_top1_accuracy": 0.0493,
+            "train_top5_accuracy": 0.2041,
+            "unigram_baseline_eval_bits_per_token": 5.00025833,
+            "unigram_baseline_eval_cross_entropy": 3.46591497,
+            "unigram_baseline_eval_mean_target_probability": 0.03127161,
+            "unigram_baseline_eval_perplexity": 32.00573055,
+            "unigram_baseline_eval_top1_accuracy": 0.03175972,
+            "unigram_baseline_eval_top5_accuracy": 0.16428795,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.71907059,
+            "avg_candidates": 14.8114619,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 9336,
+            "elapsed_seconds": 0.42740818,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99076009,
+            "eval_cross_entropy": 3.45933128,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03151663,
+            "eval_perplexity": 31.79570704,
+            "eval_top1_accuracy": 0.0522271,
+            "eval_top5_accuracy": 0.206399,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.54723361,
+            "label_smoothing": 0.15385477,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00644154,
+              -0.00507775
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 76629.32493832,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.00015864,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": -0.00020159,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00149783,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99279322,
+            "train_cross_entropy": 3.46074055,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03146323,
+            "train_perplexity": 31.84054721,
+            "train_top1_accuracy": 0.04965,
+            "train_top5_accuracy": 0.19925,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_2"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.15262271289168935,
+        "classification_mature_learning_rate": 0.002340554277064664,
+        "label_smoothing": 0.03646767049762354,
+        "logit_decay": 0.004565928099505647,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "29408c08485ddb13",
+      "mean_eval_cross_entropy": 3.45658791,
+      "mean_score": -3.45658791,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 2,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.70942233,
+            "avg_candidates": 16.26401441,
+            "created_total": 12775,
+            "current_token_baseline_eval_bits_per_token": 5.03813503,
+            "current_token_baseline_eval_cross_entropy": 3.49216909,
+            "current_token_baseline_eval_mean_target_probability": 0.03129085,
+            "current_token_baseline_eval_perplexity": 32.85714058,
+            "current_token_baseline_eval_top1_accuracy": 0.03074028,
+            "current_token_baseline_eval_top5_accuracy": 0.15934755,
+            "dataset_hash": 3318469508990414301,
+            "edge_score_weight": 0.31999999,
+            "edges": 17229,
+            "elapsed_seconds": 0.4945195,
+            "estimated_bytes": 6100368,
+            "eval_bits_per_token": 4.98276495,
+            "eval_cross_entropy": 3.45378948,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.0318256,
+            "eval_perplexity": 31.61998876,
+            "eval_top1_accuracy": 0.05285445,
+            "eval_top5_accuracy": 0.21643664,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.54225617,
+            "label_smoothing": 0.03646767,
+            "learned_address_lags": [
+              1,
+              3
+            ],
+            "learned_address_operations": [
+              0,
+              0,
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                3
+              ]
+            ],
+            "learned_channel_credit": [
+              0.01123295,
+              0.00534287,
+              -0.00302008
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              2
+            ],
+            "live_nodes": 10601,
+            "multiscale_baseline_eval_bits_per_token": 5.54135812,
+            "multiscale_baseline_eval_cross_entropy": 3.84097676,
+            "multiscale_baseline_eval_mean_target_probability": 0.0462981,
+            "multiscale_baseline_eval_perplexity": 46.57094081,
+            "multiscale_baseline_eval_top1_accuracy": 0.0604611,
+            "multiscale_baseline_eval_top5_accuracy": 0.26137077,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91153331,
+            "pair_context_baseline_eval_bits_per_token": 6.54469991,
+            "pair_context_baseline_eval_cross_entropy": 4.53644029,
+            "pair_context_baseline_eval_mean_target_probability": 0.0500119,
+            "pair_context_baseline_eval_perplexity": 93.35788075,
+            "pair_context_baseline_eval_top1_accuracy": 0.06649937,
+            "pair_context_baseline_eval_top5_accuracy": 0.27156524,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 108638,
+            "sparse_token_output": true,
+            "steps_per_second": 66229.94604118,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 2,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.00038434,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.0044174,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": 0.00141438,
+                "decision": 1,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 1,
+            "train_bits_per_token": 4.99082984,
+            "train_cross_entropy": 3.45937963,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03153117,
+            "train_perplexity": 31.79724442,
+            "train_top1_accuracy": 0.0494,
+            "train_top5_accuracy": 0.20425,
+            "unigram_baseline_eval_bits_per_token": 5.00025833,
+            "unigram_baseline_eval_cross_entropy": 3.46591497,
+            "unigram_baseline_eval_mean_target_probability": 0.03127161,
+            "unigram_baseline_eval_perplexity": 32.00573055,
+            "unigram_baseline_eval_top1_accuracy": 0.03175972,
+            "unigram_baseline_eval_top5_accuracy": 0.16428795,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.71900953,
+            "avg_candidates": 14.80758427,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 9333,
+            "elapsed_seconds": 0.41271436,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99083952,
+            "eval_cross_entropy": 3.45938634,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03151637,
+            "eval_perplexity": 31.79745785,
+            "eval_top1_accuracy": 0.05269762,
+            "eval_top5_accuracy": 0.20585006,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.54728867,
+            "label_smoothing": 0.03646767,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00639471,
+              -0.00498053
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 79357.5492714,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.00016397,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": -0.00020299,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00155852,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99281418,
+            "train_cross_entropy": 3.46075507,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03146276,
+            "train_perplexity": 31.84100959,
+            "train_top1_accuracy": 0.0497,
+            "train_top5_accuracy": 0.19905,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_2"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.10386597457467014,
+        "classification_mature_learning_rate": 0.051388244785678716,
+        "label_smoothing": 0.17299324357650162,
+        "logit_decay": 0.01607015304163552,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "4272e8db7c387e9c",
+      "mean_eval_cross_entropy": 3.459462045,
+      "mean_score": -3.459462045,
+      "runs": {
+        "11": {
+          "error": null,
+          "result": {
+            "active_channels": 2,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.6897594,
+            "avg_candidates": 15.68124084,
+            "created_total": 12775,
+            "current_token_baseline_eval_bits_per_token": 5.03813503,
+            "current_token_baseline_eval_cross_entropy": 3.49216909,
+            "current_token_baseline_eval_mean_target_probability": 0.03129085,
+            "current_token_baseline_eval_perplexity": 32.85714058,
+            "current_token_baseline_eval_top1_accuracy": 0.03074028,
+            "current_token_baseline_eval_top5_accuracy": 0.15934755,
+            "dataset_hash": 3318469508990414301,
+            "edge_score_weight": 0.31999999,
+            "edges": 16565,
+            "elapsed_seconds": 0.45423487,
+            "estimated_bytes": 6100368,
+            "eval_bits_per_token": 4.98794031,
+            "eval_cross_entropy": 3.45737676,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.0315798,
+            "eval_perplexity": 31.73362236,
+            "eval_top1_accuracy": 0.05183501,
+            "eval_top5_accuracy": 0.21604454,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.54584345,
+            "label_smoothing": 0.17299324,
+            "learned_address_lags": [
+              1,
+              3
+            ],
+            "learned_address_operations": [
+              0,
+              0,
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                3
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00730902,
+              0.00384492,
+              -0.00160856
+            ],
+            "learned_channel_phase": [
+              0,
+              2,
+              2
+            ],
+            "live_nodes": 10601,
+            "multiscale_baseline_eval_bits_per_token": 5.54135812,
+            "multiscale_baseline_eval_cross_entropy": 3.84097676,
+            "multiscale_baseline_eval_mean_target_probability": 0.0462981,
+            "multiscale_baseline_eval_perplexity": 46.57094081,
+            "multiscale_baseline_eval_top1_accuracy": 0.0604611,
+            "multiscale_baseline_eval_top5_accuracy": 0.26137077,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91153331,
+            "pair_context_baseline_eval_bits_per_token": 6.54469991,
+            "pair_context_baseline_eval_cross_entropy": 4.53644029,
+            "pair_context_baseline_eval_mean_target_probability": 0.0500119,
+            "pair_context_baseline_eval_perplexity": 93.35788075,
+            "pair_context_baseline_eval_top1_accuracy": 0.06649937,
+            "pair_context_baseline_eval_top5_accuracy": 0.27156524,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 108638,
+            "sparse_token_output": true,
+            "steps_per_second": 72103.66774397,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 2,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.00024393,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00287906,
+                "decision": 1,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": 0.00103832,
+                "decision": 1,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 1,
+            "train_bits_per_token": 4.99385152,
+            "train_cross_entropy": 3.4614741,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03141114,
+            "train_perplexity": 31.86391249,
+            "train_top1_accuracy": 0.0494,
+            "train_top5_accuracy": 0.2061,
+            "unigram_baseline_eval_bits_per_token": 5.00025833,
+            "unigram_baseline_eval_cross_entropy": 3.46591497,
+            "unigram_baseline_eval_mean_target_probability": 0.03127161,
+            "unigram_baseline_eval_perplexity": 32.00573055,
+            "unigram_baseline_eval_top1_accuracy": 0.03175972,
+            "unigram_baseline_eval_top5_accuracy": 0.16428795,
+            "vocab_size": 32
+          }
+        },
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.69513312,
+            "avg_candidates": 13.82602589,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 8588,
+            "elapsed_seconds": 0.42648306,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99395717,
+            "eval_cross_entropy": 3.46154733,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03140352,
+            "eval_perplexity": 31.86624604,
+            "eval_top1_accuracy": 0.0526192,
+            "eval_top5_accuracy": 0.20616374,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.54944966,
+            "label_smoothing": 0.17299324,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00418034,
+              -0.00318779
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 76795.5471038,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.000172,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.0002001,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00075701,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99527098,
+            "train_cross_entropy": 3.46245799,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03137167,
+            "train_perplexity": 31.89527868,
+            "train_top1_accuracy": 0.04935,
+            "train_top5_accuracy": 0.1985,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_2"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.07251043246248558,
+        "classification_mature_learning_rate": 0.002990628195913169,
+        "label_smoothing": 0.09159327713478921,
+        "logit_decay": 0.009242832628775503,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "d365ade07f77dabf",
+      "mean_eval_cross_entropy": 3.46239932,
+      "mean_score": -3.46239932,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.68038593,
+            "avg_candidates": 13.28190645,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 8165,
+            "elapsed_seconds": 0.43614563,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99518633,
+            "eval_cross_entropy": 3.46239932,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.0313681,
+            "eval_perplexity": 31.89340722,
+            "eval_top1_accuracy": 0.05254078,
+            "eval_top5_accuracy": 0.20561481,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55030165,
+            "label_smoothing": 0.09159328,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.0032608,
+              -0.00235015
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 75094.18373651,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.00012716,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00028892,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00046924,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99620151,
+            "train_cross_entropy": 3.46310299,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03134383,
+            "train_perplexity": 31.91585761,
+            "train_top1_accuracy": 0.0497,
+            "train_top5_accuracy": 0.1983,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.06709819133283086,
+        "classification_mature_learning_rate": 0.016787304064205016,
+        "label_smoothing": 0.15869777241511332,
+        "logit_decay": 0.01607043783225399,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "78c667ff8e923c02",
+      "mean_eval_cross_entropy": 3.46284162,
+      "mean_score": -3.46284162,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.67892037,
+            "avg_candidates": 13.09550562,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 8013,
+            "elapsed_seconds": 0.42489384,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99582443,
+            "eval_cross_entropy": 3.46284162,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03135036,
+            "eval_perplexity": 31.90751672,
+            "eval_top1_accuracy": 0.05246236,
+            "eval_top5_accuracy": 0.20632058,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55074394,
+            "label_smoothing": 0.15869777,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00284547,
+              -0.00222428
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 77082.78414713,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.0002041,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00029391,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00046554,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99671263,
+            "train_cross_entropy": 3.46345727,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03132959,
+            "train_perplexity": 31.92716689,
+            "train_top1_accuracy": 0.04965,
+            "train_top5_accuracy": 0.19865,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.04896788854814942,
+        "classification_mature_learning_rate": 0.176449611076674,
+        "label_smoothing": 0.18242363797460492,
+        "logit_decay": 0.019721246834703953,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "752c165d3e2c299f",
+      "mean_eval_cross_entropy": 3.46363009,
+      "mean_score": -3.46363009,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.66322667,
+            "avg_candidates": 12.54131045,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 7528,
+            "elapsed_seconds": 0.42084044,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99696196,
+            "eval_cross_entropy": 3.46363009,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03132077,
+            "eval_perplexity": 31.93268493,
+            "eval_top1_accuracy": 0.05254078,
+            "eval_top5_accuracy": 0.20647742,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55153242,
+            "label_smoothing": 0.18242364,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00207953,
+              -0.00150846
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 77825.22040895,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.0002031,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00024494,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00027618,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.9975815,
+            "train_cross_entropy": 3.46405953,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03130659,
+            "train_perplexity": 31.94640085,
+            "train_top1_accuracy": 0.04995,
+            "train_top5_accuracy": 0.19945,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.04400959962120286,
+        "classification_mature_learning_rate": 0.15526229011961307,
+        "label_smoothing": 0.13520081401689107,
+        "logit_decay": 0.01919663305111849,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "f0d4eaad3cca6627",
+      "mean_eval_cross_entropy": 3.46372977,
+      "mean_score": -3.46372977,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.66322667,
+            "avg_candidates": 12.51718979,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 7504,
+            "elapsed_seconds": 0.39338772,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99710576,
+            "eval_cross_entropy": 3.46372977,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03131719,
+            "eval_perplexity": 31.93586801,
+            "eval_top1_accuracy": 0.05246236,
+            "eval_top5_accuracy": 0.20663425,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55163209,
+            "label_smoothing": 0.13520081,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00196269,
+              -0.00143512
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 83256.28529983,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.00019525,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00025302,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00025033,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99769084,
+            "train_cross_entropy": 3.46413532,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03130383,
+            "train_perplexity": 31.94882222,
+            "train_top1_accuracy": 0.04995,
+            "train_top5_accuracy": 0.1994,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.03704225378473513,
+        "classification_mature_learning_rate": 0.2575459794648949,
+        "label_smoothing": 0.07885962577394245,
+        "logit_decay": 0.007755728467013656,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "02476752dd01ce36",
+      "mean_eval_cross_entropy": 3.46390465,
+      "mean_score": -3.46390465,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.66252443,
+            "avg_candidates": 12.41444797,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 7402,
+            "elapsed_seconds": 0.43260834,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99735805,
+            "eval_cross_entropy": 3.46390465,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03131102,
+            "eval_perplexity": 31.94145339,
+            "eval_top1_accuracy": 0.05277604,
+            "eval_top5_accuracy": 0.20608532,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55180697,
+            "label_smoothing": 0.07885963,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00177264,
+              -0.00126925
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 75708.20259402,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.0001907,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00024182,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00023593,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99789398,
+            "train_cross_entropy": 3.46427612,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03129875,
+            "train_perplexity": 31.95332108,
+            "train_top1_accuracy": 0.05005,
+            "train_top5_accuracy": 0.19915,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.030697159539549896,
+        "classification_mature_learning_rate": 0.12346859802809229,
+        "label_smoothing": 0.09186814408443489,
+        "logit_decay": 0.004918330556746451,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "f48f2b050f1cffd6",
+      "mean_eval_cross_entropy": 3.46422168,
+      "mean_score": -3.46422168,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.6587384,
+            "avg_candidates": 12.02329629,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 7022,
+            "elapsed_seconds": 0.40731122,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99781544,
+            "eval_cross_entropy": 3.46422168,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03129989,
+            "eval_perplexity": 31.95158147,
+            "eval_top1_accuracy": 0.05277604,
+            "eval_top5_accuracy": 0.20671267,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55212401,
+            "label_smoothing": 0.09186815,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00144964,
+              -0.00096328
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 80410.25729662,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.00020167,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.0001592,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00020529,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99826121,
+            "train_cross_entropy": 3.46453067,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03128977,
+            "train_perplexity": 31.96145573,
+            "train_top1_accuracy": 0.05035,
+            "train_top5_accuracy": 0.1994,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.025566798751805113,
+        "classification_mature_learning_rate": 0.033821543675995734,
+        "label_smoothing": 0.037784694835464074,
+        "logit_decay": 0.01097404286516257,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "cdf568d9ad627d96",
+      "mean_eval_cross_entropy": 3.46439668,
+      "mean_score": -3.46439668,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.65449438,
+            "avg_candidates": 11.80263801,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 6817,
+            "elapsed_seconds": 0.3892716,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99806792,
+            "eval_cross_entropy": 3.46439668,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03129381,
+            "eval_perplexity": 31.95717368,
+            "eval_top1_accuracy": 0.05285445,
+            "eval_top5_accuracy": 0.20718319,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55229901,
+            "label_smoothing": 0.0377847,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00127398,
+              -0.00086081
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 84136.62808108,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.00018667,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00014233,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.00019514,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99846545,
+            "train_cross_entropy": 3.46467223,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03128486,
+            "train_perplexity": 31.96598068,
+            "train_top1_accuracy": 0.0505,
+            "train_top5_accuracy": 0.19945,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.868114622355127,
+        "classification_mature_learning_rate": 0.0026541893707073176,
+        "label_smoothing": 0.10134606704178335,
+        "logit_decay": 0.006541771304440273,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "6e5e477f2277104a",
+      "mean_eval_cross_entropy": 3.46455005,
+      "mean_score": -3.46455005,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.7729299,
+            "avg_candidates": 18.23781754,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 10756,
+            "elapsed_seconds": 0.4484606,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99828918,
+            "eval_cross_entropy": 3.46455005,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.0327627,
+            "eval_perplexity": 31.96207523,
+            "eval_top1_accuracy": 0.05316813,
+            "eval_top5_accuracy": 0.20867315,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55245238,
+            "label_smoothing": 0.10134607,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00054608,
+              -0.0492599
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 73032.05644807,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": -0.02362965,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": -0.02882619,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -0.03059631,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 5.00876625,
+            "train_cross_entropy": 3.4718122,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03245274,
+            "train_perplexity": 32.19503353,
+            "train_top1_accuracy": 0.05015,
+            "train_top5_accuracy": 0.19645,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.019658096096516076,
+        "classification_mature_learning_rate": 0.003357164163771741,
+        "label_smoothing": 0.1422391446721582,
+        "logit_decay": 0.007668986026443168,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "6ab0abd1a5c5d3d2",
+      "mean_eval_cross_entropy": 3.46479313,
+      "mean_score": -3.46479313,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.62503053,
+            "avg_candidates": 10.3186065,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 5434,
+            "elapsed_seconds": 0.4022381,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99863986,
+            "eval_cross_entropy": 3.46479313,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.0312804,
+            "eval_perplexity": 31.96984545,
+            "eval_top1_accuracy": 0.05254078,
+            "eval_top5_accuracy": 0.20569322,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55269546,
+            "label_smoothing": 0.14223914,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00091543,
+              -0.00040128
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 81424.40946227,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.00015345,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00015876,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -7.402e-05,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99891128,
+            "train_cross_entropy": 3.46498126,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03127435,
+            "train_perplexity": 31.97586059,
+            "train_top1_accuracy": 0.05085,
+            "train_top5_accuracy": 0.20095,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.014421403503273433,
+        "classification_mature_learning_rate": 0.0029557608839377884,
+        "label_smoothing": 0.00156570480102729,
+        "logit_decay": 0.01902307038564422,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "124480695c419dd6",
+      "mean_eval_cross_entropy": 3.46493197,
+      "mean_score": -3.46493197,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.61614558,
+            "avg_candidates": 9.87472521,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 4975,
+            "elapsed_seconds": 0.4107031,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99884016,
+            "eval_cross_entropy": 3.46493197,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03127578,
+            "eval_perplexity": 31.97428435,
+            "eval_top1_accuracy": 0.05214868,
+            "eval_top5_accuracy": 0.20592848,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55283429,
+            "label_smoothing": 0.0015657,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00080561,
+              -0.00039345
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 79746.17225799,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 0.00011135,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00014759,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -6.092e-05,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99907472,
+            "train_cross_entropy": 3.46509455,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03127059,
+            "train_perplexity": 31.97948322,
+            "train_top1_accuracy": 0.05075,
+            "train_top5_accuracy": 0.20075,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.012521766559578136,
+        "classification_mature_learning_rate": 0.2116551263126437,
+        "label_smoothing": 0.027953664255155622,
+        "logit_decay": 0.014674271387704933,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "e68e20d96f60f1a9",
+      "mean_eval_cross_entropy": 3.46504892,
+      "mean_score": -3.46504892,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.60988642,
+            "avg_candidates": 9.4593002,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 4530,
+            "elapsed_seconds": 0.40519343,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.9990089,
+            "eval_cross_entropy": 3.46504892,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.03127194,
+            "eval_perplexity": 31.9780242,
+            "eval_top1_accuracy": 0.05254078,
+            "eval_top5_accuracy": 0.206399,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55295125,
+            "label_smoothing": 0.02795366,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00067604,
+              -0.00040525
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 80830.53094131,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 8.197e-05,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00014013,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -7.542e-05,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99921166,
+            "train_cross_entropy": 3.46518947,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.03126747,
+            "train_perplexity": 31.98251885,
+            "train_top1_accuracy": 0.0505,
+            "train_top5_accuracy": 0.2013,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    },
+    {
+      "config": {
+        "classification_learning_rate": 0.012198022879677396,
+        "classification_mature_learning_rate": 0.02648764723740942,
+        "label_smoothing": 0.07383494037180575,
+        "logit_decay": 0.007864565277655887,
+        "sparse_token_output": true,
+        "topology_enable_delta": false
+      },
+      "id": "c149396971a43c05",
+      "mean_eval_cross_entropy": 3.46509352,
+      "mean_score": -3.46509352,
+      "runs": {
+        "7": {
+          "error": null,
+          "result": {
+            "active_channels": 0,
+            "address_lags": [
+              1
+            ],
+            "avg_active": 5.60671104,
+            "avg_candidates": 9.30450049,
+            "created_total": 10481,
+            "current_token_baseline_eval_bits_per_token": 5.03592164,
+            "current_token_baseline_eval_cross_entropy": 3.49063489,
+            "current_token_baseline_eval_mean_target_probability": 0.0313292,
+            "current_token_baseline_eval_perplexity": 32.80676963,
+            "current_token_baseline_eval_top1_accuracy": 0.02956399,
+            "current_token_baseline_eval_top5_accuracy": 0.15079987,
+            "dataset_hash": 2548660990568237988,
+            "edge_score_weight": 0.31999999,
+            "edges": 4389,
+            "elapsed_seconds": 0.39071726,
+            "estimated_bytes": 2609592,
+            "eval_bits_per_token": 4.99907323,
+            "eval_cross_entropy": 3.46509352,
+            "eval_examples": 12752,
+            "eval_mean_target_probability": 0.0312705,
+            "eval_perplexity": 31.97945023,
+            "eval_top1_accuracy": 0.0526192,
+            "eval_top5_accuracy": 0.20553639,
+            "exact_region_mass": 0.88,
+            "excess_cross_entropy": 0.55299584,
+            "label_smoothing": 0.07383494,
+            "learned_address_lags": [
+              1
+            ],
+            "learned_address_operations": [
+              0
+            ],
+            "learned_address_programs": [
+              [
+                1
+              ]
+            ],
+            "learned_channel_credit": [
+              0.00063587,
+              -0.0003887
+            ],
+            "learned_channel_phase": [
+              0,
+              3
+            ],
+            "live_nodes": 4061,
+            "multiscale_baseline_eval_bits_per_token": 5.56659495,
+            "multiscale_baseline_eval_cross_entropy": 3.85846959,
+            "multiscale_baseline_eval_mean_target_probability": 0.0458773,
+            "multiscale_baseline_eval_perplexity": 47.39276561,
+            "multiscale_baseline_eval_top1_accuracy": 0.05834379,
+            "multiscale_baseline_eval_top5_accuracy": 0.25196048,
+            "objective": "token_cross_entropy",
+            "oracle_cross_entropy": 2.91209767,
+            "pair_context_baseline_eval_bits_per_token": 6.54140837,
+            "pair_context_baseline_eval_cross_entropy": 4.53415877,
+            "pair_context_baseline_eval_mean_target_probability": 0.04974052,
+            "pair_context_baseline_eval_perplexity": 93.1451259,
+            "pair_context_baseline_eval_top1_accuracy": 0.06665621,
+            "pair_context_baseline_eval_top5_accuracy": 0.26976161,
+            "probe_channels": 0,
+            "sequence_count": 16,
+            "simd_enabled": true,
+            "softmax_temperature": 1.0,
+            "sparse_output_entries": 53739,
+            "sparse_token_output": true,
+            "steps_per_second": 83825.32188065,
+            "strict_freeze": true,
+            "task": "mathematical_next_token_cross_entropy",
+            "topology_accepted": 0,
+            "topology_events": [
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 2048
+              },
+              {
+                "credit": 7.825e-05,
+                "decision": 2,
+                "lags": [
+                  2
+                ],
+                "op": 0,
+                "step": 6144
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 8192
+              },
+              {
+                "credit": 0.00012405,
+                "decision": 2,
+                "lags": [
+                  1,
+                  2
+                ],
+                "op": 0,
+                "step": 12288
+              },
+              {
+                "credit": 0.0,
+                "decision": 0,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 14336
+              },
+              {
+                "credit": -8.516e-05,
+                "decision": 2,
+                "lags": [
+                  3
+                ],
+                "op": 0,
+                "step": 18432
+              }
+            ],
+            "topology_proposals": 3,
+            "topology_pruned": 0,
+            "topology_rejected": 3,
+            "train_bits_per_token": 4.99926344,
+            "train_cross_entropy": 3.46522536,
+            "train_examples": 20000,
+            "train_mean_target_probability": 0.0312663,
+            "train_perplexity": 31.98366684,
+            "train_top1_accuracy": 0.05045,
+            "train_top5_accuracy": 0.20165,
+            "unigram_baseline_eval_bits_per_token": 5.00066761,
+            "unigram_baseline_eval_cross_entropy": 3.46619866,
+            "unigram_baseline_eval_mean_target_probability": 0.03126312,
+            "unigram_baseline_eval_perplexity": 32.01481153,
+            "unigram_baseline_eval_top1_accuracy": 0.03144605,
+            "unigram_baseline_eval_top5_accuracy": 0.15699498,
+            "vocab_size": 32
+          }
+        }
+      },
+      "status": "eliminated_stage_1"
+    }
+  ],
+  "dataset": {
+    "alphabet": null,
+    "hidden_dim": null,
+    "interaction_strength": 0.2,
+    "length": null,
+    "math_temperature": 0.8,
+    "noise_std": null,
+    "seeds": [
+      7,
+      11,
+      19
+    ],
+    "sequence_length": 2048,
+    "sequences": 16,
+    "task": "token-ce",
+    "vector_dim": null,
+    "vocab_size": 32,
+    "warmup": 20000
+  },
+  "objective": "minimize mean eval_cross_entropy",
+  "search_parameters": [
+    "classification_learning_rate",
+    "classification_mature_learning_rate",
+    "label_smoothing",
+    "logit_decay"
+  ],
+  "stages": [
+    {
+      "evaluated": 18,
+      "seed": 7,
+      "stage": 1,
+      "survivors": [
+        "5bbe23dd03a8aecc",
+        "62bd6ffa445c1a7e",
+        "063ff3438d8d3126",
+        "3c4c9a5e434096c1",
+        "29408c08485ddb13",
+        "4272e8db7c387e9c"
+      ]
+    },
+    {
+      "evaluated": 6,
+      "seed": 11,
+      "stage": 2,
+      "survivors": [
+        "62bd6ffa445c1a7e",
+        "5bbe23dd03a8aecc"
+      ]
+    },
+    {
+      "evaluated": 2,
+      "seed": 19,
+      "stage": 3,
+      "survivors": [
+        "62bd6ffa445c1a7e",
+        "5bbe23dd03a8aecc"
+      ]
+    }
+  ]
+}

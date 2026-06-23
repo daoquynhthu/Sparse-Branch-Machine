@@ -65,6 +65,18 @@ private:
         std::uint64_t observations{};
         std::uint64_t born_step{};
     };
+    struct SparseOutputEntry {
+        std::uint32_t decision{};
+        float logit{};
+    };
+    struct OutputTreeNode {
+        std::uint32_t left_ref{};
+        std::uint32_t right_ref{};
+    };
+    struct TokenPathStep {
+        std::uint32_t decision{};
+        bool right{};
+    };
     struct TraceFrame {
         std::vector<NodeId> route;
         std::vector<float> contribution;
@@ -72,6 +84,18 @@ private:
     };
 
     [[nodiscard]] std::uint32_t bucket(std::uint64_t signature) const noexcept;
+    [[nodiscard]] bool uses_sparse_token_output() const noexcept;
+    void build_output_tree();
+    [[nodiscard]] float sparse_logit(std::size_t slot, std::uint32_t decision) const noexcept;
+    float& mutable_sparse_logit(std::size_t slot, std::uint32_t decision);
+    [[nodiscard]] float aggregate_sparse_logit(std::span<const ScoredNode> active,
+                                               std::uint32_t decision) const noexcept;
+    [[nodiscard]] StepStats step_token_dense(std::uint32_t token,
+                                             std::uint32_t target_token,
+                                             bool learn);
+    [[nodiscard]] StepStats step_token_sparse(std::uint32_t token,
+                                              std::uint32_t target_token,
+                                              bool learn);
     [[nodiscard]] bool channel_enabled(std::size_t channel) const noexcept;
     [[nodiscard]] bool channel_learning_enabled(std::size_t channel) const noexcept;
     [[nodiscard]] std::span<const std::uint64_t> make_signatures(
@@ -135,6 +159,11 @@ private:
     std::vector<std::uint8_t> hot_indexed_;
     std::vector<NodeId> parents_;
     std::vector<float> output_vectors_;
+    std::vector<std::vector<SparseOutputEntry>> sparse_outputs_;
+    std::vector<OutputTreeNode> output_tree_;
+    std::vector<std::uint32_t> token_path_offsets_;
+    std::vector<TokenPathStep> token_path_steps_;
+    std::uint32_t output_root_ref_{};
     std::vector<std::vector<Edge>> edges_;
 
     std::vector<std::uint32_t> id_to_slot_;

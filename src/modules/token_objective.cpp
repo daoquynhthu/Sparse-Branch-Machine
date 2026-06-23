@@ -58,7 +58,7 @@ float centered_logit_mean(std::span<const float> logits) {
 
 } // namespace
 
-StepStats SparseBranchMachine::step_token(std::uint32_t token,
+StepStats SparseBranchMachine::step_token_dense(std::uint32_t token,
                                           std::uint32_t target_token,
                                           bool learn) {
     if (config_.objective != ObjectiveKind::TokenCrossEntropy) {
@@ -311,6 +311,13 @@ StepStats SparseBranchMachine::step_token(std::uint32_t token,
     stats.cross_entropy = cross_entropy;
     stats.target_probability = target_probability;
     stats.top1_correct = predicted == target_token;
+    std::size_t better = 0U;
+    for (std::size_t candidate = 0; candidate < prediction_buffer_.size(); ++candidate) {
+        if (candidate != target_token &&
+            prediction_buffer_[candidate] > target_probability) ++better;
+    }
+    stats.top5_correct = better < std::min<std::size_t>(5U, prediction_buffer_.size());
+    stats.predicted_token = predicted;
     return stats;
 }
 

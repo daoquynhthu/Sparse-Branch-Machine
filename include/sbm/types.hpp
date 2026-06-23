@@ -15,10 +15,12 @@ inline constexpr std::size_t kMaxAddressProgramArity = 2U;
 enum class NodePhase : std::uint8_t { Cold, Warm, Mature, Dormant };
 enum class ChannelPhase : std::uint8_t { Seed, Probe, Active, Retired };
 enum class TopologyDecision : std::uint8_t { Proposed, Accepted, Rejected, Pruned };
+enum class AddressOp : std::uint8_t { Tuple = 0U, DeltaMod = 1U };
 
 struct AddressProgram {
     std::array<std::uint32_t, kMaxAddressProgramArity> lags{};
     std::uint8_t arity{1U};
+    AddressOp op{AddressOp::Tuple};
 
     [[nodiscard]] bool operator==(const AddressProgram&) const noexcept = default;
 };
@@ -33,6 +35,7 @@ struct AddressProgram {
 [[nodiscard]] inline std::uint64_t address_program_key(
     const AddressProgram& program) noexcept {
     std::uint64_t key = static_cast<std::uint64_t>(program.arity) << 56U;
+    key |= static_cast<std::uint64_t>(program.op) << 48U;
     for (std::size_t index = 0; index < program.arity; ++index) {
         key |= (static_cast<std::uint64_t>(program.lags[index]) & 0x0FFFFFFFULL)
                << (28U * index);
@@ -93,6 +96,7 @@ struct Config {
     std::uint32_t max_address_channels{6};
     std::uint32_t topology_max_lag{16};
     std::uint32_t topology_max_arity{2};
+    bool topology_enable_delta{true};
     std::uint32_t topology_probe_interval{2048};
     std::uint32_t topology_probe_warmup{512};
     std::uint32_t topology_probe_steps{4096};
@@ -122,6 +126,12 @@ struct Config {
     float label_smoothing{0.01F};
     float softmax_temperature{1.0F};
     float logit_decay{0.0001F};
+    // Exact hierarchical softmax.  Every address node stores only binary
+    // decisions encountered on observed target paths, so token training and
+    // scoring scale with log(vocabulary) instead of vocabulary size.
+    bool sparse_token_output{true};
+    std::uint32_t sparse_output_topk{5};
+    std::uint32_t sparse_output_beam_width{16};
 
     std::uint64_t seed{7};
 };
@@ -137,6 +147,8 @@ struct StepStats {
     float cross_entropy{};
     float target_probability{};
     bool top1_correct{};
+    bool top5_correct{};
+    std::uint32_t predicted_token{};
 };
 
 struct Diagnostics {
@@ -158,6 +170,7 @@ struct Diagnostics {
     std::uint64_t stale_bucket_refs_skipped{};
     std::uint64_t stale_edge_refs_skipped{};
     std::uint64_t estimated_bytes{};
+    std::uint64_t sparse_output_entries{};
     std::uint64_t topology_proposals{};
     std::uint64_t topology_accepted{};
     std::uint64_t topology_rejected{};

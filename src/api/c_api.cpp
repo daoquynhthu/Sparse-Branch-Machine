@@ -192,6 +192,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"max_address_channels", "uint32", "6", "1", "8", "linear", true, false, false, "Maximum simultaneous address channels."},
     {"topology_max_lag", "uint32", "16", "2", "256", "log", true, false, false, "Largest temporal lag eligible for proposal."},
     {"topology_max_arity", "uint32", "2", "1", "2", "linear", true, false, false, "Maximum number of history offsets in an address program."},
+    {"topology_enable_delta", "bool", "true", "", "", "categorical", false, false, false, "Allow the generic modular-difference address operator to be proposed."},
     {"topology_probe_interval", "uint32", "2048", "128", "16384", "log", true, false, false, "Delay between topology proposals."},
     {"topology_probe_warmup", "uint32", "512", "0", "4096", "linear", true, false, false, "Probe steps ignored before credit collection."},
     {"topology_probe_steps", "uint32", "4096", "512", "32768", "log", true, false, false, "Lifetime of a candidate address channel."},
@@ -217,6 +218,9 @@ constexpr ParameterDescriptor kParameters[] = {
     {"label_smoothing", "float", "0.01", "0.0", "0.20", "linear", true, true, false, "Label smoothing for mathematical next-token cross-entropy."},
     {"softmax_temperature", "float", "1.0", "0.25", "3.0", "log", true, true, false, "Temperature applied to aggregated token logits."},
     {"logit_decay", "float", "0.0001", "0.0", "0.02", "linear", true, true, false, "Per-update decay applied to local token logits."},
+    {"sparse_token_output", "bool", "true", "", "", "categorical", false, false, false, "Use exact hierarchical softmax with sparse per-node binary decisions."},
+    {"sparse_output_topk", "uint32", "5", "1", "32", "linear", true, false, false, "Number of hierarchical candidates reported by token decoding."},
+    {"sparse_output_beam_width", "uint32", "16", "5", "128", "log", true, false, false, "Fixed candidate beam for O(B log V) hierarchical decoding."},
     {"seed", "uint64", "7", "0", "18446744073709551615", "linear", false, false, false, "Model random seed."},
 };
 
@@ -255,6 +259,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(max_address_channels)
     SBM_SET_UINT(topology_max_lag)
     SBM_SET_UINT(topology_max_arity)
+    SBM_SET_BOOL(topology_enable_delta)
     SBM_SET_UINT(topology_probe_interval)
     SBM_SET_UINT(topology_probe_warmup)
     SBM_SET_UINT(topology_probe_steps)
@@ -280,6 +285,9 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_FLOAT(label_smoothing)
     SBM_SET_FLOAT(softmax_temperature)
     SBM_SET_FLOAT(logit_decay)
+    SBM_SET_BOOL(sparse_token_output)
+    SBM_SET_UINT(sparse_output_topk)
+    SBM_SET_UINT(sparse_output_beam_width)
     SBM_SET_U64(seed)
 #undef SBM_SET_UINT
 #undef SBM_SET_U64
@@ -326,6 +334,7 @@ std::string config_json(const sbm::Config& c) {
         << "  \"max_address_channels\": " << c.max_address_channels << ",\n"
         << "  \"topology_max_lag\": " << c.topology_max_lag << ",\n"
         << "  \"topology_max_arity\": " << c.topology_max_arity << ",\n"
+        << "  \"topology_enable_delta\": " << c.topology_enable_delta << ",\n"
         << "  \"topology_probe_interval\": " << c.topology_probe_interval << ",\n"
         << "  \"topology_probe_warmup\": " << c.topology_probe_warmup << ",\n"
         << "  \"topology_probe_steps\": " << c.topology_probe_steps << ",\n"
@@ -351,6 +360,9 @@ std::string config_json(const sbm::Config& c) {
         << "  \"label_smoothing\": " << c.label_smoothing << ",\n"
         << "  \"softmax_temperature\": " << c.softmax_temperature << ",\n"
         << "  \"logit_decay\": " << c.logit_decay << ",\n"
+        << "  \"sparse_token_output\": " << c.sparse_token_output << ",\n"
+        << "  \"sparse_output_topk\": " << c.sparse_output_topk << ",\n"
+        << "  \"sparse_output_beam_width\": " << c.sparse_output_beam_width << ",\n"
         << "  \"seed\": " << c.seed << "\n"
         << "}\n";
     return out.str();
@@ -361,7 +373,8 @@ std::string_view parameter_tasks(std::string_view name) {
         name == "classification_mature_learning_rate" ||
         name == "label_smoothing" ||
         name == "softmax_temperature" ||
-        name == "logit_decay") {
+        name == "logit_decay" ||
+        name == "sparse_output_topk") {
         return "token-ce";
     }
     if (name == "residual_learning_rate" ||
@@ -376,7 +389,7 @@ std::string_view parameter_tasks(std::string_view name) {
 
 std::string schema_json() {
     std::ostringstream out;
-    out << "{\n  \"api_version\": 3,\n  \"parameters\": [\n";
+    out << "{\n  \"api_version\": 4,\n  \"parameters\": [\n";
     for (std::size_t i = 0; i < std::size(kParameters); ++i) {
         const auto& p = kParameters[i];
         out << "    {\"name\": \"" << json_escape(p.name)
@@ -409,8 +422,8 @@ const std::string& static_schema() {
 
 extern "C" {
 
-uint32_t sbm_api_version(void) { return 3U; }
-const char* sbm_api_version_string(void) { return "3.1.0"; }
+uint32_t sbm_api_version(void) { return 4U; }
+const char* sbm_api_version_string(void) { return "4.0.0"; }
 const char* sbm_last_error(void) { return g_last_error.c_str(); }
 const char* sbm_parameter_schema_json(void) { return static_schema().c_str(); }
 

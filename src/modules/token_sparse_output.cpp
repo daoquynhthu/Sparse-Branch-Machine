@@ -1,0 +1,432 @@
+#include "sbm/machine.hpp"
+#include "sbm/math.hpp"
+
+#include <algorithm>
+#include <bit>
+#include <cmath>
+#include <cstdint>
+#include <functional>
+#include <limits>
+#include <queue>
+#include <stdexcept>
+#include <utility>
+#include <vector>
+
+namespace sbm {
+namespace {
+
+constexpr std::uint32_t kLeafMask = 0x80000000U;
+
+[[nodiscard]] bool is_leaf(std::uint32_t ref) noexcept {
+    return (ref & kLeafMask) != 0U;
+}
+
+[[nodiscard]] std::uint32_t leaf_ref(std::uint32_t token) noexcept {
+    return kLeafMask | token;
+}
+
+[[nodiscard]] std::uint32_t leaf_token(std::uint32_t ref) noexcept {
+    return ref & ~kLeafMask;
+}
+
+[[nodiscard]] float softplus(float value) noexcept {
+    if (value > 20.0F) return value;
+    if (value < -20.0F) return std::exp(value);
+    return std::log1p(std::exp(value));
+}
+
+[[nodiscard]] float branch_loss(float normalized_logit, bool right) noexcept {
+    return right ? softplus(-normalized_logit) : softplus(normalized_logit);
+}
+
+[[nodiscard]] float log_branch_probability(float normalized_logit,
+                                           bool right) noexcept {
+    return -branch_loss(normalized_logit, right);
+}
+
+[[nodiscard]] float sigmoid(float value) noexcept {
+    if (value >= 0.0F) {
+        const float inverse = std::exp(-value);
+        return 1.0F / (1.0F + inverse);
+    }
+    const float exponential = std::exp(value);
+    return exponential / (1.0F + exponential);
+}
+
+} // namespace
+
+void SparseBranchMachine::build_output_tree() {
+    output_tree_.clear();
+    token_path_offsets_.assign(static_cast<std::size_t>(config_.vector_dim) + 1U, 0U);
+    token_path_steps_.clear();
+    std::vector<std::vector<TokenPathStep>> paths(config_.vector_dim);
+    std::vector<TokenPathStep> path;
+    std::vector<std::uint32_t> leaf_order(config_.vector_dim);
+    for (std::uint32_t token = 0U; token < config_.vector_dim; ++token) {
+        leaf_order[token] = token;
+    }
+    std::sort(leaf_order.begin(), leaf_order.end(), [&](std::uint32_t left,
+                                                        std::uint32_t right) {
+        const auto left_key = mix64(config_.seed ^
+            (static_cast<std::uint64_t>(left) + 1U) * 0x9E3779B97F4A7C15ULL);
+        const auto right_key = mix64(config_.seed ^
+            (static_cast<std::uint64_t>(right) + 1U) * 0x9E3779B97F4A7C15ULL);
+        return left_key == right_key ? left < right : left_key < right_key;
+    });
+
+    std::function<std::uint32_t(std::uint32_t, std::uint32_t)> build =
+        [&](std::uint32_t begin, std::uint32_t end) -> std::uint32_t {
+            if (end - begin == 1U) {
+                const auto token = leaf_order[begin];
+                paths[token] = path;
+                return leaf_ref(token);
+            }
+            const auto decision = static_cast<std::uint32_t>(output_tree_.size());
+            output_tree_.push_back({});
+            const auto middle = begin + (end - begin) / 2U;
+            path.push_back({decision, false});
+            const auto left = build(begin, middle);
+            path.back().right = true;
+            const auto right = build(middle, end);
+            path.pop_back();
+            output_tree_[decision] = {left, right};
+            return decision;
+        };
+
+    output_root_ref_ = build(0U, config_.vector_dim);
+    for (std::uint32_t token = 0; token < config_.vector_dim; ++token) {
+        token_path_offsets_[token] = static_cast<std::uint32_t>(token_path_steps_.size());
+        token_path_steps_.insert(token_path_steps_.end(), paths[token].begin(), paths[token].end());
+    }
+    token_path_offsets_[config_.vector_dim] =
+        static_cast<std::uint32_t>(token_path_steps_.size());
+}
+
+float SparseBranchMachine::sparse_logit(std::size_t slot,
+                                        std::uint32_t decision) const noexcept {
+    if (slot >= sparse_outputs_.size()) return 0.0F;
+    const auto& entries = sparse_outputs_[slot];
+    for (const auto& entry : entries) {
+        if (entry.decision == decision) return entry.logit;
+    }
+    return 0.0F;
+}
+
+float& SparseBranchMachine::mutable_sparse_logit(std::size_t slot,
+                                                  std::uint32_t decision) {
+    auto& entries = sparse_outputs_.at(slot);
+    for (auto& entry : entries) {
+        if (entry.decision == decision) return entry.logit;
+    }
+    entries.push_back({decision, 0.0F});
+    return entries.back().logit;
+}
+
+float SparseBranchMachine::aggregate_sparse_logit(
+    std::span<const ScoredNode> active,
+    std::uint32_t decision) const noexcept {
+    float value = 0.0F;
+    for (const auto& node : active) {
+        if (std::abs(node.responsibility) < 1e-8F) continue;
+        const auto slot = slot_of(node.id);
+        if (slot == SIZE_MAX) continue;
+        value += node.responsibility * sparse_logit(slot, decision);
+    }
+    return value;
+}
+
+StepStats SparseBranchMachine::step_token(std::uint32_t token,
+                                          std::uint32_t target_token,
+                                          bool learn) {
+    return uses_sparse_token_output()
+        ? step_token_sparse(token, target_token, learn)
+        : step_token_dense(token, target_token, learn);
+}
+
+StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
+                                                 std::uint32_t target_token,
+                                                 bool learn) {
+    if (config_.objective != ObjectiveKind::TokenCrossEntropy) {
+        throw std::logic_error("step_token requires the token cross-entropy objective");
+    }
+    if (token >= config_.token_alphabet || target_token >= config_.vector_dim) {
+        throw std::out_of_range("invalid input or target token");
+    }
+
+    if (history_.size() == config_.context_width) {
+        std::move(history_.begin() + 1, history_.end(), history_.begin());
+        history_.back() = token;
+    } else {
+        history_.push_back(token);
+    }
+    maybe_begin_topology_probe(learn);
+    const auto signatures = make_signatures(history_);
+
+    const bool can_grow = learn || config_.allow_growth_when_frozen;
+    std::uint32_t created = 0U;
+    const std::span<const float> empty_initial;
+    for (std::uint8_t channel = 0; channel < signatures.size(); ++channel) {
+        if (!channel_enabled(channel)) continue;
+        const auto signature = signatures[channel];
+        const auto exact_bucket = bucket_index(channel, signature);
+        std::size_t exact_count = 0U;
+        NodeId nearest_exact = kInvalidNode;
+        double nearest_similarity = -1.0;
+        float nearest_persistent_loss = std::numeric_limits<float>::infinity();
+        std::uint32_t nearest_visits = 0U;
+        for (const NodeId id : buckets_[exact_bucket]) {
+            const auto slot = slot_of(id);
+            if (slot == SIZE_MAX || channels_[slot] != channel) continue;
+            ++exact_count;
+            const double similarity = hamming_similarity(prototypes_[slot], signature);
+            if (similarity > nearest_similarity) {
+                nearest_similarity = similarity;
+                nearest_exact = id;
+                nearest_visits = address_visits_[slot];
+                nearest_persistent_loss = address_loss_ema_[slot];
+            }
+        }
+        const bool cooldown_ready = total_steps_ >=
+            bucket_last_split_step_[exact_bucket] + config_.split_cooldown;
+        const bool persistent_conflict = nearest_exact != kInvalidNode &&
+            nearest_visits >= config_.split_min_visits &&
+            exact_count < config_.max_specializations_per_bucket &&
+            cooldown_ready && nearest_similarity < config_.split_context_similarity &&
+            nearest_persistent_loss > config_.split_loss_threshold;
+        if (can_grow && channel_learning_enabled(channel) &&
+            (exact_count == 0U || persistent_conflict)) {
+            const NodeId id = new_node(signature, empty_initial, nearest_exact, channel);
+            const auto slot = slot_of(id);
+            if (slot != SIZE_MAX) {
+                loss_ema_[slot] = 1.0F;
+                address_loss_ema_[slot] = 1.0F;
+                utility_ema_[slot] = 0.0F;
+                hot_buckets_[exact_bucket].push_back(id);
+                hot_indexed_[slot] = 1U;
+            }
+            bucket_last_split_step_[exact_bucket] = total_steps_;
+            ++created;
+        }
+    }
+
+    auto [active, examined] = select_route(signatures);
+    const auto path_begin = token_path_offsets_[target_token];
+    const auto path_end = token_path_offsets_[target_token + 1U];
+    const float temperature = std::max(config_.softmax_temperature, 1e-5F);
+    std::vector<float> path_logits;
+    path_logits.reserve(path_end - path_begin);
+    float cross_entropy = 0.0F;
+    for (std::uint32_t index = path_begin; index < path_end; ++index) {
+        const auto& step = token_path_steps_[index];
+        const float logit = aggregate_sparse_logit(active, step.decision);
+        path_logits.push_back(logit);
+        cross_entropy += branch_loss(logit / temperature, step.right);
+    }
+    const float target_probability = std::exp(-std::min(cross_entropy, 80.0F));
+    const float normalized_loss = cross_entropy /
+        std::max(std::log(static_cast<float>(config_.vector_dim)), 1e-5F);
+
+    struct SearchItem {
+        float log_probability{};
+        std::uint32_t ref{};
+    };
+    std::vector<SearchItem> frontier{{0.0F, output_root_ref_}};
+    const auto decoder_beam = std::max(config_.sparse_output_topk,
+                                       config_.sparse_output_beam_width);
+    const auto maximum_depth = static_cast<std::uint32_t>(
+        std::bit_width(config_.vector_dim - 1U) + 2U);
+    for (std::uint32_t depth = 0U; depth < maximum_depth; ++depth) {
+        bool all_leaves = true;
+        std::vector<SearchItem> expanded;
+        expanded.reserve(frontier.size() * 2U);
+        for (const auto& item : frontier) {
+            if (is_leaf(item.ref)) {
+                expanded.push_back(item);
+                continue;
+            }
+            all_leaves = false;
+            const auto& decision = output_tree_[item.ref];
+            const float logit = aggregate_sparse_logit(active, item.ref) / temperature;
+            expanded.push_back({item.log_probability +
+                                    log_branch_probability(logit, false),
+                                decision.left_ref});
+            expanded.push_back({item.log_probability +
+                                    log_branch_probability(logit, true),
+                                decision.right_ref});
+        }
+        if (all_leaves) break;
+        const auto keep = std::min<std::size_t>(decoder_beam, expanded.size());
+        std::partial_sort(expanded.begin(), expanded.begin() + keep, expanded.end(),
+                          [](const SearchItem& left, const SearchItem& right) {
+                              return left.log_probability > right.log_probability;
+                          });
+        expanded.resize(keep);
+        frontier = std::move(expanded);
+    }
+    std::sort(frontier.begin(), frontier.end(),
+              [](const SearchItem& left, const SearchItem& right) {
+                  return left.log_probability > right.log_probability;
+              });
+    std::vector<std::uint32_t> top_tokens;
+    top_tokens.reserve(config_.sparse_output_topk);
+    for (const auto& item : frontier) {
+        if (!is_leaf(item.ref)) continue;
+        top_tokens.push_back(leaf_token(item.ref));
+        if (top_tokens.size() >= config_.sparse_output_topk) break;
+    }
+
+    const auto predicted = top_tokens.empty() ? 0U : top_tokens.front();
+    const bool top5 = std::find(top_tokens.begin(), top_tokens.end(), target_token) !=
+                      top_tokens.end();
+
+    if (learn) {
+        std::fill(channel_credit_buffer_.begin(), channel_credit_buffer_.end(), 0.0F);
+        std::array<std::uint8_t, kMaxAddressChannels> channel_members{};
+        for (const auto& node : active) {
+            if (node.channel < channel_members.size() &&
+                std::abs(node.responsibility) >= 1e-7F) {
+                ++channel_members[node.channel];
+            }
+        }
+
+        for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
+            if (!channel_enabled(channel) || channel_members[channel] == 0U) continue;
+            float without_loss = 0.0F;
+            std::size_t path_position = 0U;
+            for (std::uint32_t index = path_begin; index < path_end; ++index, ++path_position) {
+                const auto& step = token_path_steps_[index];
+                float removed = 0.0F;
+                for (const auto& node : active) {
+                    if (node.channel != channel) continue;
+                    const auto slot = slot_of(node.id);
+                    if (slot == SIZE_MAX) continue;
+                    removed += node.responsibility * sparse_logit(slot, step.decision);
+                }
+                without_loss += branch_loss(
+                    (path_logits[path_position] - removed) / temperature, step.right);
+            }
+            channel_credit_buffer_[channel] = without_loss - cross_entropy;
+        }
+
+        for (auto& node : active) {
+            const auto slot = slot_of(node.id);
+            if (slot == SIZE_MAX || std::abs(node.responsibility) < 1e-7F) {
+                node.contribution = 0.0F;
+                continue;
+            }
+            if (channel_members[node.channel] == 1U) {
+                node.contribution = channel_credit_buffer_[node.channel];
+                continue;
+            }
+            float without_loss = 0.0F;
+            std::size_t path_position = 0U;
+            for (std::uint32_t index = path_begin; index < path_end; ++index, ++path_position) {
+                const auto& step = token_path_steps_[index];
+                const float removed = node.responsibility *
+                    sparse_logit(slot, step.decision);
+                without_loss += branch_loss(
+                    (path_logits[path_position] - removed) / temperature, step.right);
+            }
+            node.contribution = without_loss - cross_entropy;
+        }
+        observe_topology_credit(std::span<const float>(channel_credit_buffer_.data(),
+                                                        topology_.size()));
+    }
+
+    std::vector<NodeId> route;
+    std::vector<float> contributions;
+    route.reserve(active.size());
+    contributions.reserve(active.size());
+    for (const auto& node : active) {
+        route.push_back(node.id);
+        contributions.push_back(node.contribution);
+    }
+
+    if (learn) {
+        apply_trace_credit(normalized_loss);
+        for (const auto& node : active) {
+            if (!node.exact_region ||
+                node.responsibility < config_.min_update_responsibility) continue;
+            const auto slot = slot_of(node.id);
+            if (slot == SIZE_MAX || !channel_learning_enabled(node.channel)) continue;
+            if (visits_[slot] == 0U && !hot_indexed_[slot]) {
+                hot_buckets_[bucket_index(channels_[slot], prototypes_[slot])]
+                    .push_back(ids_[slot]);
+                hot_indexed_[slot] = 1U;
+            }
+            ++visits_[slot];
+            ++address_visits_[slot];
+            const bool mature = phase_of_slot(slot) == NodePhase::Mature;
+            const float base_rate = mature
+                ? config_.classification_mature_learning_rate
+                : config_.classification_learning_rate;
+            const float schedule = 1.0F /
+                std::sqrt(static_cast<float>(std::max(1U, address_visits_[slot])));
+            const float rate = base_rate * schedule * node.responsibility / temperature;
+            std::size_t path_position = 0U;
+            for (std::uint32_t index = path_begin; index < path_end; ++index, ++path_position) {
+                const auto& step = token_path_steps_[index];
+                const float probability_right = sigmoid(path_logits[path_position] / temperature);
+                const float target_right = step.right
+                    ? 1.0F - 0.5F * config_.label_smoothing
+                    : 0.5F * config_.label_smoothing;
+                float& local = mutable_sparse_logit(slot, step.decision);
+                local = (1.0F - config_.logit_decay) * local +
+                        rate * (target_right - probability_right);
+            }
+            loss_ema_[slot] = 0.96F * loss_ema_[slot] + 0.04F * normalized_loss;
+            address_loss_ema_[slot] = 0.96F * address_loss_ema_[slot] +
+                                      0.04F * normalized_loss;
+            utility_ema_[slot] = 0.985F * utility_ema_[slot] +
+                0.015F * std::clamp(node.contribution, -1.0F, 1.0F);
+            update_phase(slot);
+        }
+
+        const std::size_t source_limit = std::min<std::size_t>(
+            previous_route_.size(), config_.edge_reinforce_width);
+        const std::size_t destination_limit = std::min<std::size_t>(
+            active.size(), config_.edge_reinforce_width);
+        for (std::size_t source_index = 0; source_index < source_limit; ++source_index) {
+            decay_edges(previous_route_[source_index]);
+            const float source_responsibility = source_index < previous_responsibilities_.size()
+                ? previous_responsibilities_[source_index] : 1.0F;
+            for (std::size_t destination_index = 0;
+                 destination_index < destination_limit; ++destination_index) {
+                const float helpful = std::max(0.0F, active[destination_index].contribution);
+                if (helpful < config_.edge_min_contribution) continue;
+                reinforce_edge(previous_route_[source_index],
+                               active[destination_index].id,
+                               source_responsibility *
+                                   active[destination_index].responsibility * helpful);
+            }
+        }
+        trace_.push_back({route, contributions, normalized_loss});
+        while (trace_.size() > config_.trace_horizon) trace_.pop_front();
+    }
+
+    previous_route_ = route;
+    previous_responsibilities_.clear();
+    previous_responsibilities_.reserve(active.size());
+    for (const auto& node : active) {
+        previous_responsibilities_.push_back(node.responsibility);
+    }
+    ++total_steps_;
+    total_candidates_ += examined;
+    total_active_ += route.size();
+
+    StepStats stats;
+    stats.normalized_mse = normalized_loss;
+    stats.active_nodes = static_cast<std::uint32_t>(route.size());
+    stats.candidates_examined = examined;
+    stats.live_nodes = static_cast<std::uint32_t>(ids_.size());
+    stats.created = created;
+    stats.route = std::move(route);
+    stats.cross_entropy = cross_entropy;
+    stats.target_probability = target_probability;
+    stats.top1_correct = predicted == target_token;
+    stats.top5_correct = top5;
+    stats.predicted_token = predicted;
+    return stats;
+}
+
+} // namespace sbm

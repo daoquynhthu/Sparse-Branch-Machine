@@ -1,0 +1,3311 @@
+{
+  "api_version": "4.0.0",
+  "seeds": [
+    7,
+    11,
+    19
+  ],
+  "variants": {
+    "dense_computable": {
+      "mean_estimated_bytes": 14168720.0,
+      "mean_eval_cross_entropy": 3.378434073333333,
+      "mean_sparse_output_entries": 0.0,
+      "mean_steps_per_second": 97962.39093916334,
+      "runs": [
+        {
+          "active_channels": 5,
+          "address_lags": [
+            1
+          ],
+          "avg_active": 5.90626527,
+          "avg_candidates": 31.63538868,
+          "created_total": 38713,
+          "current_token_baseline_eval_bits_per_token": 5.00679025,
+          "current_token_baseline_eval_cross_entropy": 3.47044255,
+          "current_token_baseline_eval_mean_target_probability": 0.03135428,
+          "current_token_baseline_eval_perplexity": 32.15096758,
+          "current_token_baseline_eval_top1_accuracy": 0.03189696,
+          "current_token_baseline_eval_top5_accuracy": 0.16128843,
+          "dataset_hash": 2195559232913211147,
+          "edge_score_weight": 0.31999999,
+          "edges": 82545,
+          "elapsed_seconds": 1.33247667,
+          "estimated_bytes": 15083856,
+          "eval_bits_per_token": 4.88689448,
+          "eval_cross_entropy": 3.38733713,
+          "eval_examples": 51008,
+          "eval_mean_target_probability": 0.03595032,
+          "eval_perplexity": 29.58706072,
+          "eval_top1_accuracy": 0.06355866,
+          "eval_top5_accuracy": 0.27660367,
+          "exact_region_mass": 0.88,
+          "excess_cross_entropy": 0.46770224,
+          "label_smoothing": 0.01,
+          "learned_address_lags": [
+            1,
+            4
+          ],
+          "learned_address_operations": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "learned_address_programs": [
+            [
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              4
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          "learned_channel_credit": [
+            0.03059468,
+            0.02236409,
+            -0.00026445,
+            0.01383244,
+            -0.00379327,
+            -0.00169045
+          ],
+          "learned_channel_phase": [
+            0,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "live_nodes": 23836,
+          "multiscale_baseline_eval_bits_per_token": 4.9039759,
+          "multiscale_baseline_eval_cross_entropy": 3.39917707,
+          "multiscale_baseline_eval_mean_target_probability": 0.04495078,
+          "multiscale_baseline_eval_perplexity": 29.93945171,
+          "multiscale_baseline_eval_top1_accuracy": 0.07449812,
+          "multiscale_baseline_eval_top5_accuracy": 0.31920483,
+          "objective": "token_cross_entropy",
+          "oracle_cross_entropy": 2.91963489,
+          "pair_context_baseline_eval_bits_per_token": 5.25270027,
+          "pair_context_baseline_eval_cross_entropy": 3.64089438,
+          "pair_context_baseline_eval_mean_target_probability": 0.05034082,
+          "pair_context_baseline_eval_perplexity": 38.12592068,
+          "pair_context_baseline_eval_top1_accuracy": 0.07273369,
+          "pair_context_baseline_eval_top5_accuracy": 0.33416327,
+          "probe_channels": 0,
+          "sequence_count": 64,
+          "simd_enabled": true,
+          "softmax_temperature": 1.0,
+          "sparse_output_entries": 0,
+          "sparse_token_output": false,
+          "steps_per_second": 98319.16996839,
+          "strict_freeze": true,
+          "task": "mathematical_next_token_cross_entropy",
+          "topology_accepted": 6,
+          "topology_events": [
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 2048
+            },
+            {
+              "credit": -0.00129275,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 6144
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 8192
+            },
+            {
+              "credit": 0.00032976,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 12288
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 14336
+            },
+            {
+              "credit": 0.00652639,
+              "decision": 1,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 18432
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 20480
+            },
+            {
+              "credit": -0.0002368,
+              "decision": 2,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 24576
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 26624
+            },
+            {
+              "credit": -0.00039647,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 30720
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 32768
+            },
+            {
+              "credit": 0.00250846,
+              "decision": 1,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 36864
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 38912
+            },
+            {
+              "credit": 0.0021543,
+              "decision": 1,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 43008
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 45056
+            },
+            {
+              "credit": -0.00080732,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 49152
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 51200
+            },
+            {
+              "credit": 0.0009858,
+              "decision": 1,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 55296
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 57344
+            },
+            {
+              "credit": 0.00189806,
+              "decision": 1,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 61440
+            },
+            {
+              "credit": -0.01007419,
+              "decision": 3,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 69637
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 71685
+            },
+            {
+              "credit": 0.00206888,
+              "decision": 1,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 75781
+            }
+          ],
+          "topology_proposals": 11,
+          "topology_pruned": 1,
+          "topology_rejected": 5,
+          "train_bits_per_token": 4.94324498,
+          "train_cross_entropy": 3.42639632,
+          "train_examples": 80000,
+          "train_mean_target_probability": 0.03337999,
+          "train_perplexity": 30.76557356,
+          "train_top1_accuracy": 0.0584875,
+          "train_top5_accuracy": 0.274125,
+          "unigram_baseline_eval_bits_per_token": 5.00009816,
+          "unigram_baseline_eval_cross_entropy": 3.46580394,
+          "unigram_baseline_eval_mean_target_probability": 0.03126063,
+          "unigram_baseline_eval_perplexity": 32.00217738,
+          "unigram_baseline_eval_top1_accuracy": 0.0320538,
+          "unigram_baseline_eval_top5_accuracy": 0.1574851,
+          "vocab_size": 32
+        },
+        {
+          "active_channels": 4,
+          "address_lags": [
+            1
+          ],
+          "avg_active": 5.90102131,
+          "avg_candidates": 30.74092422,
+          "created_total": 41829,
+          "current_token_baseline_eval_bits_per_token": 5.00582835,
+          "current_token_baseline_eval_cross_entropy": 3.4697758,
+          "current_token_baseline_eval_mean_target_probability": 0.03136805,
+          "current_token_baseline_eval_perplexity": 32.12953833,
+          "current_token_baseline_eval_top1_accuracy": 0.03258312,
+          "current_token_baseline_eval_top5_accuracy": 0.16050423,
+          "dataset_hash": 148259111409531357,
+          "edge_score_weight": 0.31999999,
+          "edges": 46621,
+          "elapsed_seconds": 1.34655069,
+          "estimated_bytes": 13791488,
+          "eval_bits_per_token": 4.86609435,
+          "eval_cross_entropy": 3.37291958,
+          "eval_examples": 51008,
+          "eval_mean_target_probability": 0.03703273,
+          "eval_perplexity": 29.16354819,
+          "eval_top1_accuracy": 0.06957732,
+          "eval_top5_accuracy": 0.29409112,
+          "exact_region_mass": 0.88,
+          "excess_cross_entropy": 0.4553506,
+          "label_smoothing": 0.01,
+          "learned_address_lags": [
+            1
+          ],
+          "learned_address_operations": [
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "learned_address_programs": [
+            [
+              1
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              3
+            ]
+          ],
+          "learned_channel_credit": [
+            0.01740228,
+            -0.00043375,
+            0.02301935,
+            0.01884557,
+            0.00827417,
+            -0.00217822
+          ],
+          "learned_channel_phase": [
+            0,
+            2,
+            2,
+            2,
+            2,
+            3
+          ],
+          "live_nodes": 20472,
+          "multiscale_baseline_eval_bits_per_token": 4.89193262,
+          "multiscale_baseline_eval_cross_entropy": 3.3908293,
+          "multiscale_baseline_eval_mean_target_probability": 0.04512322,
+          "multiscale_baseline_eval_perplexity": 29.6905645,
+          "multiscale_baseline_eval_top1_accuracy": 0.07638018,
+          "multiscale_baseline_eval_top5_accuracy": 0.3232042,
+          "objective": "token_cross_entropy",
+          "oracle_cross_entropy": 2.91756897,
+          "pair_context_baseline_eval_bits_per_token": 5.24857041,
+          "pair_context_baseline_eval_cross_entropy": 3.63803178,
+          "pair_context_baseline_eval_mean_target_probability": 0.05048167,
+          "pair_context_baseline_eval_perplexity": 38.01693745,
+          "pair_context_baseline_eval_top1_accuracy": 0.07487061,
+          "pair_context_baseline_eval_top5_accuracy": 0.33865276,
+          "probe_channels": 0,
+          "sequence_count": 64,
+          "simd_enabled": true,
+          "softmax_temperature": 1.0,
+          "sparse_output_entries": 0,
+          "sparse_token_output": false,
+          "steps_per_second": 97291.54697335,
+          "strict_freeze": true,
+          "task": "mathematical_next_token_cross_entropy",
+          "topology_accepted": 5,
+          "topology_events": [
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 2048
+            },
+            {
+              "credit": -9.178e-05,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 6144
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 8192
+            },
+            {
+              "credit": 0.00196674,
+              "decision": 1,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 12288
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 14336
+            },
+            {
+              "credit": 0.00553583,
+              "decision": 1,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 18432
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 20480
+            },
+            {
+              "credit": 0.00499254,
+              "decision": 1,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 24576
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 26624
+            },
+            {
+              "credit": -0.00296478,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 30720
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 32768
+            },
+            {
+              "credit": -0.00235439,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 36864
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 38912
+            },
+            {
+              "credit": 0.00129722,
+              "decision": 1,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 43008
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 45056
+            },
+            {
+              "credit": -0.00101251,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 49152
+            },
+            {
+              "credit": -0.01017497,
+              "decision": 3,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 49236
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 51284
+            },
+            {
+              "credit": 0.00174186,
+              "decision": 1,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 55380
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 57428
+            },
+            {
+              "credit": -0.00107662,
+              "decision": 2,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 61524
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 63572
+            },
+            {
+              "credit": -0.00080742,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 67668
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 69716
+            },
+            {
+              "credit": -0.00035582,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 73812
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 75860
+            },
+            {
+              "credit": -0.00124942,
+              "decision": 2,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 79956
+            }
+          ],
+          "topology_proposals": 13,
+          "topology_pruned": 1,
+          "topology_rejected": 8,
+          "train_bits_per_token": 4.93016466,
+          "train_cross_entropy": 3.41732974,
+          "train_examples": 80000,
+          "train_mean_target_probability": 0.03416359,
+          "train_perplexity": 30.4878955,
+          "train_top1_accuracy": 0.0589875,
+          "train_top5_accuracy": 0.2824,
+          "unigram_baseline_eval_bits_per_token": 5.00018255,
+          "unigram_baseline_eval_cross_entropy": 3.46586244,
+          "unigram_baseline_eval_mean_target_probability": 0.03126201,
+          "unigram_baseline_eval_perplexity": 32.00404934,
+          "unigram_baseline_eval_top1_accuracy": 0.03125,
+          "unigram_baseline_eval_top5_accuracy": 0.18828419,
+          "vocab_size": 32
+        },
+        {
+          "active_channels": 4,
+          "address_lags": [
+            1
+          ],
+          "avg_active": 5.91571507,
+          "avg_candidates": 30.79138679,
+          "created_total": 39884,
+          "current_token_baseline_eval_bits_per_token": 5.00713607,
+          "current_token_baseline_eval_cross_entropy": 3.47068225,
+          "current_token_baseline_eval_mean_target_probability": 0.03136241,
+          "current_token_baseline_eval_perplexity": 32.1586753,
+          "current_token_baseline_eval_top1_accuracy": 0.03138723,
+          "current_token_baseline_eval_top5_accuracy": 0.16236669,
+          "dataset_hash": 18033101719306103290,
+          "edge_score_weight": 0.31999999,
+          "edges": 27224,
+          "elapsed_seconds": 1.33305581,
+          "estimated_bytes": 13630816,
+          "eval_bits_per_token": 4.86916141,
+          "eval_cross_entropy": 3.37504551,
+          "eval_examples": 51008,
+          "eval_mean_target_probability": 0.03677931,
+          "eval_perplexity": 29.22561367,
+          "eval_top1_accuracy": 0.06900878,
+          "eval_top5_accuracy": 0.29638488,
+          "exact_region_mass": 0.88,
+          "excess_cross_entropy": 0.46930175,
+          "label_smoothing": 0.01,
+          "learned_address_lags": [
+            1,
+            4
+          ],
+          "learned_address_operations": [
+            0,
+            0,
+            1,
+            0,
+            1
+          ],
+          "learned_address_programs": [
+            [
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              4
+            ]
+          ],
+          "learned_channel_credit": [
+            0.01754723,
+            -0.00034698,
+            0.0176004,
+            0.01226659,
+            0.01319686,
+            -0.00351434
+          ],
+          "learned_channel_phase": [
+            0,
+            3,
+            2,
+            2,
+            2,
+            2
+          ],
+          "live_nodes": 20052,
+          "multiscale_baseline_eval_bits_per_token": 4.88489286,
+          "multiscale_baseline_eval_cross_entropy": 3.38594971,
+          "multiscale_baseline_eval_mean_target_probability": 0.04528461,
+          "multiscale_baseline_eval_perplexity": 29.54603957,
+          "multiscale_baseline_eval_top1_accuracy": 0.07585085,
+          "multiscale_baseline_eval_top5_accuracy": 0.3264978,
+          "objective": "token_cross_entropy",
+          "oracle_cross_entropy": 2.90574375,
+          "pair_context_baseline_eval_bits_per_token": 5.23323954,
+          "pair_context_baseline_eval_cross_entropy": 3.62740523,
+          "pair_context_baseline_eval_mean_target_probability": 0.05075728,
+          "pair_context_baseline_eval_perplexity": 37.61508745,
+          "pair_context_baseline_eval_top1_accuracy": 0.07351788,
+          "pair_context_baseline_eval_top5_accuracy": 0.33843711,
+          "probe_channels": 0,
+          "sequence_count": 64,
+          "simd_enabled": true,
+          "softmax_temperature": 1.0,
+          "sparse_output_entries": 0,
+          "sparse_token_output": false,
+          "steps_per_second": 98276.45587575,
+          "strict_freeze": true,
+          "task": "mathematical_next_token_cross_entropy",
+          "topology_accepted": 5,
+          "topology_events": [
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 2048
+            },
+            {
+              "credit": 0.00149116,
+              "decision": 1,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 6144
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 8192
+            },
+            {
+              "credit": -0.00068654,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 12288
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 14336
+            },
+            {
+              "credit": 0.00160523,
+              "decision": 1,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 18432
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 20480
+            },
+            {
+              "credit": 0.00109717,
+              "decision": 1,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 24576
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 26624
+            },
+            {
+              "credit": 0.00012658,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 30720
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 32768
+            },
+            {
+              "credit": -0.00295704,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 36864
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 38912
+            },
+            {
+              "credit": 0.00234204,
+              "decision": 1,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 43008
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 45056
+            },
+            {
+              "credit": 0.00022294,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 49152
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 51200
+            },
+            {
+              "credit": 6.379e-05,
+              "decision": 2,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 55296
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 57344
+            },
+            {
+              "credit": -0.00312631,
+              "decision": 2,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 61440
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 63488
+            },
+            {
+              "credit": 3.35e-06,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 67584
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 69632
+            },
+            {
+              "credit": 0.00137742,
+              "decision": 1,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 73728
+            },
+            {
+              "credit": -0.01025435,
+              "decision": 3,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 77171
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 79219
+            },
+            {
+              "credit": 0.0,
+              "decision": 2,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 80000
+            }
+          ],
+          "topology_proposals": 13,
+          "topology_pruned": 1,
+          "topology_rejected": 8,
+          "train_bits_per_token": 4.92677774,
+          "train_cross_entropy": 3.4149821,
+          "train_examples": 80000,
+          "train_mean_target_probability": 0.03432845,
+          "train_perplexity": 30.41640497,
+          "train_top1_accuracy": 0.058025,
+          "train_top5_accuracy": 0.282675,
+          "unigram_baseline_eval_bits_per_token": 4.99996246,
+          "unigram_baseline_eval_cross_entropy": 3.46570988,
+          "unigram_baseline_eval_mean_target_probability": 0.03127013,
+          "unigram_baseline_eval_perplexity": 31.99916738,
+          "unigram_baseline_eval_top1_accuracy": 0.03107356,
+          "unigram_baseline_eval_top5_accuracy": 0.15889664,
+          "vocab_size": 32
+        }
+      ]
+    },
+    "sparse_computable": {
+      "mean_estimated_bytes": 7422370.666666667,
+      "mean_eval_cross_entropy": 3.4315083166666667,
+      "mean_sparse_output_entries": 190449.0,
+      "mean_steps_per_second": 47465.204256556666,
+      "runs": [
+        {
+          "active_channels": 1,
+          "address_lags": [
+            1
+          ],
+          "avg_active": 5.93897319,
+          "avg_candidates": 35.21826911,
+          "created_total": 38733,
+          "current_token_baseline_eval_bits_per_token": 5.00679025,
+          "current_token_baseline_eval_cross_entropy": 3.47044255,
+          "current_token_baseline_eval_mean_target_probability": 0.03135428,
+          "current_token_baseline_eval_perplexity": 32.15096758,
+          "current_token_baseline_eval_top1_accuracy": 0.03189696,
+          "current_token_baseline_eval_top5_accuracy": 0.16128843,
+          "dataset_hash": 2195559232913211147,
+          "edge_score_weight": 0.31999999,
+          "edges": 38816,
+          "elapsed_seconds": 2.87656543,
+          "estimated_bytes": 6532808,
+          "eval_bits_per_token": 4.96309139,
+          "eval_cross_entropy": 3.44015281,
+          "eval_examples": 51008,
+          "eval_mean_target_probability": 0.03302088,
+          "eval_perplexity": 31.19172408,
+          "eval_top1_accuracy": 0.05442284,
+          "eval_top5_accuracy": 0.23078733,
+          "exact_region_mass": 0.88,
+          "excess_cross_entropy": 0.52051792,
+          "label_smoothing": 0.01,
+          "learned_address_lags": [
+            1
+          ],
+          "learned_address_operations": [
+            0,
+            1
+          ],
+          "learned_address_programs": [
+            [
+              1
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          "learned_channel_credit": [
+            0.0341473,
+            -0.00356188,
+            -0.02206074,
+            -0.01002408,
+            -0.01177658
+          ],
+          "learned_channel_phase": [
+            0,
+            3,
+            3,
+            3,
+            2
+          ],
+          "live_nodes": 8172,
+          "multiscale_baseline_eval_bits_per_token": 4.9039759,
+          "multiscale_baseline_eval_cross_entropy": 3.39917707,
+          "multiscale_baseline_eval_mean_target_probability": 0.04495078,
+          "multiscale_baseline_eval_perplexity": 29.93945171,
+          "multiscale_baseline_eval_top1_accuracy": 0.07449812,
+          "multiscale_baseline_eval_top5_accuracy": 0.31920483,
+          "objective": "token_cross_entropy",
+          "oracle_cross_entropy": 2.91963489,
+          "pair_context_baseline_eval_bits_per_token": 5.25270027,
+          "pair_context_baseline_eval_cross_entropy": 3.64089438,
+          "pair_context_baseline_eval_mean_target_probability": 0.05034082,
+          "pair_context_baseline_eval_perplexity": 38.12592068,
+          "pair_context_baseline_eval_top1_accuracy": 0.07273369,
+          "pair_context_baseline_eval_top5_accuracy": 0.33416327,
+          "probe_channels": 0,
+          "sequence_count": 64,
+          "simd_enabled": true,
+          "softmax_temperature": 1.0,
+          "sparse_output_entries": 156069,
+          "sparse_token_output": true,
+          "steps_per_second": 45543.20190873,
+          "strict_freeze": true,
+          "task": "mathematical_next_token_cross_entropy",
+          "topology_accepted": 4,
+          "topology_events": [
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 2048
+            },
+            {
+              "credit": -0.00272945,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 6144
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 8192
+            },
+            {
+              "credit": -0.00025778,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 12288
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 14336
+            },
+            {
+              "credit": 0.00378455,
+              "decision": 1,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 18432
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 20480
+            },
+            {
+              "credit": -0.00548571,
+              "decision": 2,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 24576
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 26624
+            },
+            {
+              "credit": -0.00248531,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 30720
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 32768
+            },
+            {
+              "credit": 0.00296355,
+              "decision": 1,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 36864
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 38912
+            },
+            {
+              "credit": 0.00110593,
+              "decision": 1,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 43008
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 45056
+            },
+            {
+              "credit": -0.00948886,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 49152
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 51200
+            },
+            {
+              "credit": -0.00358831,
+              "decision": 2,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 55296
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 57344
+            },
+            {
+              "credit": 0.00283621,
+              "decision": 1,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 61440
+            },
+            {
+              "credit": -0.01184083,
+              "decision": 3,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 61441
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 63489
+            },
+            {
+              "credit": -0.0013243,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 67585
+            },
+            {
+              "credit": -0.02206074,
+              "decision": 3,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 69632
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 71680
+            },
+            {
+              "credit": -0.00504652,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 75776
+            },
+            {
+              "credit": -0.01002408,
+              "decision": 3,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 76726
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 78774
+            },
+            {
+              "credit": 0.0,
+              "decision": 2,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 80000
+            }
+          ],
+          "topology_proposals": 13,
+          "topology_pruned": 3,
+          "topology_rejected": 9,
+          "train_bits_per_token": 4.97417201,
+          "train_cross_entropy": 3.44783331,
+          "train_examples": 80000,
+          "train_mean_target_probability": 0.03315124,
+          "train_perplexity": 31.43221445,
+          "train_top1_accuracy": 0.0568875,
+          "train_top5_accuracy": 0.222875,
+          "unigram_baseline_eval_bits_per_token": 5.00009816,
+          "unigram_baseline_eval_cross_entropy": 3.46580394,
+          "unigram_baseline_eval_mean_target_probability": 0.03126063,
+          "unigram_baseline_eval_perplexity": 32.00217738,
+          "unigram_baseline_eval_top1_accuracy": 0.0320538,
+          "unigram_baseline_eval_top5_accuracy": 0.1574851,
+          "vocab_size": 32
+        },
+        {
+          "active_channels": 2,
+          "address_lags": [
+            1
+          ],
+          "avg_active": 5.93363001,
+          "avg_candidates": 39.24514533,
+          "created_total": 35505,
+          "current_token_baseline_eval_bits_per_token": 5.00582835,
+          "current_token_baseline_eval_cross_entropy": 3.4697758,
+          "current_token_baseline_eval_mean_target_probability": 0.03136805,
+          "current_token_baseline_eval_perplexity": 32.12953833,
+          "current_token_baseline_eval_top1_accuracy": 0.03258312,
+          "current_token_baseline_eval_top5_accuracy": 0.16050423,
+          "dataset_hash": 148259111409531357,
+          "edge_score_weight": 0.31999999,
+          "edges": 107086,
+          "elapsed_seconds": 2.69152781,
+          "estimated_bytes": 7976080,
+          "eval_bits_per_token": 4.93079728,
+          "eval_cross_entropy": 3.41776823,
+          "eval_examples": 51008,
+          "eval_mean_target_probability": 0.03443675,
+          "eval_perplexity": 30.50126732,
+          "eval_top1_accuracy": 0.06279407,
+          "eval_top5_accuracy": 0.257391,
+          "exact_region_mass": 0.88,
+          "excess_cross_entropy": 0.50019926,
+          "label_smoothing": 0.01,
+          "learned_address_lags": [
+            1,
+            4
+          ],
+          "learned_address_operations": [
+            0,
+            1,
+            1
+          ],
+          "learned_address_programs": [
+            [
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              4
+            ]
+          ],
+          "learned_channel_credit": [
+            0.02580342,
+            0.03380862,
+            -0.00890253,
+            0.00022305
+          ],
+          "learned_channel_phase": [
+            0,
+            2,
+            2,
+            3
+          ],
+          "live_nodes": 11842,
+          "multiscale_baseline_eval_bits_per_token": 4.89193262,
+          "multiscale_baseline_eval_cross_entropy": 3.3908293,
+          "multiscale_baseline_eval_mean_target_probability": 0.04512322,
+          "multiscale_baseline_eval_perplexity": 29.6905645,
+          "multiscale_baseline_eval_top1_accuracy": 0.07638018,
+          "multiscale_baseline_eval_top5_accuracy": 0.3232042,
+          "objective": "token_cross_entropy",
+          "oracle_cross_entropy": 2.91756897,
+          "pair_context_baseline_eval_bits_per_token": 5.24857041,
+          "pair_context_baseline_eval_cross_entropy": 3.63803178,
+          "pair_context_baseline_eval_mean_target_probability": 0.05048167,
+          "pair_context_baseline_eval_perplexity": 38.01693745,
+          "pair_context_baseline_eval_top1_accuracy": 0.07487061,
+          "pair_context_baseline_eval_top5_accuracy": 0.33865276,
+          "probe_channels": 0,
+          "sequence_count": 64,
+          "simd_enabled": true,
+          "softmax_temperature": 1.0,
+          "sparse_output_entries": 218336,
+          "sparse_token_output": true,
+          "steps_per_second": 48674.21375495,
+          "strict_freeze": true,
+          "task": "mathematical_next_token_cross_entropy",
+          "topology_accepted": 2,
+          "topology_events": [
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 2048
+            },
+            {
+              "credit": -0.0048794,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 6144
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 8192
+            },
+            {
+              "credit": -0.00027125,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 12288
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 14336
+            },
+            {
+              "credit": -0.00177223,
+              "decision": 2,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 18432
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 20480
+            },
+            {
+              "credit": 0.00384945,
+              "decision": 1,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 24576
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 26624
+            },
+            {
+              "credit": -0.01217146,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 30720
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 32768
+            },
+            {
+              "credit": -0.0053999,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 36864
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 38912
+            },
+            {
+              "credit": -0.00105584,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 43008
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 45056
+            },
+            {
+              "credit": -0.00416,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 49152
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 51200
+            },
+            {
+              "credit": -0.00210975,
+              "decision": 2,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 55296
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 57344
+            },
+            {
+              "credit": -0.0035454,
+              "decision": 2,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 61440
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 63488
+            },
+            {
+              "credit": -0.00125012,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 67584
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 69632
+            },
+            {
+              "credit": 0.000593,
+              "decision": 1,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 73728
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 75776
+            },
+            {
+              "credit": -0.00248985,
+              "decision": 2,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 79872
+            }
+          ],
+          "topology_proposals": 13,
+          "topology_pruned": 0,
+          "topology_rejected": 11,
+          "train_bits_per_token": 4.96211207,
+          "train_cross_entropy": 3.43947399,
+          "train_examples": 80000,
+          "train_mean_target_probability": 0.03302737,
+          "train_perplexity": 31.17055782,
+          "train_top1_accuracy": 0.0576875,
+          "train_top5_accuracy": 0.23245,
+          "unigram_baseline_eval_bits_per_token": 5.00018255,
+          "unigram_baseline_eval_cross_entropy": 3.46586244,
+          "unigram_baseline_eval_mean_target_probability": 0.03126201,
+          "unigram_baseline_eval_perplexity": 32.00404934,
+          "unigram_baseline_eval_top1_accuracy": 0.03125,
+          "unigram_baseline_eval_top5_accuracy": 0.18828419,
+          "vocab_size": 32
+        },
+        {
+          "active_channels": 2,
+          "address_lags": [
+            1
+          ],
+          "avg_active": 5.93501924,
+          "avg_candidates": 38.00946507,
+          "created_total": 35476,
+          "current_token_baseline_eval_bits_per_token": 5.00713607,
+          "current_token_baseline_eval_cross_entropy": 3.47068225,
+          "current_token_baseline_eval_mean_target_probability": 0.03136241,
+          "current_token_baseline_eval_perplexity": 32.1586753,
+          "current_token_baseline_eval_top1_accuracy": 0.03138723,
+          "current_token_baseline_eval_top5_accuracy": 0.16236669,
+          "dataset_hash": 18033101719306103290,
+          "edge_score_weight": 0.31999999,
+          "edges": 79531,
+          "elapsed_seconds": 2.71923832,
+          "estimated_bytes": 7758224,
+          "eval_bits_per_token": 4.95797142,
+          "eval_cross_entropy": 3.43660391,
+          "eval_examples": 51008,
+          "eval_mean_target_probability": 0.03348701,
+          "eval_perplexity": 31.08122405,
+          "eval_top1_accuracy": 0.05555991,
+          "eval_top5_accuracy": 0.23259097,
+          "exact_region_mass": 0.88,
+          "excess_cross_entropy": 0.53086016,
+          "label_smoothing": 0.01,
+          "learned_address_lags": [
+            1,
+            4
+          ],
+          "learned_address_operations": [
+            0,
+            0,
+            1
+          ],
+          "learned_address_programs": [
+            [
+              1
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              4
+            ]
+          ],
+          "learned_channel_credit": [
+            0.03139486,
+            0.00863295,
+            -0.01162919,
+            -0.00425022
+          ],
+          "learned_channel_phase": [
+            0,
+            2,
+            2,
+            3
+          ],
+          "live_nodes": 11858,
+          "multiscale_baseline_eval_bits_per_token": 4.88489286,
+          "multiscale_baseline_eval_cross_entropy": 3.38594971,
+          "multiscale_baseline_eval_mean_target_probability": 0.04528461,
+          "multiscale_baseline_eval_perplexity": 29.54603957,
+          "multiscale_baseline_eval_top1_accuracy": 0.07585085,
+          "multiscale_baseline_eval_top5_accuracy": 0.3264978,
+          "objective": "token_cross_entropy",
+          "oracle_cross_entropy": 2.90574375,
+          "pair_context_baseline_eval_bits_per_token": 5.23323954,
+          "pair_context_baseline_eval_cross_entropy": 3.62740523,
+          "pair_context_baseline_eval_mean_target_probability": 0.05075728,
+          "pair_context_baseline_eval_perplexity": 37.61508745,
+          "pair_context_baseline_eval_top1_accuracy": 0.07351788,
+          "pair_context_baseline_eval_top5_accuracy": 0.33843711,
+          "probe_channels": 0,
+          "sequence_count": 64,
+          "simd_enabled": true,
+          "softmax_temperature": 1.0,
+          "sparse_output_entries": 196942,
+          "sparse_token_output": true,
+          "steps_per_second": 48178.19710599,
+          "strict_freeze": true,
+          "task": "mathematical_next_token_cross_entropy",
+          "topology_accepted": 2,
+          "topology_events": [
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 2048
+            },
+            {
+              "credit": -0.00370463,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 6144
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 8192
+            },
+            {
+              "credit": -0.0075053,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 1,
+              "step": 12288
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 14336
+            },
+            {
+              "credit": -0.00214693,
+              "decision": 2,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 18432
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 20480
+            },
+            {
+              "credit": -5.188e-05,
+              "decision": 2,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 1,
+              "step": 24576
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 26624
+            },
+            {
+              "credit": -0.00218154,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 30720
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 32768
+            },
+            {
+              "credit": -0.00660963,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 1,
+              "step": 36864
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 38912
+            },
+            {
+              "credit": -0.00054668,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 43008
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 45056
+            },
+            {
+              "credit": -0.00563885,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 1,
+              "step": 49152
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 51200
+            },
+            {
+              "credit": 0.00171053,
+              "decision": 1,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 55296
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 57344
+            },
+            {
+              "credit": -0.00839293,
+              "decision": 2,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 1,
+              "step": 61440
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 63488
+            },
+            {
+              "credit": -0.00570364,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 67584
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 69632
+            },
+            {
+              "credit": 0.00080244,
+              "decision": 1,
+              "lags": [
+                4
+              ],
+              "op": 1,
+              "step": 73728
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 75776
+            },
+            {
+              "credit": -0.00490909,
+              "decision": 2,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 79872
+            }
+          ],
+          "topology_proposals": 13,
+          "topology_pruned": 0,
+          "topology_rejected": 11,
+          "train_bits_per_token": 4.97189296,
+          "train_cross_entropy": 3.44625359,
+          "train_examples": 80000,
+          "train_mean_target_probability": 0.03250022,
+          "train_perplexity": 31.38259961,
+          "train_top1_accuracy": 0.052525,
+          "train_top5_accuracy": 0.2199125,
+          "unigram_baseline_eval_bits_per_token": 4.99996246,
+          "unigram_baseline_eval_cross_entropy": 3.46570988,
+          "unigram_baseline_eval_mean_target_probability": 0.03127013,
+          "unigram_baseline_eval_perplexity": 31.99916738,
+          "unigram_baseline_eval_top1_accuracy": 0.03107356,
+          "unigram_baseline_eval_top5_accuracy": 0.15889664,
+          "vocab_size": 32
+        }
+      ]
+    },
+    "sparse_tuple_only": {
+      "mean_estimated_bytes": 6827922.666666667,
+      "mean_eval_cross_entropy": 3.42341147,
+      "mean_sparse_output_entries": 194770.33333333334,
+      "mean_steps_per_second": 49691.367084633326,
+      "runs": [
+        {
+          "active_channels": 2,
+          "address_lags": [
+            1
+          ],
+          "avg_active": 5.93892739,
+          "avg_candidates": 37.60104726,
+          "created_total": 36008,
+          "current_token_baseline_eval_bits_per_token": 5.00679025,
+          "current_token_baseline_eval_cross_entropy": 3.47044255,
+          "current_token_baseline_eval_mean_target_probability": 0.03135428,
+          "current_token_baseline_eval_perplexity": 32.15096758,
+          "current_token_baseline_eval_top1_accuracy": 0.03189696,
+          "current_token_baseline_eval_top5_accuracy": 0.16128843,
+          "dataset_hash": 2195559232913211147,
+          "edge_score_weight": 0.31999999,
+          "edges": 91926,
+          "elapsed_seconds": 2.63671428,
+          "estimated_bytes": 8581816,
+          "eval_bits_per_token": 4.94708545,
+          "eval_cross_entropy": 3.42905833,
+          "eval_examples": 51008,
+          "eval_mean_target_probability": 0.03416899,
+          "eval_perplexity": 30.84758083,
+          "eval_top1_accuracy": 0.0596181,
+          "eval_top5_accuracy": 0.24492237,
+          "exact_region_mass": 0.88,
+          "excess_cross_entropy": 0.50942344,
+          "label_smoothing": 0.01,
+          "learned_address_lags": [
+            1
+          ],
+          "learned_address_operations": [
+            0,
+            0,
+            0
+          ],
+          "learned_address_programs": [
+            [
+              1
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              4
+            ]
+          ],
+          "learned_channel_credit": [
+            0.03243105,
+            0.00193142,
+            -0.00822887,
+            -0.01596073
+          ],
+          "learned_channel_phase": [
+            0,
+            2,
+            2,
+            3
+          ],
+          "live_nodes": 12288,
+          "multiscale_baseline_eval_bits_per_token": 4.9039759,
+          "multiscale_baseline_eval_cross_entropy": 3.39917707,
+          "multiscale_baseline_eval_mean_target_probability": 0.04495078,
+          "multiscale_baseline_eval_perplexity": 29.93945171,
+          "multiscale_baseline_eval_top1_accuracy": 0.07449812,
+          "multiscale_baseline_eval_top5_accuracy": 0.31920483,
+          "objective": "token_cross_entropy",
+          "oracle_cross_entropy": 2.91963489,
+          "pair_context_baseline_eval_bits_per_token": 5.25270027,
+          "pair_context_baseline_eval_cross_entropy": 3.64089438,
+          "pair_context_baseline_eval_mean_target_probability": 0.05034082,
+          "pair_context_baseline_eval_perplexity": 38.12592068,
+          "pair_context_baseline_eval_top1_accuracy": 0.07273369,
+          "pair_context_baseline_eval_top5_accuracy": 0.33416327,
+          "probe_channels": 0,
+          "sequence_count": 64,
+          "simd_enabled": true,
+          "softmax_temperature": 1.0,
+          "sparse_output_entries": 248564,
+          "sparse_token_output": true,
+          "steps_per_second": 49686.08132583,
+          "strict_freeze": true,
+          "task": "mathematical_next_token_cross_entropy",
+          "topology_accepted": 2,
+          "topology_events": [
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 2048
+            },
+            {
+              "credit": -0.00272945,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 6144
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 8192
+            },
+            {
+              "credit": -0.00537399,
+              "decision": 2,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 12288
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 14336
+            },
+            {
+              "credit": -0.00554697,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 18432
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 20480
+            },
+            {
+              "credit": -0.00531818,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 24576
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 26624
+            },
+            {
+              "credit": -0.00153261,
+              "decision": 2,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 30720
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 32768
+            },
+            {
+              "credit": -0.00158751,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 36864
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 38912
+            },
+            {
+              "credit": 0.00445147,
+              "decision": 1,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 43008
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                4
+              ],
+              "op": 0,
+              "step": 45056
+            },
+            {
+              "credit": 0.00259652,
+              "decision": 1,
+              "lags": [
+                2,
+                4
+              ],
+              "op": 0,
+              "step": 49152
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3,
+                4
+              ],
+              "op": 0,
+              "step": 51200
+            },
+            {
+              "credit": -0.00368308,
+              "decision": 2,
+              "lags": [
+                3,
+                4
+              ],
+              "op": 0,
+              "step": 55296
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                5
+              ],
+              "op": 0,
+              "step": 57344
+            },
+            {
+              "credit": -0.00682212,
+              "decision": 2,
+              "lags": [
+                5
+              ],
+              "op": 0,
+              "step": 61440
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                5
+              ],
+              "op": 0,
+              "step": 63488
+            },
+            {
+              "credit": -3.29e-06,
+              "decision": 2,
+              "lags": [
+                1,
+                5
+              ],
+              "op": 0,
+              "step": 67584
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                5
+              ],
+              "op": 0,
+              "step": 69632
+            },
+            {
+              "credit": -0.00019733,
+              "decision": 2,
+              "lags": [
+                2,
+                5
+              ],
+              "op": 0,
+              "step": 73728
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3,
+                5
+              ],
+              "op": 0,
+              "step": 75776
+            },
+            {
+              "credit": -0.00325178,
+              "decision": 2,
+              "lags": [
+                3,
+                5
+              ],
+              "op": 0,
+              "step": 79872
+            }
+          ],
+          "topology_proposals": 13,
+          "topology_pruned": 0,
+          "topology_rejected": 11,
+          "train_bits_per_token": 4.97170132,
+          "train_cross_entropy": 3.44612075,
+          "train_examples": 80000,
+          "train_mean_target_probability": 0.03278498,
+          "train_perplexity": 31.37843118,
+          "train_top1_accuracy": 0.05625,
+          "train_top5_accuracy": 0.2226,
+          "unigram_baseline_eval_bits_per_token": 5.00009816,
+          "unigram_baseline_eval_cross_entropy": 3.46580394,
+          "unigram_baseline_eval_mean_target_probability": 0.03126063,
+          "unigram_baseline_eval_perplexity": 32.00217738,
+          "unigram_baseline_eval_top1_accuracy": 0.0320538,
+          "unigram_baseline_eval_top5_accuracy": 0.1574851,
+          "vocab_size": 32
+        },
+        {
+          "active_channels": 1,
+          "address_lags": [
+            1
+          ],
+          "avg_active": 5.93366817,
+          "avg_candidates": 36.92432523,
+          "created_total": 37482,
+          "current_token_baseline_eval_bits_per_token": 5.00582835,
+          "current_token_baseline_eval_cross_entropy": 3.4697758,
+          "current_token_baseline_eval_mean_target_probability": 0.03136805,
+          "current_token_baseline_eval_perplexity": 32.12953833,
+          "current_token_baseline_eval_top1_accuracy": 0.03258312,
+          "current_token_baseline_eval_top5_accuracy": 0.16050423,
+          "dataset_hash": 148259111409531357,
+          "edge_score_weight": 0.31999999,
+          "edges": 37422,
+          "elapsed_seconds": 2.62143083,
+          "estimated_bytes": 5689248,
+          "eval_bits_per_token": 4.95110109,
+          "eval_cross_entropy": 3.43184176,
+          "eval_examples": 51008,
+          "eval_mean_target_probability": 0.03337625,
+          "eval_perplexity": 30.93356255,
+          "eval_top1_accuracy": 0.05993178,
+          "eval_top5_accuracy": 0.24841201,
+          "exact_region_mass": 0.88,
+          "excess_cross_entropy": 0.51427279,
+          "label_smoothing": 0.01,
+          "learned_address_lags": [
+            1
+          ],
+          "learned_address_operations": [
+            0,
+            0
+          ],
+          "learned_address_programs": [
+            [
+              1
+            ],
+            [
+              1,
+              5
+            ]
+          ],
+          "learned_channel_credit": [
+            0.03168123,
+            -0.00365485,
+            -0.00996124,
+            0.00378931
+          ],
+          "learned_channel_phase": [
+            0,
+            3,
+            3,
+            2
+          ],
+          "live_nodes": 8080,
+          "multiscale_baseline_eval_bits_per_token": 4.89193262,
+          "multiscale_baseline_eval_cross_entropy": 3.3908293,
+          "multiscale_baseline_eval_mean_target_probability": 0.04512322,
+          "multiscale_baseline_eval_perplexity": 29.6905645,
+          "multiscale_baseline_eval_top1_accuracy": 0.07638018,
+          "multiscale_baseline_eval_top5_accuracy": 0.3232042,
+          "objective": "token_cross_entropy",
+          "oracle_cross_entropy": 2.91756897,
+          "pair_context_baseline_eval_bits_per_token": 5.24857041,
+          "pair_context_baseline_eval_cross_entropy": 3.63803178,
+          "pair_context_baseline_eval_mean_target_probability": 0.05048167,
+          "pair_context_baseline_eval_perplexity": 38.01693745,
+          "pair_context_baseline_eval_top1_accuracy": 0.07487061,
+          "pair_context_baseline_eval_top5_accuracy": 0.33865276,
+          "probe_channels": 0,
+          "sequence_count": 64,
+          "simd_enabled": true,
+          "softmax_temperature": 1.0,
+          "sparse_output_entries": 143710,
+          "sparse_token_output": true,
+          "steps_per_second": 49975.76073751,
+          "strict_freeze": true,
+          "task": "mathematical_next_token_cross_entropy",
+          "topology_accepted": 3,
+          "topology_events": [
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 2048
+            },
+            {
+              "credit": -0.0048794,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 6144
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 8192
+            },
+            {
+              "credit": 0.0059691,
+              "decision": 1,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 12288
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 14336
+            },
+            {
+              "credit": 0.00017116,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 18432
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 20480
+            },
+            {
+              "credit": -2.75e-05,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 24576
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 26624
+            },
+            {
+              "credit": 0.00163055,
+              "decision": 1,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 30720
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 32768
+            },
+            {
+              "credit": -0.00657425,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 36864
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 38912
+            },
+            {
+              "credit": -0.00073961,
+              "decision": 2,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 43008
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                4
+              ],
+              "op": 0,
+              "step": 45056
+            },
+            {
+              "credit": -0.00287177,
+              "decision": 2,
+              "lags": [
+                2,
+                4
+              ],
+              "op": 0,
+              "step": 49152
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3,
+                4
+              ],
+              "op": 0,
+              "step": 51200
+            },
+            {
+              "credit": -0.00762431,
+              "decision": 2,
+              "lags": [
+                3,
+                4
+              ],
+              "op": 0,
+              "step": 55296
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                5
+              ],
+              "op": 0,
+              "step": 57344
+            },
+            {
+              "credit": -0.00995645,
+              "decision": 2,
+              "lags": [
+                5
+              ],
+              "op": 0,
+              "step": 61440
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                5
+              ],
+              "op": 0,
+              "step": 63488
+            },
+            {
+              "credit": 0.00100808,
+              "decision": 1,
+              "lags": [
+                1,
+                5
+              ],
+              "op": 0,
+              "step": 67584
+            },
+            {
+              "credit": -0.01463949,
+              "decision": 3,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 67585
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                5
+              ],
+              "op": 0,
+              "step": 69633
+            },
+            {
+              "credit": -0.00426672,
+              "decision": 2,
+              "lags": [
+                2,
+                5
+              ],
+              "op": 0,
+              "step": 73729
+            },
+            {
+              "credit": -0.01033988,
+              "decision": 3,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 75666
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3,
+                5
+              ],
+              "op": 0,
+              "step": 77714
+            },
+            {
+              "credit": 0.0,
+              "decision": 2,
+              "lags": [
+                3,
+                5
+              ],
+              "op": 0,
+              "step": 80000
+            }
+          ],
+          "topology_proposals": 13,
+          "topology_pruned": 2,
+          "topology_rejected": 10,
+          "train_bits_per_token": 4.96029557,
+          "train_cross_entropy": 3.43821489,
+          "train_examples": 80000,
+          "train_mean_target_probability": 0.03341195,
+          "train_perplexity": 31.13133568,
+          "train_top1_accuracy": 0.0578,
+          "train_top5_accuracy": 0.2352125,
+          "unigram_baseline_eval_bits_per_token": 5.00018255,
+          "unigram_baseline_eval_cross_entropy": 3.46586244,
+          "unigram_baseline_eval_mean_target_probability": 0.03126201,
+          "unigram_baseline_eval_perplexity": 32.00404934,
+          "unigram_baseline_eval_top1_accuracy": 0.03125,
+          "unigram_baseline_eval_top5_accuracy": 0.18828419,
+          "vocab_size": 32
+        },
+        {
+          "active_channels": 1,
+          "address_lags": [
+            1
+          ],
+          "avg_active": 5.93506503,
+          "avg_candidates": 42.16338697,
+          "created_total": 34202,
+          "current_token_baseline_eval_bits_per_token": 5.00713607,
+          "current_token_baseline_eval_cross_entropy": 3.47068225,
+          "current_token_baseline_eval_mean_target_probability": 0.03136241,
+          "current_token_baseline_eval_perplexity": 32.1586753,
+          "current_token_baseline_eval_top1_accuracy": 0.03138723,
+          "current_token_baseline_eval_top5_accuracy": 0.16236669,
+          "dataset_hash": 18033101719306103290,
+          "edge_score_weight": 0.31999999,
+          "edges": 117091,
+          "elapsed_seconds": 2.65132585,
+          "estimated_bytes": 6212704,
+          "eval_bits_per_token": 4.91862972,
+          "eval_cross_entropy": 3.40933432,
+          "eval_examples": 51008,
+          "eval_mean_target_probability": 0.03448534,
+          "eval_perplexity": 30.24510397,
+          "eval_top1_accuracy": 0.06646016,
+          "eval_top5_accuracy": 0.27146722,
+          "exact_region_mass": 0.88,
+          "excess_cross_entropy": 0.50359057,
+          "label_smoothing": 0.01,
+          "learned_address_lags": [
+            1
+          ],
+          "learned_address_operations": [
+            0,
+            0
+          ],
+          "learned_address_programs": [
+            [
+              1
+            ],
+            [
+              1,
+              2
+            ]
+          ],
+          "learned_channel_credit": [
+            0.02182442,
+            0.03187893,
+            -0.00130768
+          ],
+          "learned_channel_phase": [
+            0,
+            2,
+            3
+          ],
+          "live_nodes": 8192,
+          "multiscale_baseline_eval_bits_per_token": 4.88489286,
+          "multiscale_baseline_eval_cross_entropy": 3.38594971,
+          "multiscale_baseline_eval_mean_target_probability": 0.04528461,
+          "multiscale_baseline_eval_perplexity": 29.54603957,
+          "multiscale_baseline_eval_top1_accuracy": 0.07585085,
+          "multiscale_baseline_eval_top5_accuracy": 0.3264978,
+          "objective": "token_cross_entropy",
+          "oracle_cross_entropy": 2.90574375,
+          "pair_context_baseline_eval_bits_per_token": 5.23323954,
+          "pair_context_baseline_eval_cross_entropy": 3.62740523,
+          "pair_context_baseline_eval_mean_target_probability": 0.05075728,
+          "pair_context_baseline_eval_perplexity": 37.61508745,
+          "pair_context_baseline_eval_top1_accuracy": 0.07351788,
+          "pair_context_baseline_eval_top5_accuracy": 0.33843711,
+          "probe_channels": 0,
+          "sequence_count": 64,
+          "simd_enabled": true,
+          "softmax_temperature": 1.0,
+          "sparse_output_entries": 192037,
+          "sparse_token_output": true,
+          "steps_per_second": 49412.25919056,
+          "strict_freeze": true,
+          "task": "mathematical_next_token_cross_entropy",
+          "topology_accepted": 1,
+          "topology_events": [
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 2048
+            },
+            {
+              "credit": -0.00370463,
+              "decision": 2,
+              "lags": [
+                2
+              ],
+              "op": 0,
+              "step": 6144
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 8192
+            },
+            {
+              "credit": 0.0044532,
+              "decision": 1,
+              "lags": [
+                1,
+                2
+              ],
+              "op": 0,
+              "step": 12288
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 14336
+            },
+            {
+              "credit": -0.00846759,
+              "decision": 2,
+              "lags": [
+                3
+              ],
+              "op": 0,
+              "step": 18432
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 20480
+            },
+            {
+              "credit": -0.00132393,
+              "decision": 2,
+              "lags": [
+                1,
+                3
+              ],
+              "op": 0,
+              "step": 24576
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 26624
+            },
+            {
+              "credit": -0.00331064,
+              "decision": 2,
+              "lags": [
+                2,
+                3
+              ],
+              "op": 0,
+              "step": 30720
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 32768
+            },
+            {
+              "credit": -0.00263351,
+              "decision": 2,
+              "lags": [
+                4
+              ],
+              "op": 0,
+              "step": 36864
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 38912
+            },
+            {
+              "credit": -0.00289612,
+              "decision": 2,
+              "lags": [
+                1,
+                4
+              ],
+              "op": 0,
+              "step": 43008
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                4
+              ],
+              "op": 0,
+              "step": 45056
+            },
+            {
+              "credit": -0.00085595,
+              "decision": 2,
+              "lags": [
+                2,
+                4
+              ],
+              "op": 0,
+              "step": 49152
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3,
+                4
+              ],
+              "op": 0,
+              "step": 51200
+            },
+            {
+              "credit": -0.00543695,
+              "decision": 2,
+              "lags": [
+                3,
+                4
+              ],
+              "op": 0,
+              "step": 55296
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                5
+              ],
+              "op": 0,
+              "step": 57344
+            },
+            {
+              "credit": -0.00763738,
+              "decision": 2,
+              "lags": [
+                5
+              ],
+              "op": 0,
+              "step": 61440
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                1,
+                5
+              ],
+              "op": 0,
+              "step": 63488
+            },
+            {
+              "credit": -0.00095191,
+              "decision": 2,
+              "lags": [
+                1,
+                5
+              ],
+              "op": 0,
+              "step": 67584
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                2,
+                5
+              ],
+              "op": 0,
+              "step": 69632
+            },
+            {
+              "credit": -0.00136477,
+              "decision": 2,
+              "lags": [
+                2,
+                5
+              ],
+              "op": 0,
+              "step": 73728
+            },
+            {
+              "credit": 0.0,
+              "decision": 0,
+              "lags": [
+                3,
+                5
+              ],
+              "op": 0,
+              "step": 75776
+            },
+            {
+              "credit": -0.00555687,
+              "decision": 2,
+              "lags": [
+                3,
+                5
+              ],
+              "op": 0,
+              "step": 79872
+            }
+          ],
+          "topology_proposals": 13,
+          "topology_pruned": 0,
+          "topology_rejected": 12,
+          "train_bits_per_token": 4.95801493,
+          "train_cross_entropy": 3.43663407,
+          "train_examples": 80000,
+          "train_mean_target_probability": 0.03325067,
+          "train_perplexity": 31.08216145,
+          "train_top1_accuracy": 0.0584375,
+          "train_top5_accuracy": 0.237025,
+          "unigram_baseline_eval_bits_per_token": 4.99996246,
+          "unigram_baseline_eval_cross_entropy": 3.46570988,
+          "unigram_baseline_eval_mean_target_probability": 0.03127013,
+          "unigram_baseline_eval_perplexity": 31.99916738,
+          "unigram_baseline_eval_top1_accuracy": 0.03107356,
+          "unigram_baseline_eval_top5_accuracy": 0.15889664,
+          "vocab_size": 32
+        }
+      ]
+    }
+  }
+}

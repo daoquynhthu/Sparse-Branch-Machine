@@ -80,6 +80,7 @@ std::uint64_t lagged_token_signature(std::span<const std::uint32_t> window,
 std::uint64_t address_program_signature(std::span<const std::uint32_t> window,
                                         std::uint32_t alphabet,
                                         std::span<const std::uint32_t> lags,
+                                        AddressOp op,
                                         std::uint64_t seed) noexcept {
     if (window.empty()) return mix64(seed);
     const unsigned symbol_bits = std::max(
@@ -87,15 +88,23 @@ std::uint64_t address_program_signature(std::span<const std::uint32_t> window,
 
     std::uint32_t selected[kMaxAddressProgramArity + 1U]{};
     std::size_t count = 0U;
-    selected[count++] = window.back();
+    const auto current = window.back();
+    selected[count++] = current;
     for (const auto lag : lags) {
         if (count >= std::size(selected)) break;
-        selected[count++] = window.size() > lag
+        const auto historical = window.size() > lag
             ? window[window.size() - 1U - static_cast<std::size_t>(lag)]
             : window.front();
+        if (op == AddressOp::DeltaMod) {
+            const auto modulus = std::max(1U, alphabet);
+            selected[count++] = (current + modulus - (historical % modulus)) % modulus;
+        } else {
+            selected[count++] = historical;
+        }
     }
 
-    std::uint64_t mixed = seed ^ mix64(static_cast<std::uint64_t>(count));
+    std::uint64_t mixed = seed ^ mix64(static_cast<std::uint64_t>(count)) ^
+        mix64(static_cast<std::uint64_t>(op) + 0xD1B54A32D192ED03ULL);
     for (std::size_t index = 0; index < count; ++index) {
         mixed ^= std::rotl(mix64(static_cast<std::uint64_t>(selected[index]) +
                                  0x9E37ULL * (index + 1U)),
