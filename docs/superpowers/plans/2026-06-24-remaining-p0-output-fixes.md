@@ -63,12 +63,12 @@
 - Modify: `src/modules/token_experiment.cpp`
 - Modify: `tests/test_scaling.cpp`
 
-- [ ] Write a failing two-channel fixture requiring maximum responsibility-mass
+- [x] Write a failing two-channel fixture requiring maximum responsibility-mass
   error at most `1e-6` and a single-channel equality control.
-- [ ] Normalize represented raw channel weights to one before exact-region mass
+- [x] Normalize represented raw channel weights to one before exact-region mass
   subdivision; do not change channel score calculation.
-- [ ] Add maximum responsibility-mass error diagnostics and JSON output.
-- [ ] Run full tests and commit `fix: conserve cross-channel output mass`.
+- [x] Add maximum responsibility-mass error diagnostics and JSON output.
+- [x] Run full tests and commit `fix: conserve cross-channel output mass`.
 
 ### Task 4: Experimental gates and issue closure
 

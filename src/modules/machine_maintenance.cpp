@@ -337,6 +337,7 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         sparse_output_probable_reconstructions_;
     result.sparse_output_saturated_nodes = saturated_sparse_nodes;
     result.max_sparse_decision_visits = max_sparse_decision_visits;
+    result.max_responsibility_mass_error = max_responsibility_mass_error_;
     return result;
 }
 

@@ -209,6 +209,7 @@ private:
     std::uint64_t sparse_output_insertions_{};
     std::uint64_t sparse_output_evictions_{};
     std::uint64_t sparse_output_probable_reconstructions_{};
+    mutable double max_responsibility_mass_error_{};
 };
 
 } // namespace sbm

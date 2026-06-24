@@ -4,6 +4,7 @@
 #include "sbm/math.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 
@@ -175,9 +176,21 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures) {
 
 void SparseBranchMachine::assign_responsibilities(std::span<ScoredNode> active) const {
     for (auto& node : active) node.responsibility = 0.0F;
+    std::array<bool, kMaxAddressChannels> represented{};
+    for (const auto& node : active) {
+        if (node.channel < represented.size()) represented[node.channel] = true;
+    }
+    double channel_weight_sum = 0.0;
     for (std::uint8_t channel = 0; channel < topology_.size(); ++channel) {
-        if (!channel_enabled(channel)) continue;
-        const float channel_mass = channel == 0U ? 1.0F : config_.residual_channel_gain;
+        if (!channel_enabled(channel) || !represented[channel]) continue;
+        channel_weight_sum += channel == 0U ? 1.0 : config_.residual_channel_gain;
+    }
+    if (channel_weight_sum <= 0.0) return;
+    for (std::uint8_t channel = 0; channel < topology_.size(); ++channel) {
+        if (!channel_enabled(channel) || !represented[channel]) continue;
+        const float raw_weight = channel == 0U ? 1.0F : config_.residual_channel_gain;
+        const float channel_mass = static_cast<float>(
+            static_cast<double>(raw_weight) / channel_weight_sum);
         bool has_exact = false;
         bool has_non_exact = false;
         for (const auto& node : active) {
@@ -222,6 +235,10 @@ void SparseBranchMachine::assign_responsibilities(std::span<ScoredNode> active) 
             normalize_group(false, channel_mass);
         }
     }
+    double assigned_mass = 0.0;
+    for (const auto& node : active) assigned_mass += node.responsibility;
+    max_responsibility_mass_error_ = std::max(
+        max_responsibility_mass_error_, std::abs(assigned_mass - 1.0));
 }
 
 void SparseBranchMachine::aggregate(std::span<const ScoredNode> active,

@@ -391,6 +391,8 @@ std::string to_json(const ExperimentResult& result) {
         << result.diagnostics.sparse_output_saturated_nodes << ",\n"
         << "  \"max_sparse_decision_visits\": "
         << result.diagnostics.max_sparse_decision_visits << ",\n"
+        << "  \"max_responsibility_mass_error\": "
+        << result.diagnostics.max_responsibility_mass_error << ",\n"
         << "  \"topology_proposals\": " << result.diagnostics.topology_proposals << ",\n"
         << "  \"topology_accepted\": " << result.diagnostics.topology_accepted << ",\n"
         << "  \"topology_rejected\": " << result.diagnostics.topology_rejected << ",\n"

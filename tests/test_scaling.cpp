@@ -214,6 +214,28 @@ void verify_fresh_decision_learning_in_mature_node() {
     assert(local_log_gain > 0.02);
 }
 
+void verify_conserved_channel_mass() {
+    auto single_left_config = sparse_config(6U, 32U);
+    single_left_config.residual_channel_gain = 0.5F;
+    auto single_right_config = single_left_config;
+    single_right_config.residual_channel_gain = 2.0F;
+    sbm::SparseBranchMachine single_left(single_left_config);
+    sbm::SparseBranchMachine single_right(single_right_config);
+    const auto left = single_left.step_token(3U, 7U, true);
+    const auto right = single_right.step_token(3U, 7U, true);
+    assert(std::abs(left.target_probability - right.target_probability) < 1e-7F);
+
+    auto multi_config = sparse_config(6U, 32U);
+    multi_config.address_lags = {1U, 2U};
+    multi_config.max_address_channels = 2U;
+    multi_config.residual_channel_gain = 2.0F;
+    sbm::SparseBranchMachine multi(multi_config);
+    for (std::uint32_t step = 0U; step < 64U; ++step) {
+        (void)multi.step_token(step % 32U, (step + 1U) % 32U, true);
+    }
+    assert(multi.diagnostics().max_responsibility_mass_error < 1e-6);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -257,6 +279,11 @@ int main(int argc, char** argv) {
     if (mode == "prior") {
         verify_global_output_prior();
         std::cout << "global output prior tests passed\n";
+        return 0;
+    }
+    if (mode == "channels") {
+        verify_conserved_channel_mass();
+        std::cout << "channel mass conservation passed\n";
         return 0;
     }
     const auto address_10 = address_bytes(10U);
