@@ -36,6 +36,11 @@ namespace {
     return exponential / (1.0F + exponential);
 }
 
+[[nodiscard]] std::uint64_t decision_mask(std::uint32_t decision) noexcept {
+    const auto mixed = static_cast<std::uint64_t>(decision) * 0x9E3779B97F4A7C15ULL;
+    return 1ULL << (mixed >> 58U);
+}
+
 } // namespace
 
 float SparseBranchMachine::sparse_logit(std::size_t slot,
@@ -62,6 +67,11 @@ float& SparseBranchMachine::mutable_sparse_logit(std::size_t slot,
     if (found != entries.end() && found->decision == decision) {
         return found->logit;
     }
+    const auto mask = decision_mask(decision);
+    if ((sparse_output_evicted_masks_[slot] & mask) != 0U) {
+        ++sparse_output_probable_reconstructions_;
+    }
+    ++sparse_output_insertions_;
     if (entries.size() >= config_.max_sparse_decisions_per_node) {
         const auto victim = std::min_element(
             entries.begin(), entries.end(),
@@ -72,7 +82,9 @@ float& SparseBranchMachine::mutable_sparse_logit(std::size_t slot,
                     ? left_magnitude < right_magnitude
                     : left.decision > right.decision;
             });
+        sparse_output_evicted_masks_[slot] |= decision_mask(victim->decision);
         entries.erase(victim);
+        ++sparse_output_evictions_;
         found = std::lower_bound(
             entries.begin(), entries.end(), decision,
             [](const SparseOutputEntry& entry, std::uint32_t value) {

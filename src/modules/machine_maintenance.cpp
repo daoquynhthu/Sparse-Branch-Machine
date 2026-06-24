@@ -30,6 +30,7 @@ void SparseBranchMachine::erase_slot(std::size_t slot) {
                         output_vectors_.data() + slot * config_.vector_dim);
         }
         sparse_outputs_[slot] = std::move(sparse_outputs_[last]);
+        sparse_output_evicted_masks_[slot] = sparse_output_evicted_masks_[last];
         edges_[slot] = std::move(edges_[last]);
         id_to_slot_[ids_[slot]] = static_cast<std::uint32_t>(slot);
     }
@@ -48,6 +49,7 @@ void SparseBranchMachine::erase_slot(std::size_t slot) {
         output_vectors_.resize(ids_.size() * config_.vector_dim);
     }
     sparse_outputs_.pop_back();
+    sparse_output_evicted_masks_.pop_back();
     edges_.pop_back();
     id_to_slot_[victim] = UINT32_MAX;
 }
@@ -242,10 +244,14 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     std::uint64_t sparse_entries = 0U;
     std::uint64_t sparse_capacity = 0U;
     std::uint64_t max_sparse_entries = 0U;
+    std::uint64_t saturated_sparse_nodes = 0U;
     for (const auto& entries : sparse_outputs_) {
         sparse_entries += entries.size();
         sparse_capacity += entries.capacity();
         max_sparse_entries = std::max<std::uint64_t>(max_sparse_entries, entries.size());
+        if (entries.size() >= config_.max_sparse_decisions_per_node) {
+            ++saturated_sparse_nodes;
+        }
     }
     const std::uint64_t address_index_bytes =
         bucket_directory_.bucket_count() * sizeof(void*) +
@@ -274,6 +280,7 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         parents_.capacity() * sizeof(NodeId) +
         output_vectors_.capacity() * sizeof(float) +
         sparse_capacity * sizeof(SparseOutputEntry) +
+        sparse_output_evicted_masks_.capacity() * sizeof(std::uint64_t) +
         id_to_slot_.capacity() * sizeof(std::uint32_t) +
         edge_capacity * sizeof(Edge) +
         address_index_bytes + output_structure_bytes + global_output_prior_bytes;
@@ -303,6 +310,11 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     result.max_sparse_entries_per_node = max_sparse_entries;
     result.global_output_prior_bytes = global_output_prior_bytes;
     result.global_output_prior_updates = global_output_prior_updates_;
+    result.sparse_output_insertions = sparse_output_insertions_;
+    result.sparse_output_evictions = sparse_output_evictions_;
+    result.sparse_output_probable_reconstructions =
+        sparse_output_probable_reconstructions_;
+    result.sparse_output_saturated_nodes = saturated_sparse_nodes;
     return result;
 }
 

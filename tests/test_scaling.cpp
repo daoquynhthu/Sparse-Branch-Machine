@@ -186,7 +186,12 @@ int main(int argc, char** argv) {
         for (std::uint32_t step = 0U; step < 4096U; ++step) {
             (void)machine.step_token(3U, step % 257U, true);
         }
-        assert(machine.diagnostics().max_sparse_entries_per_node <= 8U);
+        const auto diagnostics = machine.diagnostics();
+        assert(diagnostics.max_sparse_entries_per_node <= 8U);
+        assert(diagnostics.sparse_output_insertions > 8U);
+        assert(diagnostics.sparse_output_evictions > 0U);
+        assert(diagnostics.sparse_output_probable_reconstructions > 0U);
+        assert(diagnostics.sparse_output_saturated_nodes > 0U);
         std::cout << "bounded decision capacity passed\n";
         return 0;
     }

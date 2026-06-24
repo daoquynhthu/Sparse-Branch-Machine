@@ -22,12 +22,12 @@
 - Modify: `src/modules/token_experiment.cpp`
 - Modify: `tests/test_scaling.cpp`
 
-- [ ] Write a failing capacity fixture requiring insertion, eviction,
+- [x] Write a failing capacity fixture requiring insertion, eviction,
   probable-reconstruction and saturated-node diagnostics.
-- [ ] Run `sbm_scaling_sparse_capacity` and confirm missing-field RED.
-- [ ] Add bounded counters and one 64-bit evicted-decision mask per node; count
+- [x] Run `sbm_scaling_sparse_capacity` and confirm missing-field RED.
+- [x] Add bounded counters and one 64-bit evicted-decision mask per node; count
   current saturated nodes in `diagnostics()`.
-- [ ] Verify all scaling tests and commit
+- [x] Verify all scaling tests and commit
   `feat: instrument sparse output capacity pressure`.
 
 ### Task 2: Implement per-decision learning and evidence eviction

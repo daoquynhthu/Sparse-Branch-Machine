@@ -188,6 +188,10 @@ struct Diagnostics {
     std::uint64_t max_sparse_entries_per_node{};
     std::uint64_t global_output_prior_bytes{};
     std::uint64_t global_output_prior_updates{};
+    std::uint64_t sparse_output_insertions{};
+    std::uint64_t sparse_output_evictions{};
+    std::uint64_t sparse_output_probable_reconstructions{};
+    std::uint64_t sparse_output_saturated_nodes{};
 };
 
 } // namespace sbm

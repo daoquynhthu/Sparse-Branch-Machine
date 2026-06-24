@@ -168,6 +168,7 @@ private:
     std::vector<NodeId> parents_;
     std::vector<float> output_vectors_;
     std::vector<std::vector<SparseOutputEntry>> sparse_outputs_;
+    std::vector<std::uint64_t> sparse_output_evicted_masks_;
     std::optional<detail::ImplicitOutputTree> implicit_output_;
     std::vector<detail::ImplicitDecision> token_path_scratch_;
     std::vector<std::uint64_t> global_output_total_;
@@ -206,6 +207,9 @@ private:
     mutable std::uint64_t stale_bucket_refs_skipped_{};
     mutable std::uint64_t stale_edge_refs_skipped_{};
     std::uint64_t max_bucket_candidates_inspected_{};
+    std::uint64_t sparse_output_insertions_{};
+    std::uint64_t sparse_output_evictions_{};
+    std::uint64_t sparse_output_probable_reconstructions_{};
 };
 
 } // namespace sbm

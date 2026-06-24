@@ -255,6 +255,7 @@ NodeId SparseBranchMachine::new_node(std::uint64_t signature,
         output_vectors_.insert(output_vectors_.end(), initial.begin(), initial.end());
     }
     sparse_outputs_.emplace_back();
+    sparse_output_evicted_masks_.push_back(0U);
     edges_.emplace_back();
     edges_.back().reserve(config_.max_edges_per_node);
     auto& bucket_state = ensure_bucket(bucket_index(channel, signature));
