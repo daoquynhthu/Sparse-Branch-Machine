@@ -37,6 +37,7 @@ Each document has one authoritative role:
 
 | Document | Role |
 |---|---|
+| [`ISSUES.md`](ISSUES.md) | confirmed current implementation defects and experiment blockers |
 | [`ROADMAP_REAL_DATA.md`](ROADMAP_REAL_DATA.md) | normative next-phase research and dataset plan |
 | [`THEORY_ALIGNMENT.md`](THEORY_ALIGNMENT.md) | theoretical target, current alignment and open theory |
 | [`DESIGN_NOTES.md`](DESIGN_NOTES.md) | implementation and architecture invariants |

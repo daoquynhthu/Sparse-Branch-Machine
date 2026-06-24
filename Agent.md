@@ -47,6 +47,7 @@ Documents have non-overlapping responsibilities:
 
 | Document | Authoritative responsibility |
 |---|---|
+| `ISSUES.md` | confirmed current implementation defects and experiment blockers |
 | `README.md` | concise repository entry point, current status and navigation |
 | `ROADMAP_REAL_DATA.md` | normative next-phase plan and research gates |
 | `THEORY_ALIGNMENT.md` | theoretical target, current alignment and unresolved theory |
@@ -61,12 +62,13 @@ When documents conflict, use this order:
 
 1. explicit current user instruction;
 2. `Agent.md` hard constraints;
-3. `ROADMAP_REAL_DATA.md` for next work;
-4. `THEORY_ALIGNMENT.md` for theory;
-5. `DESIGN_NOTES.md` for implementation invariants;
-6. `API.md` and `BUILDING.md` for interfaces and tooling;
-7. `README.md` summaries;
-8. `RESEARCH_LOG.md` only as historical evidence.
+3. `ISSUES.md` for confirmed current blockers;
+4. `ROADMAP_REAL_DATA.md` for next work;
+5. `THEORY_ALIGNMENT.md` for theory;
+6. `DESIGN_NOTES.md` for implementation invariants;
+7. `API.md` and `BUILDING.md` for interfaces and tooling;
+8. `README.md` summaries;
+9. `RESEARCH_LOG.md` only as historical evidence.
 
 Do not copy a full result or specification into several documents. Put it in the
 canonical document and link to it elsewhere.
