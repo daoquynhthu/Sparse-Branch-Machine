@@ -1,6 +1,7 @@
 #include "sbm/dataset.hpp"
 
 #include "sbm/math.hpp"
+#include "sbm/detail/little_endian_io.hpp"
 
 #include <algorithm>
 #include <array>
@@ -189,11 +190,11 @@ void write_token_shard(const TokenDataset& dataset, const std::string& path) {
     if (!output) throw std::runtime_error("cannot open token shard for writing");
     output.write(reinterpret_cast<const char*>(header.data()),
                  static_cast<std::streamsize>(header.size()));
-    output.write(reinterpret_cast<const char*>(dataset.sequence_offsets.data()),
-                 static_cast<std::streamsize>(offsets_bytes));
+    detail::write_little_endian(
+        output, std::span<const std::uint64_t>(dataset.sequence_offsets));
     write_zeros(output, tokens_offset - offsets_offset - offsets_bytes);
-    output.write(reinterpret_cast<const char*>(dataset.tokens.data()),
-                 static_cast<std::streamsize>(tokens_bytes));
+    detail::write_little_endian(
+        output, std::span<const std::uint32_t>(dataset.tokens));
     output.flush();
     if (!output) throw std::runtime_error("token shard write failed");
     output.close();

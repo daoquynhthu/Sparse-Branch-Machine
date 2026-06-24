@@ -621,3 +621,11 @@ sequence indices, impossible token offsets and nonzero offsets on the explicit
 end cursor fail through the native exception, C `-1`/last-error and Python
 `SBMError` contracts. `{shard_index, sequence_count, 0}` remains the canonical
 end state. Regression tests also verify that rejected cursors are not advanced.
+
+## 2026-06-24 — portable shard payload encoding
+
+The C++ shard writer no longer dumps host-memory representations for offsets
+and token IDs. It uses a buffered explicit little-endian encoder, with known
+32-bit/64-bit byte fixtures plus complete deterministic-file and mapped-read
+coverage. The zero-copy reader still rejects big-endian hosts because its
+mapped typed spans require native little-endian layout.

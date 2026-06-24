@@ -143,6 +143,9 @@ a read-only file mapping and must be released with `sbm_token_shard_destroy`.
 `sbm_token_shard_open` can verify the complete payload hash without copying the
 payload. The format stores fixed little-endian token IDs, sequence offsets and a
 versioned 128-byte header.
+The writer encodes payload scalars explicitly and therefore emits the same
+format on either host byte order. The zero-copy mapped reader currently requires
+a little-endian host.
 
 `sbm_token_shard_cursor` records shard index, sequence index and token offset.
 The only end-of-shard cursor is `(shard_index, sequence_count, 0)`. Sequence

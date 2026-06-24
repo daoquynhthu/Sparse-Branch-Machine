@@ -1,6 +1,6 @@
 # P2 Portability and Status Repair Plan
 
-1. Add a failing byte-level test for explicit little-endian scalar-array
+1. [completed] Add a failing byte-level test for explicit little-endian scalar-array
    encoding. Implement a bounded stream encoder and route token shard offsets
    and token IDs through it. Verify deterministic shard bytes and mapped reads,
    resolve P2-1 and commit.

@@ -22,16 +22,6 @@ capacity churn remains material and blocks capacity/default interpretation.
 
 ## P2: portability and documentation defects
 
-### P2-1: C++ shard writer assumes a little-endian host
-
-The mapped reader explicitly rejects non-little-endian hosts, but
-`write_token_shard` writes `sequence_offsets` and `tokens` directly from host
-memory while declaring the format little-endian. On a big-endian host it would
-emit an invalid file with a valid little-endian marker.
-
-**Required gate:** either reject non-little-endian hosts before writing or encode
-payload values explicitly. Reader and writer platform policy must match.
-
 ### P2-2: Canonical status documents contradict the current repository state
 
 `Agent.md` and `THEORY_ALIGNMENT.md` still name absence of a cloud real-language
@@ -55,6 +45,13 @@ contract exists and the current code violates it, or when they become necessary
 to interpret an already-running experiment.
 
 ## Resolved
+
+### P2-1: Portable little-endian shard writer
+
+Resolved with buffered explicit little-endian encoding for sequence offsets
+and token IDs. A byte-level regression covers 32-bit and 64-bit values, while
+existing deterministic-file and mapped-read tests cover the complete shard.
+The mmap reader continues to reject big-endian hosts explicitly.
 
 ### P1-3: Strict token-shard cursor validation
 

@@ -1,4 +1,5 @@
 #include "sparse_branch_machine.hpp"
+#include "sbm/detail/little_endian_io.hpp"
 
 #include <array>
 #include <cassert>
@@ -8,6 +9,7 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <sstream>
 #include <vector>
 
 namespace {
@@ -17,6 +19,17 @@ bool close(float a, float b, float tolerance = 1e-6F) {
 }
 
 int main() {
+    {
+        const std::array<std::uint32_t, 1> words32{0x01020304U};
+        const std::array<std::uint64_t, 1> words64{0x0102030405060708ULL};
+        std::ostringstream encoded(std::ios::binary);
+        sbm::detail::write_little_endian(encoded, words32);
+        sbm::detail::write_little_endian(encoded, words64);
+        const std::string expected{
+            '\x04', '\x03', '\x02', '\x01',
+            '\x08', '\x07', '\x06', '\x05', '\x04', '\x03', '\x02', '\x01'};
+        assert(encoded.str() == expected);
+    }
     const std::uint32_t fixed_window[]{1, 2, 3, 4};
     assert(sbm::rolling_signature(fixed_window) == sbm::rolling_signature(fixed_window));
     assert(sbm::hamming_similarity(42, 42) == 1.0);
