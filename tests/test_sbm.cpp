@@ -166,10 +166,23 @@ int main() {
         assert(shard.next(cursor, example));
         assert(example.input == 20U && example.target == 21U);
         assert(!shard.next(cursor, example));
-        sbm::TokenShardCursor malformed_cursor{
-            7U, 0U, std::numeric_limits<std::uint64_t>::max()};
-        assert(shard.next(malformed_cursor, example));
-        assert(example.input == 20U && example.target == 21U);
+        for (const auto malformed_cursor : std::array{
+                 sbm::TokenShardCursor{7U, 0U, std::numeric_limits<std::uint64_t>::max()},
+                 sbm::TokenShardCursor{7U, 3U, 0U},
+                 sbm::TokenShardCursor{7U, 2U, 1U}}) {
+            auto cursor_copy = malformed_cursor;
+            bool rejected = false;
+            try {
+                (void)shard.next(cursor_copy, example);
+            } catch (const std::invalid_argument&) {
+                rejected = true;
+            }
+            assert(rejected);
+            assert(cursor_copy.sequence_index == malformed_cursor.sequence_index);
+            assert(cursor_copy.token_offset == malformed_cursor.token_offset);
+        }
+        sbm::TokenShardCursor end_cursor{7U, 2U, 0U};
+        assert(!shard.next(end_cursor, example));
 
         sbm::MappedTokenShard reopened(shard_path_a, 7U);
         auto replay_cursor = resume_cursor;

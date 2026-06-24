@@ -613,3 +613,11 @@ A cap 4/8/16 ablation produced NLL 8.16936/8.17441/8.17892 and throughput
 maximum lookup candidates grew 8/16/32. The default remains 4: simple capacity
 growth is slower, slightly worse in this gate and does not solve the underlying
 hotspot behavior.
+
+## 2026-06-24 — strict mapped-shard resume cursors
+
+Mapped shard iteration now validates resume state before mutation. Out-of-range
+sequence indices, impossible token offsets and nonzero offsets on the explicit
+end cursor fail through the native exception, C `-1`/last-error and Python
+`SBMError` contracts. `{shard_index, sequence_count, 0}` remains the canonical
+end state. Regression tests also verify that rejected cursors are not advanced.

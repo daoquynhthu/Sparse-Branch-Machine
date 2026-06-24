@@ -145,6 +145,9 @@ payload. The format stores fixed little-endian token IDs, sequence offsets and a
 versioned 128-byte header.
 
 `sbm_token_shard_cursor` records shard index, sequence index and token offset.
+The only end-of-shard cursor is `(shard_index, sequence_count, 0)`. Sequence
+indices beyond that point, nonzero end offsets and offsets beyond the final
+transition in a sequence are errors; failed reads do not advance the cursor.
 `sbm_token_shard_next` returns only within-sequence next-token pairs: `1` means
 an example was produced, `0` means end of shard and `-1` means an API error.
 Copying the cursor and reopening the same shard reproduces the identical next

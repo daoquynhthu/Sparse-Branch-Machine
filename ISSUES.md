@@ -20,17 +20,6 @@ capacity churn remains material and blocks capacity/default interpretation.
 
 ## P1: diagnostic and recovery blockers
 
-### P1-3: Invalid token-shard cursors are silently advanced
-
-`MappedTokenShard::next` rejects a mismatched shard ID, but an out-of-range
-`token_offset` is treated like sequence exhaustion and silently advances to the
-next sequence (`src/modules/token_shard.cpp`). This can hide corrupted resume
-state in the public cursor API.
-
-**Required gate:** reject impossible `sequence_index`/`token_offset`
-combinations. End-of-shard must remain representable explicitly, and malformed
-cursor tests must fail loudly rather than skip examples.
-
 ## P2: portability and documentation defects
 
 ### P2-1: C++ shard writer assumes a little-endian host
@@ -66,6 +55,13 @@ contract exists and the current code violates it, or when they become necessary
 to interpret an already-running experiment.
 
 ## Resolved
+
+### P1-3: Strict token-shard cursor validation
+
+Resolved in the mapped shard reader and covered through C++, C and Python.
+Sequence indices beyond the shard, offsets beyond the final transition and
+nonzero offsets at end-of-shard now fail before mutating the cursor. The
+explicit `{shard_index, sequence_count, 0}` end cursor remains valid.
 
 ### P1-2: Address-bucket capacity pressure diagnostics
 

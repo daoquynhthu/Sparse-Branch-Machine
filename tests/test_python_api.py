@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "python"))
 
-from sbm_runtime import Runtime  # noqa: E402
+from sbm_runtime import Runtime, SBMError  # noqa: E402
 
 
 parser = argparse.ArgumentParser()
@@ -62,6 +62,15 @@ with runtime.token_dataset_from_ids([1, 2, 3, 1, 2, 4], 8, [0, 3, 6]) as externa
             assert shard.next_example() == (1, 2)
             resume = shard.cursor
             assert shard.next_example() == (2, 3)
+            shard.seek((5, 0, 2**64 - 1))
+            try:
+                shard.next_example()
+                raise AssertionError("malformed cursor was accepted")
+            except SBMError as error:
+                assert "token_offset" in str(error)
+            assert shard.cursor == (5, 0, 2**64 - 1)
+            shard.seek((5, 2, 0))
+            assert shard.next_example() is None
             with runtime.config({"bucket_bits": 6}) as shard_config:
                 shard_result = shard.run(shard_config, warmup=2)
             assert shard_result["task"] == "real_corpus_next_token_cross_entropy"

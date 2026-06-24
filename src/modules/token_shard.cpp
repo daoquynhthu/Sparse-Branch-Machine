@@ -318,6 +318,21 @@ bool MappedTokenShard::next(TokenShardCursor& cursor, TokenExample& example) con
     if (cursor.shard_index != impl_->shard_index) {
         throw std::invalid_argument("token shard cursor belongs to another shard");
     }
+    if (cursor.sequence_index > impl_->sequence_count) {
+        throw std::invalid_argument("token shard cursor sequence_index is out of range");
+    }
+    if (cursor.sequence_index == impl_->sequence_count) {
+        if (cursor.token_offset != 0U) {
+            throw std::invalid_argument(
+                "token shard end cursor token_offset must be zero");
+        }
+        return false;
+    }
+    const auto cursor_start = impl_->offsets[cursor.sequence_index];
+    const auto cursor_end = impl_->offsets[cursor.sequence_index + 1U];
+    if (cursor.token_offset > cursor_end - cursor_start - 1U) {
+        throw std::invalid_argument("token shard cursor token_offset is out of range");
+    }
     while (cursor.sequence_index < impl_->sequence_count) {
         const auto start = impl_->offsets[cursor.sequence_index];
         const auto end = impl_->offsets[cursor.sequence_index + 1U];

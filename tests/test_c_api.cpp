@@ -90,6 +90,15 @@ int main() {
     assert(sbm_token_shard_next(shard, &cursor, &input, &target) == 1);
     assert(input == 2U && target == 4U);
     assert(sbm_token_shard_next(shard, &cursor, &input, &target) == 0);
+    sbm_token_shard_cursor malformed_cursor{3U, 0U, UINT64_MAX};
+    assert(sbm_token_shard_next(
+               shard, &malformed_cursor, &input, &target) == -1);
+    assert(std::string_view(sbm_last_error()).find("token_offset") !=
+           std::string_view::npos);
+    assert(malformed_cursor.sequence_index == 0U);
+    assert(malformed_cursor.token_offset == UINT64_MAX);
+    sbm_token_shard_cursor explicit_end{3U, 2U, 0U};
+    assert(sbm_token_shard_next(shard, &explicit_end, &input, &target) == 0);
     char* shard_result = sbm_run_token_shard_experiment_json(
         shard, 2U, config, 1, 0U, 0U, 0U);
     assert(shard_result != nullptr);
