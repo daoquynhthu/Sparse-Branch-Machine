@@ -1,5 +1,6 @@
 #include "sparse_branch_machine.hpp"
 #include "sbm/detail/implicit_output.hpp"
+#include "sbm/detail/sparse_output.hpp"
 
 #include <cassert>
 #include <algorithm>
@@ -157,6 +158,62 @@ void verify_global_output_prior() {
                     expected_probability) < 1e-6);
 }
 
+void verify_sparse_output_policy() {
+    using sbm::detail::SparseOutputEntry;
+    {
+        std::vector<SparseOutputEntry> entries{
+            {1U, 0.0F, 100U, 0.05F, 0U},
+            {2U, 8.0F, 1U, 0.0F, 0U},
+        };
+        assert(sbm::detail::select_sparse_output_victim(entries, 100U) == 1U);
+    }
+    {
+        std::vector<SparseOutputEntry> entries{
+            {1U, 0.0F, 100U, 0.05F, 0U},
+            {2U, 0.0F, 0U, 0.0F, 99U},
+        };
+        assert(sbm::detail::select_sparse_output_victim(entries, 100U) == 0U);
+    }
+    {
+        std::vector<SparseOutputEntry> entries{
+            {2U, 0.0F, 4U, 0.0F, 10U},
+            {5U, 0.0F, 4U, 0.0F, 10U},
+        };
+        assert(sbm::detail::select_sparse_output_victim(entries, 100U) == 1U);
+    }
+    SparseOutputEntry fresh{1U, 0.0F, 0U, 0.0F, 0U};
+    SparseOutputEntry mature{1U, 0.0F, 96U, 0.0F, 0U};
+    assert(std::abs(sbm::detail::sparse_decision_learning_rate(
+                        fresh, 0.35F, 0.08F, 96U) - 0.35F) < 1e-7F);
+    assert(std::abs(sbm::detail::sparse_decision_learning_rate(
+                        mature, 0.35F, 0.08F, 96U) -
+                    0.08F / std::sqrt(97.0F)) < 1e-7F);
+}
+
+void verify_fresh_decision_learning_in_mature_node() {
+    auto full_config = sparse_config(4U, 4U);
+    full_config.max_specializations_per_bucket = 1U;
+    full_config.split_min_visits = UINT32_MAX;
+    auto prior_config = full_config;
+    prior_config.min_update_responsibility = 2.0F;
+    sbm::SparseBranchMachine full(full_config);
+    sbm::SparseBranchMachine prior_only(prior_config);
+    for (std::uint32_t step = 0U; step < 256U; ++step) {
+        (void)full.step_token(0U, 0U, true);
+        (void)prior_only.step_token(0U, 0U, true);
+    }
+    const float full_before = full.step_token(0U, 3U, false).target_probability;
+    const float prior_before = prior_only.step_token(0U, 3U, false).target_probability;
+    (void)full.step_token(0U, 3U, true);
+    (void)prior_only.step_token(0U, 3U, true);
+    const float full_after = full.step_token(0U, 3U, false).target_probability;
+    const float prior_after = prior_only.step_token(0U, 3U, false).target_probability;
+    const double local_log_gain =
+        std::log(static_cast<double>(full_after) / full_before) -
+        std::log(static_cast<double>(prior_after) / prior_before);
+    assert(local_log_gain > 0.02);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -178,6 +235,8 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (mode == "capacity") {
+        verify_sparse_output_policy();
+        verify_fresh_decision_learning_in_mature_node();
         auto config = sparse_config(4U, 257U);
         config.max_sparse_decisions_per_node = 8U;
         config.max_specializations_per_bucket = 1U;

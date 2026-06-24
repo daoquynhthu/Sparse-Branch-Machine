@@ -56,8 +56,9 @@ float SparseBranchMachine::sparse_logit(std::size_t slot,
         ? found->logit : 0.0F;
 }
 
-float& SparseBranchMachine::mutable_sparse_logit(std::size_t slot,
-                                                  std::uint32_t decision) {
+SparseBranchMachine::SparseOutputEntry& SparseBranchMachine::mutable_sparse_entry(
+    std::size_t slot,
+    std::uint32_t decision) {
     auto& entries = sparse_outputs_.at(slot);
     auto found = std::lower_bound(
         entries.begin(), entries.end(), decision,
@@ -65,7 +66,7 @@ float& SparseBranchMachine::mutable_sparse_logit(std::size_t slot,
             return entry.decision < value;
         });
     if (found != entries.end() && found->decision == decision) {
-        return found->logit;
+        return *found;
     }
     const auto mask = decision_mask(decision);
     if ((sparse_output_evicted_masks_[slot] & mask) != 0U) {
@@ -73,15 +74,8 @@ float& SparseBranchMachine::mutable_sparse_logit(std::size_t slot,
     }
     ++sparse_output_insertions_;
     if (entries.size() >= config_.max_sparse_decisions_per_node) {
-        const auto victim = std::min_element(
-            entries.begin(), entries.end(),
-            [](const SparseOutputEntry& left, const SparseOutputEntry& right) {
-                const float left_magnitude = std::abs(left.logit);
-                const float right_magnitude = std::abs(right.logit);
-                return left_magnitude != right_magnitude
-                    ? left_magnitude < right_magnitude
-                    : left.decision > right.decision;
-            });
+        const auto victim_index = detail::select_sparse_output_victim(entries, total_steps_);
+        const auto victim = entries.begin() + static_cast<std::ptrdiff_t>(victim_index);
         sparse_output_evicted_masks_[slot] |= decision_mask(victim->decision);
         entries.erase(victim);
         ++sparse_output_evictions_;
@@ -91,7 +85,7 @@ float& SparseBranchMachine::mutable_sparse_logit(std::size_t slot,
                 return entry.decision < value;
             });
     }
-    return entries.insert(found, {decision, 0.0F})->logit;
+    return *entries.insert(found, {decision, 0.0F, 0U, 0.0F, total_steps_});
 }
 
 float SparseBranchMachine::aggregate_sparse_logit(
@@ -360,22 +354,32 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             }
             ++visits_[slot];
             ++address_visits_[slot];
-            const bool mature = phase_of_slot(slot) == NodePhase::Mature;
-            const float base_rate = mature
-                ? config_.classification_mature_learning_rate
-                : config_.classification_learning_rate;
-            const float schedule = 1.0F /
-                std::sqrt(static_cast<float>(std::max(1U, address_visits_[slot])));
-            const float rate = base_rate * schedule * node.responsibility / temperature;
             std::size_t path_position = 0U;
             for (const auto& step : token_path_scratch_) {
                 const float probability_right = sigmoid(path_logits[path_position] / temperature);
                 const float target_right = step.right
                     ? 1.0F - 0.5F * config_.label_smoothing
                     : 0.5F * config_.label_smoothing;
-                float& local = mutable_sparse_logit(slot, step.id);
-                local = (1.0F - config_.logit_decay) * local +
+                auto& entry = mutable_sparse_entry(slot, step.id);
+                const float removed = node.responsibility * entry.logit;
+                const float without_loss = branch_loss(
+                    (path_logits[path_position] - removed) / temperature, step.right);
+                const float full_branch_loss = branch_loss(
+                    path_logits[path_position] / temperature, step.right);
+                const float gain = std::clamp(
+                    without_loss - full_branch_loss, -1.0F, 1.0F);
+                const float rate = detail::sparse_decision_learning_rate(
+                    entry,
+                    config_.classification_learning_rate,
+                    config_.classification_mature_learning_rate,
+                    config_.mature_visits) * node.responsibility / temperature;
+                entry.logit = (1.0F - config_.logit_decay) * entry.logit +
                         rate * (target_right - probability_right);
+                entry.gain_ema = 0.99F * entry.gain_ema + 0.01F * gain;
+                if (entry.visits != std::numeric_limits<std::uint32_t>::max()) {
+                    ++entry.visits;
+                }
+                entry.last_update_step = total_steps_;
                 ++path_position;
             }
             loss_ema_[slot] = 0.96F * loss_ema_[slot] + 0.04F * normalized_loss;

@@ -484,6 +484,8 @@ std::string to_json(const TokenExperimentResult& result) {
         << result.diagnostics.sparse_output_probable_reconstructions << ",\n"
         << "  \"sparse_output_saturated_nodes\": "
         << result.diagnostics.sparse_output_saturated_nodes << ",\n"
+        << "  \"max_sparse_decision_visits\": "
+        << result.diagnostics.max_sparse_decision_visits << ",\n"
         << "  \"sparse_output_entries\": "
         << result.diagnostics.sparse_output_entries << ",\n"
         << "  \"topology_proposals\": " << result.diagnostics.topology_proposals << ",\n"

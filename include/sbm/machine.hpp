@@ -2,6 +2,7 @@
 
 #include "sbm/types.hpp"
 #include "sbm/detail/implicit_output.hpp"
+#include "sbm/detail/sparse_output.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -68,10 +69,7 @@ private:
         std::uint64_t observations{};
         std::uint64_t born_step{};
     };
-    struct SparseOutputEntry {
-        std::uint32_t decision{};
-        float logit{};
-    };
+    using SparseOutputEntry = detail::SparseOutputEntry;
     struct TraceFrame {
         std::vector<NodeId> route;
         std::vector<float> contribution;
@@ -87,7 +85,8 @@ private:
     [[nodiscard]] std::uint32_t bucket(std::uint64_t signature) const noexcept;
     [[nodiscard]] bool uses_sparse_token_output() const noexcept;
     [[nodiscard]] float sparse_logit(std::size_t slot, std::uint32_t decision) const noexcept;
-    float& mutable_sparse_logit(std::size_t slot, std::uint32_t decision);
+    SparseOutputEntry& mutable_sparse_entry(std::size_t slot,
+                                            std::uint32_t decision);
     [[nodiscard]] float aggregate_sparse_logit(std::span<const ScoredNode> active,
                                                std::uint32_t decision) const noexcept;
     [[nodiscard]] float global_output_logit(std::uint32_t decision) const noexcept;
@@ -167,7 +166,7 @@ private:
     std::vector<std::uint8_t> hot_indexed_;
     std::vector<NodeId> parents_;
     std::vector<float> output_vectors_;
-    std::vector<std::vector<SparseOutputEntry>> sparse_outputs_;
+    std::vector<std::vector<detail::SparseOutputEntry>> sparse_outputs_;
     std::vector<std::uint64_t> sparse_output_evicted_masks_;
     std::optional<detail::ImplicitOutputTree> implicit_output_;
     std::vector<detail::ImplicitDecision> token_path_scratch_;

@@ -192,6 +192,7 @@ struct Diagnostics {
     std::uint64_t sparse_output_evictions{};
     std::uint64_t sparse_output_probable_reconstructions{};
     std::uint64_t sparse_output_saturated_nodes{};
+    std::uint64_t max_sparse_decision_visits{};
 };
 
 } // namespace sbm

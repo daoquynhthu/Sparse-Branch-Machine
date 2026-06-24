@@ -36,6 +36,7 @@ sbm_configure_target(sbm_core)
 
 add_library(sbm_machine SHARED
   src/modules/implicit_output.cpp
+  src/modules/sparse_output_policy.cpp
   src/modules/machine_storage.cpp
   src/modules/machine_topology.cpp
   src/modules/machine_routing.cpp

@@ -39,17 +39,17 @@
 - Modify: `src/modules/machine_maintenance.cpp`
 - Modify: `tests/test_scaling.cpp`
 
-- [ ] Write failing unit tests for deterministic probation-aware victim
+- [x] Write failing unit tests for deterministic probation-aware victim
   selection, high-evidence near-zero retention and tie-breaking.
-- [ ] Write a failing machine fixture showing a new decision in a mature node
+- [x] Write a failing machine fixture showing a new decision in a mature node
   separates from a prior-only control after one update.
-- [ ] Move `SparseOutputEntry` to the detail header with visits, gain EMA and
+- [x] Move `SparseOutputEntry` to the detail header with visits, gain EMA and
   last-update step; implement the specified retention score and selector.
-- [ ] Change mutable lookup to return the entry, schedule learning from entry
+- [x] Change mutable lookup to return the entry, schedule learning from entry
   visits, and update branch coding-gain evidence after prediction.
-- [ ] Merge matching entry evidence with saturating visits and preserve sorted
+- [x] Merge matching entry evidence with saturating visits and preserve sorted
   decision order and hard capacity.
-- [ ] Run full tests, compare fixed 10k smoke quality/bytes/churn, and commit
+- [x] Run full tests, compare fixed 10k smoke quality/bytes/churn, and commit
   `fix: learn and retain sparse decisions by evidence`.
 
 ### Task 3: Conserve cross-channel responsibility mass
