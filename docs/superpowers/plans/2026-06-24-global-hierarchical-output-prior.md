@@ -22,14 +22,14 @@
 - Modify: `tests/test_python_api.py`
 - Modify: `tests/test_scaling.cpp`
 
-- [ ] **Step 1: Write failing registry and behavior tests**
+- [x] **Step 1: Write failing registry and behavior tests**
 
 Add assertions that the parameter schema contains `output_tree_seed`, Python can
 set it, and two sparse machines with different `seed` but the same
 `output_tree_seed` return identical first-step target probabilities for a
 power-of-two vocabulary.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run:
 
@@ -41,13 +41,13 @@ ctest --test-dir build-fast -C Release -R "sbm_(c_api|scaling_implicit_output|py
 Expected: compilation or schema assertions fail because `output_tree_seed` does
 not exist.
 
-- [ ] **Step 3: Implement the additive parameter**
+- [x] **Step 3: Implement the additive parameter**
 
 Add `std::uint64_t output_tree_seed{7}` to `Config`, register it as a tunable
 `uint64`, handle set/get JSON, construct `ImplicitOutputTree` from it, and emit
 it in token experiment JSON. Do not change `rng_state_(config.seed)`.
 
-- [ ] **Step 4: Verify GREEN and commit**
+- [x] **Step 4: Verify GREEN and commit**
 
 Run the Task 1 test command, then:
 

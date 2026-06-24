@@ -90,6 +90,7 @@ struct TokenExperimentResult {
     float softmax_temperature{};
     float label_smoothing{};
     bool sparse_token_output{};
+    std::uint64_t output_tree_seed{};
 };
 
 [[nodiscard]] ExperimentResult run_experiment(

@@ -4,6 +4,7 @@
 #include <cassert>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <string_view>
@@ -88,6 +89,24 @@ void verify_implicit_output(std::uint32_t vocabulary) {
     }
 }
 
+void verify_output_seed_decoupled() {
+    auto left_config = sparse_config(4U, 5U);
+    left_config.seed = 7U;
+    left_config.output_tree_seed = 29U;
+    auto right_config = left_config;
+    right_config.seed = 19U;
+    sbm::SparseBranchMachine left(left_config);
+    sbm::SparseBranchMachine right(right_config);
+    for (std::uint32_t target = 0U; target < 5U; ++target) {
+        left.reset_sequence();
+        right.reset_sequence();
+        const auto left_step = left.step_token(0U, target, false);
+        const auto right_step = right.step_token(0U, target, false);
+        assert(std::abs(left_step.target_probability -
+                        right_step.target_probability) < 1e-7F);
+    }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -104,6 +123,7 @@ int main(int argc, char** argv) {
         for (const auto vocabulary : {2U, 3U, 4096U, 50257U, 250000U}) {
             verify_implicit_output(vocabulary);
         }
+        verify_output_seed_decoupled();
         std::cout << "implicit output tests passed\n";
         return 0;
     }

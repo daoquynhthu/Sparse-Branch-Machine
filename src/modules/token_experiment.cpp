@@ -311,6 +311,7 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.softmax_temperature = config.softmax_temperature;
     result.label_smoothing = config.label_smoothing;
     result.sparse_token_output = config.sparse_token_output;
+    result.output_tree_seed = config.output_tree_seed;
     return result;
 }
 
@@ -457,6 +458,7 @@ std::string to_json(const TokenExperimentResult& result) {
         << "  \"label_smoothing\": " << result.label_smoothing << ",\n"
         << "  \"sparse_token_output\": "
         << (result.sparse_token_output ? "true" : "false") << ",\n"
+        << "  \"output_tree_seed\": " << result.output_tree_seed << ",\n"
         << "  \"live_nodes\": " << result.diagnostics.live_nodes << ",\n"
         << "  \"edges\": " << result.diagnostics.edges << ",\n"
         << "  \"avg_active\": " << result.diagnostics.avg_active << ",\n"

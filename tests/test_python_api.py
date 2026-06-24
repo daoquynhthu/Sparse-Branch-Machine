@@ -22,10 +22,13 @@ assert runtime.version.startswith("4.")
 schema = runtime.parameter_schema()
 assert any(item["name"] == "edge_score_weight" for item in schema["parameters"])
 assert any(item["name"] == "classification_learning_rate" for item in schema["parameters"])
+assert any(item["name"] == "output_tree_seed" for item in schema["parameters"])
 
 with runtime.config() as registry_config:
     for descriptor in schema["parameters"]:
         registry_config.set(descriptor["name"], descriptor["default"])
+with runtime.config({"output_tree_seed": 31}) as output_seed_config:
+    assert output_seed_config.as_dict()["output_tree_seed"] == 31
 
 with runtime.generate_dataset(8000, 32, 16, 20, 9) as dataset:
     assert dataset.kind == "vector_regression"

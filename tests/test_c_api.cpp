@@ -14,6 +14,7 @@ int main() {
     assert(schema.find("exact_region_mass") != std::string_view::npos);
     assert(schema.find("classification_learning_rate") != std::string_view::npos);
     assert(schema.find("max_sparse_decisions_per_node") != std::string_view::npos);
+    assert(schema.find("output_tree_seed") != std::string_view::npos);
     assert(schema.find("search_default") != std::string_view::npos);
 
     sbm_config_handle* config = sbm_config_create();
@@ -21,12 +22,15 @@ int main() {
     assert(sbm_config_set(config, "exact_region_mass", "0.91") == 0);
     assert(sbm_config_set(config, "address_lags", "1,2,4") == 0);
     assert(sbm_config_set(config, "label_smoothing", "0.02") == 0);
+    assert(sbm_config_set(config, "output_tree_seed", "29") == 0);
     assert(sbm_config_set(config, "does_not_exist", "1") != 0);
     assert(std::strlen(sbm_last_error()) > 0U);
 
     char* config_json = sbm_config_get_json(config);
     assert(config_json != nullptr);
     assert(std::string_view(config_json).find("classification_learning_rate") !=
+           std::string_view::npos);
+    assert(std::string_view(config_json).find("\"output_tree_seed\": 29") !=
            std::string_view::npos);
     sbm_string_free(config_json);
 

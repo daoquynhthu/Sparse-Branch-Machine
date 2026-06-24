@@ -134,6 +134,7 @@ struct Config {
     std::uint32_t sparse_output_beam_width{16};
     std::uint32_t max_sparse_decisions_per_node{64};
 
+    std::uint64_t output_tree_seed{7};
     std::uint64_t seed{7};
 };
 
