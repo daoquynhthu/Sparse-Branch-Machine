@@ -104,8 +104,8 @@ the mature schedule depends on decision visits rather than node visits.
 
 Resolved by `1d5bfd7`. Eviction now uses coding gain, visit evidence and bounded
 probation with deterministic ties, not logit magnitude. Mean 1M/0.1M NLL
-improved from 7.60693 to 7.54645. Churn remains high and is still tracked under
-P1-1 rather than treated as solved capacity calibration.
+improved from 7.60693 to 7.54645. The later P1-1 admission repair reduced the
+remaining reconstruction churn without changing this eviction policy.
 
 ### P0-5: Conserved cross-channel output mass
 
