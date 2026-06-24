@@ -24,6 +24,9 @@ cursor repairs.
 
 ## P2: portability and documentation defects
 
+No active P2 issue remains after the 2026-06-24 shard portability and canonical
+status repairs.
+
 ## Queue discipline
 
 This file intentionally excludes capabilities that are merely scheduled in

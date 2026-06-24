@@ -9,5 +9,5 @@
    P0/P1 repairs and compatibility-only data status. Remove contradictory
    current-state claims without weakening corpus provenance gates, resolve P2-2
    and commit.
-3. Run all native/Python checks plus `git diff --check`, close the plan and
+3. [completed] Run all native/Python checks plus `git diff --check`, close the plan and
    commit final validation state.
