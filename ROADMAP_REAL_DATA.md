@@ -10,19 +10,16 @@
 
 ## 1. Why the project is currently blocked
 
-**Status update (2026-06-23):** local data availability is no longer the
+**Status update (2026-06-24):** local data availability is no longer the
 immediate engineering blocker. A 1.0M-train/0.1M-validation subset of the NAIME
 FineWeb-Edu artifact now runs through mapped shards, bounded output state and
 split-correct frozen evaluation. It remains `compatibility_only` because source
 document identity, tokenizer provenance and cross-split deduplication evidence
-are absent. More importantly, the three-seed run reached validation NLL 10.6696
-versus unigram 7.6826. The immediate blocker is therefore predictive learning,
-while an admissible corpus remains required before any positive research claim.
-
-The present bottleneck is not that synthetic mathematical tasks have become
-computationally impossible. The bottleneck is that the current cloud workspace
-does not contain a real natural-language corpus suitable for training and
-held-out evaluation.
+are absent. The original three-seed run failed at NLL 10.6696 versus unigram
+7.6826; subsequent shared-prior, decision-learning and admission repairs brought
+the seed-7 gate to NLL 7.5115. This establishes a compatibility predictive gate,
+not document-level generalization. The remaining research boundary is evidence
+on an admissible corpus plus unresolved content-conditioned addressing.
 
 The mathematical token generator has been useful for:
 
@@ -43,8 +40,8 @@ It cannot establish that the machine learns:
   frequency distributions.
 
 Accordingly, further synthetic-benchmark optimization is no longer the primary
-research path. The next phase must acquire, tokenize, shard and train on real
-language data while retaining the mathematical task as a test fixture.
+research path. Compatibility-corpus runs may diagnose engineering and learning,
+but accepted language experiments must use a traceable document-level corpus.
 
 ## 2. Research objective of the real-data phase
 
@@ -239,36 +236,38 @@ locality. This is not a first-gate requirement.
 
 ## 5. Corpus ingestion and shard format
 
-The current `token_dataset_from_ids` API proves the in-memory contract but is
-not sufficient for real training. The next engineering milestone is a streaming
-corpus layer.
+The repository now has versioned mapped shards, manifest-owned multi-shard
+iteration and exact shard cursors. These satisfy the bounded corpus execution
+substrate, but not source acquisition, tokenizer provenance, document-level
+split verification or full model checkpointing.
 
 ### 5.1 Required components
 
-1. **Text source iterator**
+1. **Text source iterator — remaining for admissible D1/R0**
    - yields one document at a time;
    - preserves source document ID and metadata needed for split verification;
    - does not concatenate documents.
 
-2. **Tokenizer adapter**
+2. **Tokenizer adapter — compatibility converter exists; provenance-complete
+   adapter remains**
    - converts one document at a time;
    - inserts explicit boundary tokens;
    - records token count and rejected/empty documents.
 
-3. **Binary shard writer**
+3. **Binary shard writer — implemented**
    - stores token IDs in a fixed endian format;
    - stores document offsets separately;
    - stores vocabulary size, tokenizer hash, corpus-manifest hash and checksum;
    - supports shards that can be memory-mapped independently.
 
-4. **Streaming dataset handle**
+4. **Streaming dataset handle — implemented for deterministic manifest order**
    - iterates shards without loading the full corpus;
    - supports deterministic start position and epoch order;
    - exposes document boundaries to the machine;
-   - supports a bounded read-ahead buffer;
+   - bounded read-ahead remains optional future performance work;
    - never changes sample order silently.
 
-5. **Checkpoint cursor**
+5. **Checkpoint cursor — data cursor implemented; model checkpoint remains**
    - records shard ID, document ID, token offset and RNG state;
    - allows exact resume without replaying or skipping data.
 
@@ -299,7 +298,9 @@ fields equivalent to:
 }
 ```
 
-The concrete schema should be versioned before D1 is accepted.
+The `sbm-corpus-manifest` schema is versioned and path-confined. D1 acceptance
+still requires the provenance and split fields above to contain verified source
+facts rather than compatibility placeholders.
 
 ### 5.4 Existing NAIME token-block artifact
 
@@ -575,7 +576,7 @@ exist:
 - a pinned real-language corpus manifest;
 - a reproducible tokenizer trained without validation/test leakage;
 - versioned memory-mappable token shards with document boundaries;
-- streaming C/C++ and Python dataset APIs;
+- streaming C/C++ and Python dataset APIs (implemented);
 - exact checkpoint/resume;
 - automated baseline and multi-seed experiment scripts;
 - held-out NLL and prequential codelength reports;

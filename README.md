@@ -19,14 +19,18 @@ The repository currently supports:
 - experimental hierarchical sparse token output;
 - stable shared libraries, C ABI, thin CLI and Python `ctypes` API;
 - runtime parameter discovery and automated multi-seed search;
+- versioned memory-mapped token shards, manifest-owned multi-shard execution
+  and exact data cursors;
 - strict frozen evaluation and deterministic synthetic regression fixtures.
 
 The workspace now has a versioned memory-mapped shard layer and a compatibility
 converter for an existing tokenized FineWeb-Edu artifact. That artifact lacks
 recoverable source-document boundaries, a pinned source revision and a tokenizer
 artifact, so it does not pass the strict R0 reproducibility gate. It can support
-pipeline and compatibility experiments while acquisition of a fully traceable
-document-level corpus remains required.
+pipeline and compatibility experiments. After the output-learning repairs, the
+1.0M/0.1M compatibility gate beats its unigram control, but this is not evidence
+of document-level generalization. A fully traceable corpus remains required for
+an admissible R0 claim.
 
 Read [`ROADMAP_REAL_DATA.md`](ROADMAP_REAL_DATA.md) before starting new model
 work.
@@ -133,9 +137,9 @@ with runtime.token_dataset_from_ids(
         result = dataset.run(config, warmup=train_examples)
 ```
 
-The in-memory API is ready for external token IDs, but real-corpus streaming,
-versioned shards and checkpoint/resume are next-phase deliverables rather than
-completed capabilities.
+The mapped corpus API streams manifest-owned shards without loading the full
+corpus and exposes exact shard cursors. Model-state serialization is not yet
+implemented, so a data cursor alone is not a complete training checkpoint.
 
 ## Automated experiments
 

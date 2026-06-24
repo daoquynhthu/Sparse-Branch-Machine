@@ -629,3 +629,12 @@ and token IDs. It uses a buffered explicit little-endian encoder, with known
 32-bit/64-bit byte fixtures plus complete deterministic-file and mapped-read
 coverage. The zero-copy reader still rejects big-endian hosts because its
 mapped typed spans require native little-endian layout.
+
+## 2026-06-24 — canonical status reconciliation
+
+The canonical documents now distinguish three facts consistently: mapped
+manifest-owned corpus execution is implemented; the repaired compatibility run
+passes the unigram predictive gate; and the available token-block artifact is
+still inadmissible for R0 because source documents, tokenizer provenance and
+cross-split deduplication evidence are missing. Exact data cursors are available,
+but model-state checkpoint serialization remains unimplemented.

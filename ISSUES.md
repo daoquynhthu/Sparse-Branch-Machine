@@ -15,26 +15,14 @@
 
 ## P0: predictive-learning blockers
 
-No active P0 issue remains after the 2026-06-24 output-learning repairs. P1
-capacity churn remains material and blocks capacity/default interpretation.
+No active P0 issue remains after the 2026-06-24 output-learning repairs.
 
 ## P1: diagnostic and recovery blockers
 
+No active P1 issue remains after the 2026-06-24 capacity, diagnostics and
+cursor repairs.
+
 ## P2: portability and documentation defects
-
-### P2-2: Canonical status documents contradict the current repository state
-
-`Agent.md` and `THEORY_ALIGNMENT.md` still name absence of a cloud real-language
-corpus as the current blocker. `README.md` first states that versioned mapped
-shards exist, then later calls versioned shards and streaming next-phase
-deliverables. `ROADMAP_REAL_DATA.md` has a current status update but retains
-older ingestion text that describes the implemented mapped corpus layer as the
-next milestone.
-
-**Required gate:** reconcile current status without weakening the distinction
-between the `compatibility_only` artifact and an admissible R0 corpus. The active
-blocker is predictive learning; strict corpus provenance remains a prerequisite
-for positive claims.
 
 ## Queue discipline
 
@@ -45,6 +33,14 @@ contract exists and the current code violates it, or when they become necessary
 to interpret an already-running experiment.
 
 ## Resolved
+
+### P2-2: Canonical current-state documentation
+
+Resolved by reconciling the canonical documents with the implemented mapped
+shards, manifest-owned multi-shard execution, strict data cursors and P0/P1
+learning repairs. The compatibility corpus remains explicitly non-admissible
+for R0 because document, source, tokenizer and deduplication provenance are
+missing. Model checkpoint serialization remains unimplemented.
 
 ### P2-1: Portable little-endian shard writer
 

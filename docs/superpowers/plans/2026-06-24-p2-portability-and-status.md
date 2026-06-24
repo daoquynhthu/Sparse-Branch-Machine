@@ -4,7 +4,7 @@
    encoding. Implement a bounded stream encoder and route token shard offsets
    and token IDs through it. Verify deterministic shard bytes and mapped reads,
    resolve P2-1 and commit.
-2. Audit `Agent.md`, `README.md`, `THEORY_ALIGNMENT.md`,
+2. [completed] Audit `Agent.md`, `README.md`, `THEORY_ALIGNMENT.md`,
    `ROADMAP_REAL_DATA.md` and `ISSUES.md` against the implemented mapped corpus,
    P0/P1 repairs and compatibility-only data status. Remove contradictory
    current-state claims without weakening corpus provenance gates, resolve P2-2

@@ -86,7 +86,8 @@ accepted final design:
   dense output;
 - candidate top-k decoding is approximate under a fixed beam;
 - the tree partition is generic rather than semantically learned;
-- real-corpus behavior has not been measured.
+- compatibility-corpus behavior is now measured, but document-level and
+  provenance-complete behavior is not.
 
 ### 2.5 Computable address experiment
 
@@ -180,13 +181,15 @@ structure is known and low-dimensional. It cannot reveal which content
 relations real language actually requires, how often they occur, or whether a
 candidate program transfers across documents and domains.
 
-The current cloud environment lacks a real natural-language corpus. Therefore:
+The repository now has compatibility-only FineWeb-Edu token blocks and a mapped
+corpus runner, but lacks an admissible document-level corpus with source,
+tokenizer and split provenance. Therefore:
 
 - further synthetic improvements are engineering/regression evidence only;
 - program-language expansion should pause unless needed for a concrete real-data
   diagnostic;
 - lifecycle and output designs must be re-evaluated on real held-out text;
-- the next normative work is defined in `ROADMAP_REAL_DATA.md`.
+- accepted language claims remain governed by `ROADMAP_REAL_DATA.md`.
 
 ## 7. Current theoretical claims that are justified
 

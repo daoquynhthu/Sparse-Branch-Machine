@@ -36,10 +36,12 @@ The current research branch contains:
 - strict training/evaluation topology freeze;
 - mathematical synthetic tasks for deterministic regression.
 
-The current blocker is the absence of a real natural-language corpus in the
-cloud workspace. The next accepted research phase is real-corpus acquisition,
-tokenization, sharding, streaming and training as specified in
-`ROADMAP_REAL_DATA.md`.
+The compatibility corpus, mapped shard layer and multi-shard runner now exist.
+The current research boundary is evidence quality: predictive learning has
+passed the unigram gate only on a provenance-incomplete token-block artifact.
+The next accepted language claim requires a traceable document-level corpus,
+while model work must continue to satisfy the predictive and bounded-scaling
+gates in `ROADMAP_REAL_DATA.md`.
 
 ## 3. Canonical document map
 
@@ -158,9 +160,10 @@ separate, documented theory change.
 
 ### 5.1 Current priority
 
-Acquire and use real natural-language data. Start with a small, pinned real
-corpus, then a deterministic web sample. Do not spend the next cycle improving
-only the mathematical benchmark.
+Use the mapped compatibility corpus for engineering and predictive diagnostics,
+but do not promote those results to R0 evidence. Prepare a small pinned
+document-level corpus for accepted language experiments. Do not spend a cycle
+improving only the mathematical benchmark.
 
 ### 5.2 Data hygiene
 
