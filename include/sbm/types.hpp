@@ -193,6 +193,8 @@ struct Diagnostics {
     std::uint64_t sparse_output_probable_reconstructions{};
     std::uint64_t sparse_output_saturated_nodes{};
     std::uint64_t max_sparse_decision_visits{};
+    std::uint64_t sparse_output_admission_rejections{};
+    std::uint64_t sparse_output_admission_promotions{};
     double max_responsibility_mass_error{};
 };
 

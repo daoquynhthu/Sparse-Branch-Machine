@@ -271,8 +271,10 @@ int main(int argc, char** argv) {
         assert(diagnostics.max_sparse_entries_per_node <= 8U);
         assert(diagnostics.sparse_output_insertions > 8U);
         assert(diagnostics.sparse_output_evictions > 0U);
-        assert(diagnostics.sparse_output_probable_reconstructions > 0U);
+        assert(diagnostics.sparse_output_admission_rejections > 0U);
+        assert(diagnostics.sparse_output_admission_promotions > 0U);
         assert(diagnostics.sparse_output_saturated_nodes > 0U);
+        assert(diagnostics.sparse_output_evictions < diagnostics.steps);
         std::cout << "bounded decision capacity passed\n";
         return 0;
     }

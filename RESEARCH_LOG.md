@@ -581,3 +581,20 @@ within-channel routing. The regression fixture and a two-channel mathematical
 calibration measured maximum responsibility-mass error near `1.1e-7`; topology
 credit remained finite. This closes P0-5 correctness but is not evidence that
 adaptive topology improves language modeling.
+
+## 2026-06-24 — evidence-gated sparse admission
+
+A controlled seed-7 capacity curve rejected cap growth as the P1-1 repair.
+Increasing the per-node cap from 64 to 128 and 256 improved validation NLL from
+7.54625 to 7.49217 and 7.45667, but retained 18.5 and 14.4 evictions per train
+token, expanded estimated state from 33.5 MB to 52.0 and 77.4 MB and reduced
+measured throughput to 4.56k and 4.25k steps/s.
+
+Full nodes now place unseen decisions in a bounded eight-candidate admission
+table and promote on a second observation. Existing decisions, non-full nodes
+and merge preservation are unchanged. At the original cap 64, the same medium
+gate reached NLL 7.51149 with 1.090 evictions and 0.864 probable
+reconstructions per train token. It rejected 23.40 million one-hit admissions,
+promoted 1.09 million candidates and used 35.74 MB. This closes the diagnostic
+and pathological-churn blocker; the remaining saturated population is a
+quality/performance tuning question rather than silent replacement behavior.

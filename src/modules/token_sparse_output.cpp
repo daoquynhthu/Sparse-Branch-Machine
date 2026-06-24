@@ -56,9 +56,10 @@ float SparseBranchMachine::sparse_logit(std::size_t slot,
         ? found->logit : 0.0F;
 }
 
-SparseBranchMachine::SparseOutputEntry& SparseBranchMachine::mutable_sparse_entry(
+SparseBranchMachine::SparseOutputEntry* SparseBranchMachine::mutable_sparse_entry(
     std::size_t slot,
-    std::uint32_t decision) {
+    std::uint32_t decision,
+    bool force_admission) {
     auto& entries = sparse_outputs_.at(slot);
     auto found = std::lower_bound(
         entries.begin(), entries.end(), decision,
@@ -66,7 +67,42 @@ SparseBranchMachine::SparseOutputEntry& SparseBranchMachine::mutable_sparse_entr
             return entry.decision < value;
         });
     if (found != entries.end() && found->decision == decision) {
-        return *found;
+        return &*found;
+    }
+    if (!force_admission && entries.size() >= config_.max_sparse_decisions_per_node) {
+        constexpr std::size_t candidate_limit = 8U;
+        constexpr std::uint8_t required_sightings = 2U;
+        auto& candidates = sparse_admission_.at(slot);
+        auto candidate = std::find_if(
+            candidates.begin(), candidates.end(),
+            [decision](const SparseAdmissionCandidate& value) {
+                return value.decision == decision;
+            });
+        if (candidate == candidates.end()) {
+            if (candidates.size() >= candidate_limit) {
+                candidate = std::min_element(
+                    candidates.begin(), candidates.end(),
+                    [](const SparseAdmissionCandidate& left,
+                       const SparseAdmissionCandidate& right) {
+                        return left.sightings < right.sightings ||
+                            (left.sightings == right.sightings &&
+                             left.last_seen_step < right.last_seen_step);
+                    });
+                *candidate = {decision, 1U, total_steps_};
+            } else {
+                candidates.push_back({decision, 1U, total_steps_});
+            }
+            ++sparse_output_admission_rejections_;
+            return nullptr;
+        }
+        candidate->last_seen_step = total_steps_;
+        if (candidate->sightings < required_sightings) ++candidate->sightings;
+        if (candidate->sightings < required_sightings) {
+            ++sparse_output_admission_rejections_;
+            return nullptr;
+        }
+        candidates.erase(candidate);
+        ++sparse_output_admission_promotions_;
     }
     const auto mask = decision_mask(decision);
     if ((sparse_output_evicted_masks_[slot] & mask) != 0U) {
@@ -85,7 +121,7 @@ SparseBranchMachine::SparseOutputEntry& SparseBranchMachine::mutable_sparse_entr
                 return entry.decision < value;
             });
     }
-    return *entries.insert(found, {decision, 0.0F, 0U, 0.0F, total_steps_});
+    return &*entries.insert(found, {decision, 0.0F, 0U, 0.0F, total_steps_});
 }
 
 float SparseBranchMachine::aggregate_sparse_logit(
@@ -360,7 +396,12 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 const float target_right = step.right
                     ? 1.0F - 0.5F * config_.label_smoothing
                     : 0.5F * config_.label_smoothing;
-                auto& entry = mutable_sparse_entry(slot, step.id);
+                auto* entry_pointer = mutable_sparse_entry(slot, step.id);
+                if (entry_pointer == nullptr) {
+                    ++path_position;
+                    continue;
+                }
+                auto& entry = *entry_pointer;
                 const float removed = node.responsibility * entry.logit;
                 const float without_loss = branch_loss(
                     (path_logits[path_position] - removed) / temperature, step.right);

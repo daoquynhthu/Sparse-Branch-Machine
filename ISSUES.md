@@ -20,18 +20,6 @@ capacity churn remains material and blocks capacity/default interpretation.
 
 ## P1: diagnostic and recovery blockers
 
-### P1-1: Sparse-output saturation and churn are under-instrumented
-
-Current diagnostics report total entries and maximum entries per node, so the
-system is not completely blind. They do not report eviction count, rejected or
-recreated decisions, the fraction of nodes at capacity, or retention by
-frequency. The medium run averaged roughly 59 entries per node against a hard
-limit of 64, making those omissions material.
-
-**Required gate:** add zero-cost-disabled or bounded counters before changing
-the default capacity. Diagnostics must distinguish stable near-capacity storage
-from repeated eviction/reconstruction churn.
-
 ### P1-2: Address-bucket capacity pressure is not observable
 
 Node creation is suppressed when `exact_count` reaches
@@ -89,6 +77,15 @@ contract exists and the current code violates it, or when they become necessary
 to interpret an already-running experiment.
 
 ## Resolved
+
+### P1-1: Evidence-gated sparse-output admission
+
+Resolved by the bounded two-hit admission table. A 64/128/256 capacity curve
+showed that cap growth alone retained 14.4-18.5 evictions per token while
+roughly doubling state and reducing throughput. At cap 64, admission reduced
+evictions from 23.26 to 1.09 per token and probable reconstructions from 22.73
+to 0.864 on the 998,400/99,328 seed-7 gate. Validation NLL improved from
+7.54625 to 7.51149. Rejections and promotions are explicit diagnostics.
 
 ### P0-1: Shared global output prior
 

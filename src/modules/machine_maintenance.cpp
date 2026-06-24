@@ -30,6 +30,7 @@ void SparseBranchMachine::erase_slot(std::size_t slot) {
                         output_vectors_.data() + slot * config_.vector_dim);
         }
         sparse_outputs_[slot] = std::move(sparse_outputs_[last]);
+        sparse_admission_[slot] = std::move(sparse_admission_[last]);
         sparse_output_evicted_masks_[slot] = sparse_output_evicted_masks_[last];
         edges_[slot] = std::move(edges_[last]);
         id_to_slot_[ids_[slot]] = static_cast<std::uint32_t>(slot);
@@ -49,6 +50,7 @@ void SparseBranchMachine::erase_slot(std::size_t slot) {
         output_vectors_.resize(ids_.size() * config_.vector_dim);
     }
     sparse_outputs_.pop_back();
+    sparse_admission_.pop_back();
     sparse_output_evicted_masks_.pop_back();
     edges_.pop_back();
     id_to_slot_[victim] = UINT32_MAX;
@@ -114,7 +116,8 @@ void SparseBranchMachine::absorb_node(std::size_t survivor_slot,
         }
     } else {
         for (const auto& entry : sparse_outputs_[victim_slot]) {
-            auto& destination = mutable_sparse_entry(survivor_slot, entry.decision);
+            auto& destination = *mutable_sparse_entry(
+                survivor_slot, entry.decision, true);
             const auto destination_visits = destination.visits;
             const std::uint64_t combined_visits =
                 static_cast<std::uint64_t>(destination_visits) + entry.visits;
@@ -259,6 +262,7 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     }
     std::uint64_t sparse_entries = 0U;
     std::uint64_t sparse_capacity = 0U;
+    std::uint64_t sparse_admission_capacity = 0U;
     std::uint64_t max_sparse_entries = 0U;
     std::uint64_t saturated_sparse_nodes = 0U;
     std::uint64_t max_sparse_decision_visits = 0U;
@@ -273,6 +277,9 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
             max_sparse_decision_visits = std::max<std::uint64_t>(
                 max_sparse_decision_visits, entry.visits);
         }
+    }
+    for (const auto& candidates : sparse_admission_) {
+        sparse_admission_capacity += candidates.capacity();
     }
     const std::uint64_t address_index_bytes =
         bucket_directory_.bucket_count() * sizeof(void*) +
@@ -301,6 +308,8 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         parents_.capacity() * sizeof(NodeId) +
         output_vectors_.capacity() * sizeof(float) +
         sparse_capacity * sizeof(detail::SparseOutputEntry) +
+        sparse_admission_.capacity() * sizeof(std::vector<SparseAdmissionCandidate>) +
+        sparse_admission_capacity * sizeof(SparseAdmissionCandidate) +
         sparse_output_evicted_masks_.capacity() * sizeof(std::uint64_t) +
         id_to_slot_.capacity() * sizeof(std::uint32_t) +
         edge_capacity * sizeof(Edge) +
@@ -337,6 +346,10 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         sparse_output_probable_reconstructions_;
     result.sparse_output_saturated_nodes = saturated_sparse_nodes;
     result.max_sparse_decision_visits = max_sparse_decision_visits;
+    result.sparse_output_admission_rejections =
+        sparse_output_admission_rejections_;
+    result.sparse_output_admission_promotions =
+        sparse_output_admission_promotions_;
     result.max_responsibility_mass_error = max_responsibility_mass_error_;
     return result;
 }

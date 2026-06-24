@@ -210,6 +210,8 @@ Sparse-output result diagnostics additionally report:
 - `sparse_output_insertions` and `sparse_output_evictions`;
 - `sparse_output_probable_reconstructions` from a bounded per-node fingerprint;
 - `sparse_output_saturated_nodes` and `max_sparse_decision_visits`;
+- `sparse_output_admission_rejections` and
+  `sparse_output_admission_promotions` from the full-node evidence gate;
 - `max_responsibility_mass_error` for cross-channel normalization.
 
 Probable reconstructions are deliberately approximate because exact unbounded

@@ -1,0 +1,22 @@
+{
+  "manifest": "E:/SPM_DATA/naime_compat_medium/manifest.json",
+  "seed": 7,
+  "train_examples": 998400,
+  "eval_examples": 99328,
+  "capacity_curve": [
+    {"capacity": 64, "eval_nll": 7.54624822, "steps_per_second": 8557.56, "estimated_mb": 33.544236, "evictions_per_train_token": 23.257, "reconstructions_per_train_token": 22.732, "saturated_nodes": 12048},
+    {"capacity": 128, "eval_nll": 7.49217151, "steps_per_second": 4559.3, "estimated_mb": 51.96, "evictions_per_train_token": 18.517, "reconstructions_per_train_token": 18.132, "saturated_nodes": 8384},
+    {"capacity": 256, "eval_nll": 7.45667061, "steps_per_second": 4251.5, "estimated_mb": 77.44, "evictions_per_train_token": 14.405, "reconstructions_per_train_token": 14.156, "saturated_nodes": 5018}
+  ],
+  "admission_capacity_64": {
+    "eval_nll": 7.51149439,
+    "steps_per_second": 6985.2,
+    "estimated_mb": 35.74,
+    "evictions_per_train_token": 1.090,
+    "reconstructions_per_train_token": 0.864,
+    "saturated_nodes": 12184,
+    "live_nodes": 15623,
+    "admission_rejections": 23403113,
+    "admission_promotions": 1088721
+  }
+}
