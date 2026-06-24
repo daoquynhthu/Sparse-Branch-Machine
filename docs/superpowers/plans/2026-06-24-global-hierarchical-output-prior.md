@@ -69,7 +69,7 @@ git commit -m "fix: decouple output tree from model seed"
 - Modify: `CMakeLists.txt`
 - Modify: `tests/test_scaling.cpp`
 
-- [ ] **Step 1: Write failing prior tests**
+- [x] **Step 1: Write failing prior tests**
 
 Add a `prior` scaling-test mode that verifies:
 
@@ -91,7 +91,7 @@ Register the mode as:
 add_test(NAME sbm_scaling_prior COMMAND sbm_scaling_tests prior)
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run:
 
@@ -102,7 +102,7 @@ ctest --test-dir build-fast -C Release -R sbm_scaling_prior --output-on-failure
 
 Expected: diagnostics fields and global prior are missing.
 
-- [ ] **Step 3: Implement count storage and helpers**
+- [x] **Step 3: Implement count storage and helpers**
 
 Add two `std::vector<std::uint64_t>` members sized `V-1`:
 
@@ -122,7 +122,7 @@ void observe_global_output_path(std::span<const detail::ImplicitDecision> path);
 Compute `log((right + 0.5) / (left + 0.5))`. Update counts with overflow checks
 after all target-dependent metrics and credits are fixed.
 
-- [ ] **Step 4: Use combined logits everywhere**
+- [x] **Step 4: Use combined logits everywhere**
 
 In target path scoring and beam expansion, replace local-only logits with:
 
@@ -133,13 +133,13 @@ global_output_logit(decision) + aggregate_sparse_logit(active, decision)
 Keep counterfactual removal local-only so the prior remains present. Local SGD
 uses the combined branch probability and therefore learns a residual.
 
-- [ ] **Step 5: Add diagnostics and memory accounting**
+- [x] **Step 5: Add diagnostics and memory accounting**
 
 Add `global_output_prior_bytes` and `global_output_prior_updates` to
 `Diagnostics`, C++ JSON and token JSON. Include count vector capacities in
 `estimated_bytes` but not `output_structure_bytes`.
 
-- [ ] **Step 6: Verify GREEN and commit**
+- [x] **Step 6: Verify GREEN and commit**
 
 Run all scaling, C++, C and Python tests, then:
 

@@ -107,6 +107,55 @@ void verify_output_seed_decoupled() {
     }
 }
 
+void verify_global_output_prior() {
+    auto config = sparse_config(4U, 4U);
+    config.output_tree_seed = 7U;
+    config.min_update_responsibility = 2.0F;
+    sbm::SparseBranchMachine machine(config);
+
+    const auto first = machine.step_token(0U, 1U, true);
+    assert(std::abs(first.target_probability - 0.25F) < 1e-6F);
+    (void)machine.step_token(0U, 1U, true);
+    (void)machine.step_token(0U, 1U, true);
+    (void)machine.step_token(0U, 0U, true);
+
+    const auto trained = machine.diagnostics();
+    assert(trained.global_output_prior_updates == 4U);
+    assert(trained.global_output_prior_bytes ==
+           2U * (config.vector_dim - 1U) * sizeof(std::uint64_t));
+
+    const auto frozen_first = machine.step_token(0U, 1U, false);
+    const auto frozen_second = machine.step_token(0U, 1U, false);
+    assert(std::abs(frozen_first.target_probability -
+                    frozen_second.target_probability) < 1e-7F);
+    assert(frozen_first.predicted_token == 1U);
+    assert(machine.diagnostics().global_output_prior_updates == 4U);
+
+    sbm::detail::ImplicitOutputTree tree(config.vector_dim, config.output_tree_seed);
+    std::vector<sbm::detail::ImplicitDecision> path;
+    tree.target_path(1U, path);
+    std::uint64_t total[3]{};
+    std::uint64_t right[3]{};
+    for (const auto target : {1U, 1U, 1U, 0U}) {
+        tree.target_path(target, path);
+        for (const auto& decision : path) {
+            ++total[decision.id];
+            right[decision.id] += decision.right ? 1U : 0U;
+        }
+    }
+    tree.target_path(1U, path);
+    double expected_probability = 1.0;
+    for (const auto& decision : path) {
+        const double right_probability =
+            (static_cast<double>(right[decision.id]) + 0.5) /
+            (static_cast<double>(total[decision.id]) + 1.0);
+        expected_probability *= decision.right
+            ? right_probability : 1.0 - right_probability;
+    }
+    assert(std::abs(static_cast<double>(frozen_first.target_probability) -
+                    expected_probability) < 1e-6);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -138,6 +187,11 @@ int main(int argc, char** argv) {
         }
         assert(machine.diagnostics().max_sparse_entries_per_node <= 8U);
         std::cout << "bounded decision capacity passed\n";
+        return 0;
+    }
+    if (mode == "prior") {
+        verify_global_output_prior();
+        std::cout << "global output prior tests passed\n";
         return 0;
     }
     const auto address_10 = address_bytes(10U);

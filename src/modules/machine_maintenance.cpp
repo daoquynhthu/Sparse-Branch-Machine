@@ -255,6 +255,9 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     const std::uint64_t output_structure_bytes =
         (implicit_output_.has_value() ? sizeof(detail::ImplicitOutputTree) : 0U) +
         token_path_scratch_.capacity() * sizeof(detail::ImplicitDecision);
+    const std::uint64_t global_output_prior_bytes =
+        (global_output_total_.capacity() + global_output_right_.capacity()) *
+        sizeof(std::uint64_t);
     const auto denominator = std::max<std::uint64_t>(1, total_steps_);
     const std::uint64_t bytes =
         ids_.capacity() * sizeof(NodeId) +
@@ -272,7 +275,7 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         sparse_capacity * sizeof(SparseOutputEntry) +
         id_to_slot_.capacity() * sizeof(std::uint32_t) +
         edge_capacity * sizeof(Edge) +
-        address_index_bytes + output_structure_bytes;
+        address_index_bytes + output_structure_bytes + global_output_prior_bytes;
     std::uint64_t seed_channels = 0U;
     std::uint64_t probe_channels = 0U;
     std::uint64_t active_channels = 0U;
@@ -297,6 +300,8 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     result.output_structure_bytes = output_structure_bytes;
     result.max_bucket_candidates_inspected = max_bucket_candidates_inspected_;
     result.max_sparse_entries_per_node = max_sparse_entries;
+    result.global_output_prior_bytes = global_output_prior_bytes;
+    result.global_output_prior_updates = global_output_prior_updates_;
     return result;
 }
 

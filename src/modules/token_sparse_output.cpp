@@ -95,6 +95,36 @@ float SparseBranchMachine::aggregate_sparse_logit(
     return value;
 }
 
+float SparseBranchMachine::global_output_logit(
+    std::uint32_t decision) const noexcept {
+    if (decision >= global_output_total_.size()) return 0.0F;
+    const auto total = global_output_total_[decision];
+    const auto right = global_output_right_[decision];
+    if (right > total) return 0.0F;
+    constexpr double pseudocount = 0.5;
+    const double left = static_cast<double>(total - right);
+    return static_cast<float>(std::log(
+        (static_cast<double>(right) + pseudocount) / (left + pseudocount)));
+}
+
+void SparseBranchMachine::observe_global_output_path(
+    std::span<const detail::ImplicitDecision> path) {
+    if (global_output_prior_updates_ == std::numeric_limits<std::uint64_t>::max()) {
+        throw std::overflow_error("global output prior update count overflow");
+    }
+    for (const auto& step : path) {
+        auto& total = global_output_total_.at(step.id);
+        auto& right = global_output_right_.at(step.id);
+        if (total == std::numeric_limits<std::uint64_t>::max() ||
+            (step.right && right == std::numeric_limits<std::uint64_t>::max())) {
+            throw std::overflow_error("global output prior branch count overflow");
+        }
+        ++total;
+        if (step.right) ++right;
+    }
+    ++global_output_prior_updates_;
+}
+
 StepStats SparseBranchMachine::step_token(std::uint32_t token,
                                           std::uint32_t target_token,
                                           bool learn) {
@@ -179,7 +209,8 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     path_logits.reserve(token_path_scratch_.size());
     float cross_entropy = 0.0F;
     for (const auto& step : token_path_scratch_) {
-        const float logit = aggregate_sparse_logit(active, step.id);
+        const float logit = global_output_logit(step.id) +
+            aggregate_sparse_logit(active, step.id);
         path_logits.push_back(logit);
         cross_entropy += branch_loss(logit / temperature, step.right);
     }
@@ -208,8 +239,8 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             }
             all_leaves = false;
             const auto decision = output_tree.split(item.lo, item.hi);
-            const float logit = aggregate_sparse_logit(
-                active, decision.decision_id) / temperature;
+            const float logit = (global_output_logit(decision.decision_id) +
+                aggregate_sparse_logit(active, decision.decision_id)) / temperature;
             expanded.push_back({item.log_probability +
                                     log_branch_probability(logit, false),
                                 item.lo, decision.middle});
@@ -304,6 +335,8 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         route.push_back(node.id);
         contributions.push_back(node.contribution);
     }
+
+    if (learn) observe_global_output_path(token_path_scratch_);
 
     if (learn) {
         apply_trace_credit(normalized_loss);

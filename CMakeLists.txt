@@ -123,6 +123,7 @@ if(SBM_BUILD_TESTS)
   add_test(NAME sbm_scaling_implicit_output COMMAND sbm_scaling_tests implicit)
   add_test(NAME sbm_scaling_output_memory COMMAND sbm_scaling_tests output)
   add_test(NAME sbm_scaling_sparse_capacity COMMAND sbm_scaling_tests capacity)
+  add_test(NAME sbm_scaling_prior COMMAND sbm_scaling_tests prior)
 
   if(SBM_BUILD_PYTHON_SMOKE_TEST)
     find_package(Python3 COMPONENTS Interpreter)

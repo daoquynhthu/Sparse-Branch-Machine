@@ -90,6 +90,9 @@ private:
     float& mutable_sparse_logit(std::size_t slot, std::uint32_t decision);
     [[nodiscard]] float aggregate_sparse_logit(std::span<const ScoredNode> active,
                                                std::uint32_t decision) const noexcept;
+    [[nodiscard]] float global_output_logit(std::uint32_t decision) const noexcept;
+    void observe_global_output_path(
+        std::span<const detail::ImplicitDecision> path);
     [[nodiscard]] StepStats step_token_dense(std::uint32_t token,
                                              std::uint32_t target_token,
                                              bool learn);
@@ -167,6 +170,9 @@ private:
     std::vector<std::vector<SparseOutputEntry>> sparse_outputs_;
     std::optional<detail::ImplicitOutputTree> implicit_output_;
     std::vector<detail::ImplicitDecision> token_path_scratch_;
+    std::vector<std::uint64_t> global_output_total_;
+    std::vector<std::uint64_t> global_output_right_;
+    std::uint64_t global_output_prior_updates_{};
     std::vector<std::vector<Edge>> edges_;
 
     std::vector<std::uint32_t> id_to_slot_;

@@ -186,6 +186,8 @@ struct Diagnostics {
     std::uint64_t output_structure_bytes{};
     std::uint64_t max_bucket_candidates_inspected{};
     std::uint64_t max_sparse_entries_per_node{};
+    std::uint64_t global_output_prior_bytes{};
+    std::uint64_t global_output_prior_updates{};
 };
 
 } // namespace sbm
