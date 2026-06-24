@@ -15,24 +15,6 @@
 
 ## P0: predictive-learning blockers
 
-### P0-1: No shared global output prior
-
-**Confirmed implementation fact.** Sparse token prediction is only the weighted
-sum of decision logits stored by active address nodes. A missing local decision
-contributes zero logit, and there is no global decision table shared across
-addresses (`SparseBranchMachine::aggregate_sparse_logit` in
-`src/modules/token_sparse_output.cpp`). New address nodes therefore restart from
-an approximately uniform hierarchical distribution rather than a learned corpus
-base distribution.
-
-This is the leading falsifiable explanation for the medium-corpus result
-(`eval NLL 10.6696` versus unigram `7.6826`), not a proven sole cause.
-
-**Required gate:** add a bounded global hierarchical base distribution and
-represent local node output as a residual. With fixed topology and control-edge
-effects disabled, the model must at least match the online unigram control. If
-it does not, reject this causal explanation and continue diagnosis.
-
 ### P0-2: Sparse decisions inherit node-wide learning-rate decay
 
 **Confirmed learning-semantics defect.** `SparseOutputEntry` stores only
@@ -58,18 +40,6 @@ parameter magnitude is not evidence of coding value or dispensability.
 coding benefit, usage and reconstruction cost. Compare against the current
 magnitude policy at identical capacity and active work; rollback if held-out NLL
 or churn worsens.
-
-### P0-4: Output-tree randomization is coupled to the model seed
-
-**Confirmed reproducibility defect.** `SparseBranchMachine` constructs
-`ImplicitOutputTree(config_.vector_dim, config_.seed)` in
-`src/modules/machine_storage.cpp`. Multi-seed runs therefore change both model
-randomness and the hierarchical class decomposition, so their variance does not
-isolate training stochasticity.
-
-**Required gate:** introduce a separately reported `output_tree_seed`, fixed by
-the tokenizer or experiment manifest, while retaining `seed` for model
-stochasticity. A test must prove identical token paths across model seeds.
 
 ### P0-5: Cross-channel output mass is not conserved
 
@@ -156,3 +126,19 @@ This file intentionally excludes capabilities that are merely scheduled in
 `THEORY_ALIGNMENT.md`. Those items enter this queue only after an implemented
 contract exists and the current code violates it, or when they become necessary
 to interpret an already-running experiment.
+
+## Resolved
+
+### P0-1: Shared global output prior
+
+Resolved by `f9a2ab1` and optimized by `83fd3d3`. A Jeffreys-smoothed global
+hierarchical count prior now supplies the base logit; address-local sparse
+outputs are residuals. Counts update only after prediction and remain frozen in
+evaluation. On the 1M/0.1M compatibility run, mean validation NLL changed from
+10.6696 to 7.6069 versus unigram 7.6826 across seeds 7, 11 and 19.
+
+### P0-4: Output-tree seed coupling
+
+Resolved by `6e56b67`. `output_tree_seed` is independent of model `seed`, is
+reported through the runtime/API result, and has cross-model-seed regression
+coverage.

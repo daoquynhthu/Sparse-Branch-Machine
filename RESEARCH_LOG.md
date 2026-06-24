@@ -524,3 +524,31 @@ pair-context 9.3042 and interpolated multiscale 8.6670. Training NLL was also
 bounded scaling implementation is operational, but the current learning rule
 does not exploit even frequency structure at this corpus scale. Architecture
 diagnosis, rather than larger training, is now the blocking research task.
+
+## 2026-06-24 — global hierarchical output prior
+
+The medium-corpus failure was traced first to the absence of a shared output
+base distribution. A single Jeffreys-smoothed hierarchical count prior was
+added, with bounded local node logits reinterpreted as residuals. The output
+tree received an independent `output_tree_seed=7`, held fixed across model
+seeds. Unit tests verify score-before-update behavior, analytic branch
+probabilities, frozen count state, decoding through the prior and seed
+decoupling.
+
+On the original one-shard 10,240/10,240 comparison, prior-only validation NLL
+was 8.5877, the full fixed-topology model reached 8.58149 and the unigram control
+was 8.58146. This closes the previous 10.8682 failure without changing data or
+routing. The cached prior used 1.01 MB and the full smoke ran at 16,819 token/s.
+
+The 998,400-train/99,328-validation gate completed on seeds 7, 11 and 19. NLLs
+were 7.60671, 7.60692 and 7.60718 (mean 7.60693, standard deviation 0.00023),
+beating the common unigram control 7.68264 by 0.07571. Mean model state was
+18.48 MB before the derived-logit cache accounting adjustment. The three-way
+run measured 8,749 token/s before cache optimization, below the prior 12,841
+token/s implementation; a post-cache one-shard smoke recovered from 15,291 to
+16,819 token/s but does not fully remove the training-time count-update cost.
+
+P0-1 and P0-4 are therefore closed. This result establishes shared frequency
+learning and a small contextual residual gain on a compatibility-only corpus;
+it does not validate adaptive topology or resolve per-decision learning and
+eviction defects.

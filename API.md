@@ -192,3 +192,15 @@ The Python hardware scheduler is tooling above the stable C ABI. Resource
 fractions apply to the current hardware snapshot, not theoretical installed
 capacity. Worker processes remain isolated and do not share model or runtime
 handles, so scheduling does not change a run's learning semantics.
+
+## Global hierarchical output prior
+
+Token result JSON reports `output_tree_seed`, `global_output_prior_bytes` and
+`global_output_prior_updates`. Runtime parameter `output_tree_seed` controls the
+fixed implicit class decomposition independently of model `seed`; comparison
+runs must keep it constant.
+
+The prior stores corpus-wide hierarchical branch counts. It is updated for
+training examples only and is read-only during strict frozen evaluation. Its
+storage is included in `estimated_bytes`, while `output_structure_bytes`
+continues to describe only the constant-storage implicit tree and path scratch.

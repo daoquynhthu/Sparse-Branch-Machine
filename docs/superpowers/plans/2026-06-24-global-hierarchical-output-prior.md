@@ -156,7 +156,7 @@ git commit -m "feat: add global hierarchical output prior"
 - Modify: `API.md`
 - Modify: `RESEARCH_LOG.md`
 
-- [ ] **Step 1: Run full static and unit verification**
+- [x] **Step 1: Run full static and unit verification**
 
 ```powershell
 Get-ChildItem python\*.py,scripts\*.py,tests\*.py | ForEach-Object { python -m py_compile $_.FullName }
@@ -167,7 +167,7 @@ git diff --check
 
 Expected: all tests pass and no whitespace errors.
 
-- [ ] **Step 2: Run fixed smoke controls**
+- [x] **Step 2: Run fixed smoke controls**
 
 Run three controls on the existing 10,240/10,240 compatibility smoke:
 
@@ -179,7 +179,7 @@ Record model NLL, unigram NLL, throughput, model bytes and prior bytes. Reject
 the implementation if prior-only is materially worse than the computed
 hierarchical unigram estimator or frozen evaluation mutates counts.
 
-- [ ] **Step 3: Run the medium gate**
+- [x] **Step 3: Run the medium gate**
 
 Only after Step 2 passes, execute seeds `7,11,19` on
 `E:\SPM_DATA\naime_compat_medium\manifest.json` with fixed
@@ -188,13 +188,13 @@ and 7.6826 unigram controls. Keep the change if it closes the unigram gap withou
 unbounded active work; otherwise record the negative result before deciding
 rollback.
 
-- [ ] **Step 4: Update canonical documents and issue status**
+- [x] **Step 4: Update canonical documents and issue status**
 
 Document the global/local logit decomposition and API parameter. Mark P0-1 and
 P0-4 resolved only if all correctness gates pass; experimental quality failure
 does not invalidate a semantically correct prior but must remain a blocker.
 
-- [ ] **Step 5: Commit the verified result**
+- [x] **Step 5: Commit the verified result**
 
 ```powershell
 git add ISSUES.md DESIGN_NOTES.md API.md RESEARCH_LOG.md docs/superpowers/plans/2026-06-24-global-hierarchical-output-prior.md

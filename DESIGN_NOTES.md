@@ -131,6 +131,25 @@ model error can be separated from source entropy.
 
 The repository retains a dense full-vocabulary logit path as a correctness control and includes an experimental hierarchical sparse output path. The sparse path stores observed binary decisions and computes target NLL along a tree path, but it is not yet the accepted final output architecture. Output designs must be compared on held-out quality, bytes, target-NLL cost and candidate decoding cost, especially on real tokenized text.
 
+## Global and local token output
+
+Sparse token prediction decomposes every implicit-tree decision into a shared
+base logit and bounded address-local residuals:
+
+```text
+logit(d) = global_count_logit(d) + sum_i responsibility_i * residual(i, d)
+```
+
+The global term uses Jeffreys-smoothed left/right counts and is updated only
+after the current prediction, ranking and counterfactual credit are fixed. The
+two count arrays and derived logit cache are global `O(V)` state; local output
+remains capacity-bounded per node. Prediction and update touch only target or
+beam paths and remain `O(log V)` for fixed beam width. Frozen evaluation does
+not update global counts.
+
+The implicit output decomposition is keyed by `output_tree_seed`, not model
+`seed`. Multi-seed comparisons must keep `output_tree_seed` fixed.
+
 ## Sparse address programs
 
 The adaptive topology object is an `AddressProgram`, not a task-specific lag
