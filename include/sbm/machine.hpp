@@ -172,6 +172,7 @@ private:
     std::vector<detail::ImplicitDecision> token_path_scratch_;
     std::vector<std::uint64_t> global_output_total_;
     std::vector<std::uint64_t> global_output_right_;
+    std::vector<float> global_output_logit_cache_;
     std::uint64_t global_output_prior_updates_{};
     std::vector<std::vector<Edge>> edges_;
 

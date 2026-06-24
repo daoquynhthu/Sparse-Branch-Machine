@@ -97,14 +97,8 @@ float SparseBranchMachine::aggregate_sparse_logit(
 
 float SparseBranchMachine::global_output_logit(
     std::uint32_t decision) const noexcept {
-    if (decision >= global_output_total_.size()) return 0.0F;
-    const auto total = global_output_total_[decision];
-    const auto right = global_output_right_[decision];
-    if (right > total) return 0.0F;
-    constexpr double pseudocount = 0.5;
-    const double left = static_cast<double>(total - right);
-    return static_cast<float>(std::log(
-        (static_cast<double>(right) + pseudocount) / (left + pseudocount)));
+    return decision < global_output_logit_cache_.size()
+        ? global_output_logit_cache_[decision] : 0.0F;
 }
 
 void SparseBranchMachine::observe_global_output_path(
@@ -121,6 +115,10 @@ void SparseBranchMachine::observe_global_output_path(
         }
         ++total;
         if (step.right) ++right;
+        constexpr double pseudocount = 0.5;
+        const double left = static_cast<double>(total - right);
+        global_output_logit_cache_[step.id] = static_cast<float>(std::log(
+            (static_cast<double>(right) + pseudocount) / (left + pseudocount)));
     }
     ++global_output_prior_updates_;
 }

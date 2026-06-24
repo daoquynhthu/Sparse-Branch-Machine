@@ -257,7 +257,8 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
         token_path_scratch_.capacity() * sizeof(detail::ImplicitDecision);
     const std::uint64_t global_output_prior_bytes =
         (global_output_total_.capacity() + global_output_right_.capacity()) *
-        sizeof(std::uint64_t);
+            sizeof(std::uint64_t) +
+        global_output_logit_cache_.capacity() * sizeof(float);
     const auto denominator = std::max<std::uint64_t>(1, total_steps_);
     const std::uint64_t bytes =
         ids_.capacity() * sizeof(NodeId) +

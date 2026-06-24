@@ -122,7 +122,8 @@ void verify_global_output_prior() {
     const auto trained = machine.diagnostics();
     assert(trained.global_output_prior_updates == 4U);
     assert(trained.global_output_prior_bytes ==
-           2U * (config.vector_dim - 1U) * sizeof(std::uint64_t));
+           (config.vector_dim - 1U) *
+               (2U * sizeof(std::uint64_t) + sizeof(float)));
 
     const auto frozen_first = machine.step_token(0U, 1U, false);
     const auto frozen_second = machine.step_token(0U, 1U, false);

@@ -111,6 +111,7 @@ SparseBranchMachine::SparseBranchMachine(Config config)
         implicit_output_.emplace(config_.vector_dim, config_.output_tree_seed);
         global_output_total_.assign(config_.vector_dim - 1U, 0U);
         global_output_right_.assign(config_.vector_dim - 1U, 0U);
+        global_output_logit_cache_.assign(config_.vector_dim - 1U, 0.0F);
         token_path_scratch_.reserve(
             static_cast<std::size_t>(std::bit_width(config_.vector_dim - 1U)) + 1U);
     }

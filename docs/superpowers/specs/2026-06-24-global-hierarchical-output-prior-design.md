@@ -42,8 +42,10 @@ global prior remains in every counterfactual.
 
 ## Storage and complexity
 
-The global prior owns two `uint64_t` arrays of `vocabulary - 1` entries. It is a
-single `O(V)` output bias, not per-node state. Per-token prediction and update
+The global prior owns two `uint64_t` count arrays and one derived `float` logit
+cache of `vocabulary - 1` entries. The cache is refreshed only for decisions on
+an observed target path and avoids repeated logarithms during beam decoding. It
+is a single `O(V)` output bias, not per-node state. Per-token prediction and update
 touch only the target or beam paths and remain `O(log V)` with bounded beam
 width. No vocabulary scan is introduced.
 
@@ -69,8 +71,8 @@ ABI passes configuration by opaque handle and registry name.
 5. A prior-only imbalanced-token fixture reaches its analytically computed
    hierarchical unigram NLL.
 6. Target NLL and beam decoding both include the global prior.
-7. `global_output_prior_bytes` is exactly bounded by two count arrays and local
-   sparse capacity remains unchanged.
+7. `global_output_prior_bytes` is exactly bounded by two count arrays plus one
+   derived float cache, and local sparse capacity remains unchanged.
 8. Full C++, C and Python API tests pass before the implementation commit.
 
 ## Experiment gate
