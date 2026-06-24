@@ -15,47 +15,8 @@
 
 ## P0: predictive-learning blockers
 
-### P0-2: Sparse decisions inherit node-wide learning-rate decay
-
-**Confirmed learning-semantics defect.** `SparseOutputEntry` stores only
-`decision` and `logit` (`include/sbm/machine.hpp`). During sparse token updates,
-every path decision uses a schedule derived from the node-wide
-`address_visits_[slot]` (`SparseBranchMachine::step_token_sparse` in
-`src/modules/token_sparse_output.cpp`). A decision first observed late in a
-mature node therefore receives the same heavily decayed rate as frequently
-trained decisions.
-
-**Required gate:** maintain bounded per-decision update evidence and show that a
-new decision in a mature node learns at the declared fresh-decision rate without
-changing established decisions or violating the per-node capacity bound.
-
-### P0-3: Sparse-decision eviction uses parameter magnitude as importance
-
-**Confirmed capacity-management defect.** At capacity,
-`mutable_sparse_logit` removes the entry with minimum `abs(logit)`. A frequent,
-well-calibrated binary decision can legitimately have a logit near zero, so
-parameter magnitude is not evidence of coding value or dispensability.
-
-**Required gate:** replacement must use measured evidence such as cumulative
-coding benefit, usage and reconstruction cost. Compare against the current
-magnitude policy at identical capacity and active work; rollback if held-out NLL
-or churn worsens.
-
-### P0-5: Cross-channel output mass is not conserved
-
-**Confirmed for multi-channel execution.** Responsibility normalization is
-performed independently per channel. Channel 0 receives mass `1`, while every
-additional enabled channel receives `residual_channel_gain`
-(`assign_responsibilities` in `src/modules/machine_routing.cpp`). Total output
-scale consequently changes with channel count, mixing information gain with
-confidence rescaling and contaminating topology credit.
-
-This issue blocks adaptive/multi-channel topology interpretation. It does not
-explain the fixed single-channel medium-corpus failure.
-
-**Required gate:** separate channel information contribution from aggregate
-logit scale and verify calibration at fixed information while varying enabled
-channel count.
+No active P0 issue remains after the 2026-06-24 output-learning repairs. P1
+capacity churn remains material and blocks capacity/default interpretation.
 
 ## P1: diagnostic and recovery blockers
 
@@ -142,3 +103,23 @@ evaluation. On the 1M/0.1M compatibility run, mean validation NLL changed from
 Resolved by `6e56b67`. `output_tree_seed` is independent of model `seed`, is
 reported through the runtime/API result, and has cross-model-seed regression
 coverage.
+
+### P0-2: Per-decision learning statistics
+
+Resolved by `1d5bfd7`. Each sparse decision now owns visits, coding-gain EMA and
+last-update step. Fresh decisions in mature nodes use the fresh-decision rate;
+the mature schedule depends on decision visits rather than node visits.
+
+### P0-3: Evidence-based sparse-decision eviction
+
+Resolved by `1d5bfd7`. Eviction now uses coding gain, visit evidence and bounded
+probation with deterministic ties, not logit magnitude. Mean 1M/0.1M NLL
+improved from 7.60693 to 7.54645. Churn remains high and is still tracked under
+P1-1 rather than treated as solved capacity calibration.
+
+### P0-5: Conserved cross-channel output mass
+
+Resolved by `ed89a72`. Represented channel weights are normalized globally
+before within-channel routing. Regression and multi-channel calibration keep
+total responsibility error below `1e-6`, while single-channel behavior remains
+unchanged.

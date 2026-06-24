@@ -150,6 +150,17 @@ not update global counts.
 The implicit output decomposition is keyed by `output_tree_seed`, not model
 `seed`. Multi-seed comparisons must keep `output_tree_seed` fixed.
 
+Each local sparse decision owns its own visit count, coding-gain EMA and last
+update step. Local learning-rate maturity is decision-local. At capacity,
+probation-aware retention uses coding benefit and visit evidence; logit
+magnitude is not an importance measure. Eviction/reconstruction and saturation
+remain explicit diagnostics because fixed capacity can still produce churn.
+
+For multiple represented address channels, raw seed/residual channel weights
+are normalized to total mass one before exact/non-exact subdivision. Changing
+channel count therefore cannot increase confidence merely by increasing total
+responsibility mass.
+
 ## Sparse address programs
 
 The adaptive topology object is an `AddressProgram`, not a task-specific lag

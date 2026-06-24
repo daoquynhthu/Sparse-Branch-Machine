@@ -204,3 +204,13 @@ The prior stores corpus-wide hierarchical branch counts. It is updated for
 training examples only and is read-only during strict frozen evaluation. Its
 storage is included in `estimated_bytes`, while `output_structure_bytes`
 continues to describe only the constant-storage implicit tree and path scratch.
+
+Sparse-output result diagnostics additionally report:
+
+- `sparse_output_insertions` and `sparse_output_evictions`;
+- `sparse_output_probable_reconstructions` from a bounded per-node fingerprint;
+- `sparse_output_saturated_nodes` and `max_sparse_decision_visits`;
+- `max_responsibility_mass_error` for cross-channel normalization.
+
+Probable reconstructions are deliberately approximate because exact unbounded
+eviction history would violate the model's storage contract.

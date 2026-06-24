@@ -552,3 +552,32 @@ P0-1 and P0-4 are therefore closed. This result establishes shared frequency
 learning and a small contextual residual gain on a compatibility-only corpus;
 it does not validate adaptive topology or resolve per-decision learning and
 eviction defects.
+
+## 2026-06-24 — per-decision evidence and channel mass
+
+Capacity diagnostics first measured the old magnitude-only policy on the
+10,240/10,240 smoke: 304,608 insertions, 276,890 evictions and 265,892 probable
+reconstructions for 27,718 retained entries. The apparent 64-entry bound was
+therefore hiding severe reconstruction churn.
+
+Sparse entries now maintain decision-local visits, coding-gain EMA and update
+recency. Learning-rate maturity is per decision. Eviction uses positive coding
+gain, visit evidence and a 32-step probation period with deterministic ties.
+On the same smoke, NLL improved from 8.58149 to 8.57956; evictions fell to
+220,507, estimated state rose from 1.64 MB to 2.12 MB and throughput fell from
+16.46k to 14.11k token/s. The semantic repair reduces but does not eliminate
+capacity churn.
+
+The 998,400/99,328 three-seed gate produced validation NLL 7.54625, 7.54651 and
+7.54658 (mean 7.54645, standard deviation 0.00017), improving by 0.06049 over
+the global-prior stage and by 0.13620 over unigram. Mean throughput was 8,558
+token/s and estimated state 33.53 MB. Capacity remained hard-bounded at 64, but
+mean evictions were 23.22 million and 12,049 nodes ended saturated. P0-2/P0-3
+are closed as learning/selection semantics; P1-1 remains open because the
+capacity operating point is still churn-heavy.
+
+Cross-channel raw weights are now normalized over represented channels before
+within-channel routing. The regression fixture and a two-channel mathematical
+calibration measured maximum responsibility-mass error near `1.1e-7`; topology
+credit remained finite. This closes P0-5 correctness but is not evidence that
+adaptive topology improves language modeling.

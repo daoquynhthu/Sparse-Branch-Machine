@@ -79,13 +79,13 @@
 - Modify: `RESEARCH_LOG.md`
 - Modify: this plan
 
-- [ ] Run the one-shard fixed-topology smoke and record NLL, unigram gap,
+- [x] Run the one-shard fixed-topology smoke and record NLL, unigram gap,
   throughput, bytes, saturation, evictions and probable reconstructions.
-- [ ] Run the 1M/0.1M fixed-topology seeds 7, 11 and 19. Accept P0-2/P0-3 only
+- [x] Run the 1M/0.1M fixed-topology seeds 7, 11 and 19. Accept P0-2/P0-3 only
   within the `0.5%` NLL gate and with bounded capacity.
-- [ ] Run a multi-channel synthetic calibration checking conserved mass and
+- [x] Run a multi-channel synthetic calibration checking conserved mass and
   finite topology credit; do not claim language improvement from it.
-- [ ] Run Python compilation, full build, CTest and `git diff --check`.
-- [ ] Move P0-2/P0-3/P0-5 to resolved only when their respective gates pass;
+- [x] Run Python compilation, full build, CTest and `git diff --check`.
+- [x] Move P0-2/P0-3/P0-5 to resolved only when their respective gates pass;
   record negative results without hiding them.
-- [ ] Commit `research: validate remaining P0 output fixes`.
+- [x] Commit `research: validate remaining P0 output fixes`.
