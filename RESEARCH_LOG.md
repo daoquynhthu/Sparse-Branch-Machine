@@ -598,3 +598,18 @@ reconstructions per train token. It rejected 23.40 million one-hit admissions,
 promoted 1.09 million candidates and used 35.74 MB. This closes the diagnostic
 and pathological-churn blocker; the remaining saturated population is a
 quality/performance tuning question rather than silent replacement behavior.
+
+## 2026-06-24 — address capacity pressure
+
+All objective paths now count specialization attempts blocked solely by the
+per-bucket cap. Final diagnostics also expose occupied buckets, full buckets
+and maximum residents. On the 20,480-example compatibility smoke, cap 4 had
+3,510 occupied buckets, only 33 full buckets, but 3,401 blocked attempts. The
+pressure is concentrated in repeated hotspot conflicts rather than globally
+undersized storage.
+
+A cap 4/8/16 ablation produced NLL 8.16936/8.17441/8.17892 and throughput
+16.96k/10.15k/7.29k steps/s. Blocked attempts remained 3,401/2,841/2,190 while
+maximum lookup candidates grew 8/16/32. The default remains 4: simple capacity
+growth is slower, slightly worse in this gate and does not solve the underlying
+hotspot behavior.

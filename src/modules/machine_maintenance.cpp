@@ -234,6 +234,9 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     std::uint64_t edge_count = 0;
     std::uint64_t edge_capacity = 0;
     std::uint64_t bucket_capacity = 0;
+    std::uint64_t occupied_buckets = 0;
+    std::uint64_t full_buckets = 0;
+    std::uint64_t max_bucket_residents = 0;
     std::uint64_t cold = 0;
     std::uint64_t warm = 0;
     std::uint64_t mature = 0;
@@ -246,6 +249,12 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     }
     for (const auto& [key, state] : bucket_directory_) {
         (void)key;
+        if (!state.residents.empty()) ++occupied_buckets;
+        if (state.residents.size() >= config_.max_specializations_per_bucket) {
+            ++full_buckets;
+        }
+        max_bucket_residents = std::max<std::uint64_t>(
+            max_bucket_residents, state.residents.size());
         bucket_capacity += state.residents.capacity();
         bucket_capacity += state.hot.capacity();
         bucket_capacity += state.cold.capacity();
@@ -335,6 +344,10 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
             topology_pruned_, seed_channels, probe_channels, active_channels, retired_channels,
             simd_available()};
     result.address_index_bytes = address_index_bytes;
+    result.address_occupied_buckets = occupied_buckets;
+    result.address_full_buckets = full_buckets;
+    result.address_max_bucket_residents = max_bucket_residents;
+    result.address_capacity_blocked_splits = address_capacity_blocked_splits_;
     result.output_structure_bytes = output_structure_bytes;
     result.max_bucket_candidates_inspected = max_bucket_candidates_inspected_;
     result.max_sparse_entries_per_node = max_sparse_entries;

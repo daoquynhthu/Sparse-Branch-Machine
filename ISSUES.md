@@ -20,17 +20,6 @@ capacity churn remains material and blocks capacity/default interpretation.
 
 ## P1: diagnostic and recovery blockers
 
-### P1-2: Address-bucket capacity pressure is not observable
-
-Node creation is suppressed when `exact_count` reaches
-`max_specializations_per_bucket` in all objective paths, but diagnostics expose
-only global creation totals and maximum lookup candidates. They do not report
-full-bucket fraction, capacity-blocked specialization attempts or per-bucket
-context diversity.
-
-**Required gate:** instrument capacity pressure before increasing the bucket
-limit or interpreting the final node count as natural convergence.
-
 ### P1-3: Invalid token-shard cursors are silently advanced
 
 `MappedTokenShard::next` rejects a mismatched shard ID, but an out-of-range
@@ -77,6 +66,14 @@ contract exists and the current code violates it, or when they become necessary
 to interpret an already-running experiment.
 
 ## Resolved
+
+### P1-2: Address-bucket capacity pressure diagnostics
+
+Resolved by occupied/full/max-resident and capacity-blocked split diagnostics
+in all objective paths. A cap 4/8/16 smoke found that larger caps reduced but
+did not remove hotspot blocking, worsened NLL from 8.1694 to 8.1744/8.1789 and
+reduced throughput from 16.96k to 10.15k/7.29k steps/s. The default remains 4;
+hotspot conflict policy is a research question, not a hidden capacity limit.
 
 ### P1-1: Evidence-gated sparse-output admission
 

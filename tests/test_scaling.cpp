@@ -236,6 +236,24 @@ void verify_conserved_channel_mass() {
     assert(multi.diagnostics().max_responsibility_mass_error < 1e-6);
 }
 
+void verify_address_capacity_pressure() {
+    auto config = sparse_config(1U, 32U);
+    config.max_specializations_per_bucket = 1U;
+    config.split_min_visits = 1U;
+    config.split_cooldown = 0U;
+    config.split_context_similarity = 1.01;
+    config.split_loss_threshold = 0.0F;
+    sbm::SparseBranchMachine machine(config);
+    for (std::uint32_t step = 0U; step < 128U; ++step) {
+        (void)machine.step_token(step % 32U, (step + 7U) % 32U, true);
+    }
+    const auto diagnostics = machine.diagnostics();
+    assert(diagnostics.address_occupied_buckets > 0U);
+    assert(diagnostics.address_full_buckets > 0U);
+    assert(diagnostics.address_max_bucket_residents == 1U);
+    assert(diagnostics.address_capacity_blocked_splits > 0U);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -259,6 +277,7 @@ int main(int argc, char** argv) {
     if (mode == "capacity") {
         verify_sparse_output_policy();
         verify_fresh_decision_learning_in_mature_node();
+        verify_address_capacity_pressure();
         auto config = sparse_config(4U, 257U);
         config.max_sparse_decisions_per_node = 8U;
         config.max_specializations_per_bucket = 1U;

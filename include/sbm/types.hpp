@@ -183,6 +183,10 @@ struct Diagnostics {
     std::uint64_t retired_channels{};
     bool simd_enabled{};
     std::uint64_t address_index_bytes{};
+    std::uint64_t address_occupied_buckets{};
+    std::uint64_t address_full_buckets{};
+    std::uint64_t address_max_bucket_residents{};
+    std::uint64_t address_capacity_blocked_splits{};
     std::uint64_t output_structure_bytes{};
     std::uint64_t max_bucket_candidates_inspected{};
     std::uint64_t max_sparse_entries_per_node{};

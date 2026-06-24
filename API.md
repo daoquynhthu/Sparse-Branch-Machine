@@ -212,6 +212,11 @@ Sparse-output result diagnostics additionally report:
 - `sparse_output_saturated_nodes` and `max_sparse_decision_visits`;
 - `sparse_output_admission_rejections` and
   `sparse_output_admission_promotions` from the full-node evidence gate;
+
+Address-capacity diagnostics report `address_occupied_buckets`,
+`address_full_buckets`, `address_max_bucket_residents` and
+`address_capacity_blocked_splits`. A blocked split has passed every conflict
+and growth gate except `max_specializations_per_bucket`.
 - `max_responsibility_mass_error` for cross-channel normalization.
 
 Probable reconstructions are deliberately approximate because exact unbounded

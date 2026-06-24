@@ -142,13 +142,19 @@ StepStats SparseBranchMachine::step(std::uint32_t token,
         const bool cooldown_ready = total_steps_ >=
             (bucket_state == nullptr ? 0U : bucket_state->last_split_step) +
                 config_.split_cooldown;
-        const bool persistent_conflict = nearest_exact != kInvalidNode &&
+        const bool conflict_without_capacity = nearest_exact != kInvalidNode &&
             nearest_visits >= config_.split_min_visits &&
-            exact_count < config_.max_specializations_per_bucket &&
             cooldown_ready &&
             nearest_similarity < config_.split_context_similarity &&
             nearest_persistent_loss > config_.split_loss_threshold &&
             normalized_mse > config_.split_loss_threshold;
+        const bool persistent_conflict = conflict_without_capacity &&
+            exact_count < config_.max_specializations_per_bucket;
+        if (can_grow && channel_learning_enabled(channel) &&
+            conflict_without_capacity &&
+            exact_count >= config_.max_specializations_per_bucket) {
+            ++address_capacity_blocked_splits_;
+        }
 
         NodeId representative = nearest_exact;
         if (can_grow && channel_learning_enabled(channel) &&

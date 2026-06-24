@@ -213,6 +213,7 @@ private:
     mutable std::uint64_t stale_bucket_refs_skipped_{};
     mutable std::uint64_t stale_edge_refs_skipped_{};
     std::uint64_t max_bucket_candidates_inspected_{};
+    std::uint64_t address_capacity_blocked_splits_{};
     std::uint64_t sparse_output_insertions_{};
     std::uint64_t sparse_output_evictions_{};
     std::uint64_t sparse_output_probable_reconstructions_{};
