@@ -776,3 +776,33 @@ channels this makes the aggregate-logit learning signal effectively too small,
 and it weakens the seed channel when new channels are added. This explains why
 adaptive/content channels can show positive ablation credit but still reduce
 global held-out NLL relative to the single-channel control.
+
+## 2026-06-27 — channel-local token residual repair
+
+The token dense and sparse objectives now update local residual logits in
+channel-local coordinates. Inference is unchanged: active nodes still contribute
+`responsibility * local_logit`. During learning, however, the local update uses
+`responsibility / active_channel_mass`, matching the coordinate system used by
+the represented channel instead of applying global responsibility a second time.
+
+Regression coverage was added to the channel scaling test. It trains a single
+channel and a two-channel sparse-token model on the same rare-target update and
+requires the two-channel local log-gain to remain within the same order as the
+single-channel gain. This protects against the previous quadratic dilution.
+
+The minimal fixed-topology reproductions were repaired on the 1M FineWeb-Edu
+smoke. Fixed `address_lags=1,2,4` with cap64 improved from NLL 7.37680 before
+the fix to 7.21146 after the fix, beating the lag-1 cap64 control at 7.27091.
+With cap512 and high token learning rates, fixed `1,2,4` improved from 7.16674
+to 6.91215, beating the lag-1 high-rate control at 6.99106.
+
+The content-focused adaptive smoke also improved. With Delta proposals disabled
+to bring content programs into the early budget, the run accepted the same
+operations `[0, 0, 0, 2, 3, 0]` as before, including `ContentMatch([2])` and
+`ContentFollow([1,2])`. Validation NLL improved from 7.41103 to 7.16205, train
+NLL from 7.40035 to 7.12646, and accepted content-channel credit increased:
+`ContentMatch([2])` proposal credit rose from 0.00838 to 0.02340 and
+`ContentFollow([1,2])` from 0.00349 to 0.01073. This does not yet close the
+larger 10M R1 short-context gate, but it resolves the diagnosed multi-channel
+residual dilution and restores content-addressing experiments to a meaningful
+state.

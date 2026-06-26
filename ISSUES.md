@@ -15,31 +15,6 @@
 
 ## P0: predictive-learning blockers
 
-### P0-7: Token multi-channel residual dilution
-
-The token objectives do not train channel-local residual logits in the same
-coordinate system used by the vector residual path. In inference, every local
-token residual is multiplied by node responsibility. In training, dense and
-sparse token objectives also scale the local logit update by node
-responsibility. When multiple represented channels split responsibility mass,
-the effective aggregate-logit learning signal is therefore diluted twice. The
-vector regression path explicitly compensates for channel mass when learning
-residual stages; token paths do not.
-
-The failure is observable without content-conditioned addressing. On the 1M
-FineWeb-Edu smoke, fixed lag-1 with cap64 reached NLL 7.2709, while fixed
-`address_lags=1,2,4` regressed to 7.3768. With cap512 and high token learning
-rates, lag-1 reached 6.9911 but fixed `1,2,4` still regressed to 7.1667. Lowering
-`residual_channel_gain` to 0.25 partially recovered the multi-channel runs
-to 7.3256 and 7.0820 respectively, confirming that responsibility/fusion mass
-is a causal contributor. The remaining gap indicates additional sparse-output
-capacity fragmentation across many address nodes.
-
-Until this is repaired, accepted adaptive/content channels with positive local
-credit should not be interpreted as useful global structure. The next fix should
-make token residual learning channel-local, or otherwise prevent added channels
-from weakening the seed channel's already learned short-context distribution.
-
 ### P0-6: Real-data R1 short-context control failure
 
 On the admissible document-level FineWeb-Edu R1 corpus, the fixed-topology
@@ -125,6 +100,21 @@ roughly doubling state and reducing throughput. At cap 64, admission reduced
 evictions from 23.26 to 1.09 per token and probable reconstructions from 22.73
 to 0.864 on the 998,400/99,328 seed-7 gate. Validation NLL improved from
 7.54625 to 7.51149. Rejections and promotions are explicit diagnostics.
+
+### P0-7: Token multi-channel residual dilution
+
+Resolved by training dense and sparse token residual logits in channel-local
+coordinates. Inference still aggregates local logits with global node
+responsibility, but updates now use responsibility normalized by the active
+mass assigned to the represented channel.
+
+The fix repaired the minimal 1M FineWeb-Edu reproductions. Fixed
+`address_lags=1,2,4` at cap64 improved from NLL 7.3768 to 7.2115, beating the
+lag-1 cap64 control at 7.2709. With cap512 and high token learning rates,
+fixed `1,2,4` improved from 7.1667 to 6.9122, beating the lag-1 high-rate
+control at 6.9911. The content-focused adaptive smoke improved from 7.4110 to
+7.1621, while accepting the same `ContentMatch([2])` and `ContentFollow([1,2])`
+channels with larger positive credit.
 
 ### P0-1: Shared global output prior
 

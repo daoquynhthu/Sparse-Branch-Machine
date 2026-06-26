@@ -236,6 +236,63 @@ void verify_conserved_channel_mass() {
     assert(multi.diagnostics().max_responsibility_mass_error < 1e-6);
 }
 
+void verify_multi_channel_token_residual_learning() {
+    auto single_config = sparse_config(4U, 4U);
+    single_config.max_specializations_per_bucket = 1U;
+    single_config.split_min_visits = UINT32_MAX;
+    single_config.classification_learning_rate = 0.8F;
+    single_config.classification_mature_learning_rate = 0.2F;
+    auto multi_config = single_config;
+    multi_config.address_lags = {1U, 2U};
+    multi_config.max_address_channels = 2U;
+
+    auto single_prior_config = single_config;
+    single_prior_config.min_update_responsibility = 2.0F;
+    auto multi_prior_config = multi_config;
+    multi_prior_config.min_update_responsibility = 2.0F;
+
+    sbm::SparseBranchMachine single(single_config);
+    sbm::SparseBranchMachine multi(multi_config);
+    sbm::SparseBranchMachine single_prior(single_prior_config);
+    sbm::SparseBranchMachine multi_prior(multi_prior_config);
+    for (std::uint32_t step = 0U; step < 128U; ++step) {
+        const auto token = step & 1U;
+        (void)single.step_token(token, 0U, true);
+        (void)multi.step_token(token, 0U, true);
+        (void)single_prior.step_token(token, 0U, true);
+        (void)multi_prior.step_token(token, 0U, true);
+    }
+
+    const auto token = 1U;
+    const float single_before = single.step_token(token, 3U, false).target_probability;
+    const float multi_before = multi.step_token(token, 3U, false).target_probability;
+    const float single_prior_before =
+        single_prior.step_token(token, 3U, false).target_probability;
+    const float multi_prior_before =
+        multi_prior.step_token(token, 3U, false).target_probability;
+
+    (void)single.step_token(token, 3U, true);
+    (void)multi.step_token(token, 3U, true);
+    (void)single_prior.step_token(token, 3U, true);
+    (void)multi_prior.step_token(token, 3U, true);
+
+    const float single_after = single.step_token(token, 3U, false).target_probability;
+    const float multi_after = multi.step_token(token, 3U, false).target_probability;
+    const float single_prior_after =
+        single_prior.step_token(token, 3U, false).target_probability;
+    const float multi_prior_after =
+        multi_prior.step_token(token, 3U, false).target_probability;
+
+    const double single_local_gain =
+        std::log(static_cast<double>(single_after) / single_before) -
+        std::log(static_cast<double>(single_prior_after) / single_prior_before);
+    const double multi_local_gain =
+        std::log(static_cast<double>(multi_after) / multi_before) -
+        std::log(static_cast<double>(multi_prior_after) / multi_prior_before);
+    assert(single_local_gain > 0.02);
+    assert(multi_local_gain > 0.70 * single_local_gain);
+}
+
 void verify_address_capacity_pressure() {
     auto config = sparse_config(1U, 32U);
     config.max_specializations_per_bucket = 1U;
@@ -304,6 +361,7 @@ int main(int argc, char** argv) {
     }
     if (mode == "channels") {
         verify_conserved_channel_mass();
+        verify_multi_channel_token_residual_learning();
         std::cout << "channel mass conservation passed\n";
         return 0;
     }

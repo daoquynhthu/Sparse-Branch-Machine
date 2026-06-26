@@ -386,6 +386,13 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
 
     if (learn) {
         apply_trace_credit(normalized_loss);
+        std::array<float, kMaxAddressChannels> channel_responsibility_mass{};
+        for (const auto& node : active) {
+            if (node.channel < channel_responsibility_mass.size() &&
+                std::abs(node.responsibility) >= 1e-7F) {
+                channel_responsibility_mass[node.channel] += node.responsibility;
+            }
+        }
         for (const auto& node : active) {
             if (!node.exact_region ||
                 node.responsibility < config_.min_update_responsibility) continue;
@@ -415,11 +422,15 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                     path_logits[path_position] / temperature, step.right);
                 const float gain = std::clamp(
                     without_loss - full_branch_loss, -1.0F, 1.0F);
+                const float channel_mass = node.channel < channel_responsibility_mass.size()
+                    ? channel_responsibility_mass[node.channel] : node.responsibility;
+                const float within_channel_responsibility = std::clamp(
+                    node.responsibility / std::max(channel_mass, 1e-6F), 0.0F, 1.0F);
                 const float rate = detail::sparse_decision_learning_rate(
                     entry,
                     config_.classification_learning_rate,
                     config_.classification_mature_learning_rate,
-                    config_.mature_visits) * node.responsibility / temperature;
+                    config_.mature_visits) * within_channel_responsibility / temperature;
                 entry.logit = (1.0F - config_.logit_decay) * entry.logit +
                         rate * (target_right - probability_right);
                 entry.gain_ema = 0.99F * entry.gain_ema + 0.01F * gain;

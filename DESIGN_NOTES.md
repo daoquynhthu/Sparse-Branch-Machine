@@ -161,6 +161,12 @@ are normalized to total mass one before exact/non-exact subdivision. Changing
 channel count therefore cannot increase confidence merely by increasing total
 responsibility mass.
 
+Token residual logits are learned in channel-local coordinates. Inference still
+aggregates local residuals with global node responsibility, but dense and sparse
+token updates use responsibility normalized by the represented channel's active
+mass. This prevents adding a validated channel from quadratically diluting the
+seed channel's already learned short-context distribution.
+
 ## Sparse address programs
 
 The adaptive topology object is an `AddressProgram`, not a task-specific lag

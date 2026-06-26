@@ -219,6 +219,13 @@ StepStats SparseBranchMachine::step_token_dense(std::uint32_t token,
 
     if (learn) {
         apply_trace_credit(normalized_loss);
+        std::array<float, kMaxAddressChannels> channel_responsibility_mass{};
+        for (const auto& node : active) {
+            if (node.channel < channel_responsibility_mass.size() &&
+                std::abs(node.responsibility) >= 1e-7F) {
+                channel_responsibility_mass[node.channel] += node.responsibility;
+            }
+        }
         const float smoothing = config_.label_smoothing;
         const float off_target = config_.vector_dim > 1U
             ? smoothing / static_cast<float>(config_.vector_dim - 1U)
@@ -242,7 +249,11 @@ StepStats SparseBranchMachine::step_token_dense(std::uint32_t token,
                 : config_.classification_learning_rate;
             const float schedule = 1.0F /
                 std::sqrt(static_cast<float>(std::max(1U, address_visits_[slot])));
-            const float rate = base_rate * schedule * node.responsibility /
+            const float channel_mass = node.channel < channel_responsibility_mass.size()
+                ? channel_responsibility_mass[node.channel] : node.responsibility;
+            const float within_channel_responsibility = std::clamp(
+                node.responsibility / std::max(channel_mass, 1e-6F), 0.0F, 1.0F);
+            const float rate = base_rate * schedule * within_channel_responsibility /
                 std::max(config_.softmax_temperature, 1e-5F);
             float* logits = output_vectors_.data() + slot * config_.vector_dim;
             const float retain = 1.0F - config_.logit_decay;
