@@ -22,6 +22,14 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--bucket-bits", type=int, default=14)
     parser.add_argument("--adaptive-topology", action="store_true")
+    parser.add_argument(
+        "--set",
+        dest="overrides",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="Additional runtime parameter override.",
+    )
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit(f"output already exists: {args.output}")
@@ -33,6 +41,11 @@ def main() -> int:
         "sparse_token_output": True,
         "adaptive_topology": args.adaptive_topology,
     }
+    for override in args.overrides:
+        if "=" not in override:
+            parser.error(f"--set requires NAME=VALUE, got {override!r}")
+        name, value = override.split("=", 1)
+        config_values[name] = value
     with runtime.open_token_corpus(args.manifest) as corpus:
         with runtime.config(config_values) as config:
             result = corpus.run(config, strict_freeze=True)

@@ -15,7 +15,23 @@
 
 ## P0: predictive-learning blockers
 
-No active P0 issue remains after the 2026-06-24 output-learning repairs.
+### P0-6: Real-data R1 short-context control failure
+
+On the admissible document-level FineWeb-Edu R1 corpus, the fixed-topology
+machine passes the unigram gate but fails the stronger short-context gate at
+10M train / 1M validation scale. Seed 7 with the default sparse-output capacity
+reached validation NLL 7.1154 versus unigram 7.5085, but the current-token
+control reached 6.4998 and the interpolated multiscale control reached 6.7688.
+
+Increasing `max_sparse_decisions_per_node` from 64 to 128 improved NLL to
+7.0584 but still did not approach the short-context controls. The 1M smoke
+capacity curve 64/128/512 produced NLL 7.2709/7.2397/7.1952 while increasing
+estimated state 48.0/71.2/132.2 MB and reducing throughput. This identifies
+sparse-output capacity/churn as a contributor, but not a sufficient explanation
+for the R1 failure.
+
+Until this is repaired, larger real-data runs should be treated as diagnostics
+only and should not be interpreted as passing the R1 predictive-learning gate.
 
 ## P1: diagnostic and recovery blockers
 

@@ -661,3 +661,20 @@ standard deviation 0.00006. Mean throughput fell to 10.78k token steps/s and
 mean estimated state rose to 270.8 MB. This is a negative result for using the
 current adaptive topology as the default path for larger R1 runs. The next run
 should scale the fixed-topology control before revisiting adaptive proposals.
+
+A larger fixed-topology seed-7 diagnostic used all 9,999,473 tokens from the
+10M train view with validation/test capped near 1M tokens. Default capacity
+reached validation NLL 7.11537 versus unigram 7.50852, but failed the R1
+short-context gate: current-token control was 6.49976 and interpolated
+multiscale control was 6.76884. Throughput was 7.66k token steps/s, estimated
+state was 109.2 MB, sparse output retained 2.76M entries, evicted 15.13M entries
+and rejected 225.17M one-hit admissions.
+
+Raising `max_sparse_decisions_per_node` to 128 on the same seed improved NLL to
+7.05836, with estimated state 171.9 MB and throughput 6.60k token steps/s.
+This confirms output-capacity pressure as one contributor, but the gain is far
+too small to explain the gap to the short-context controls. On the 1M smoke,
+capacity 64/128/512 produced NLL 7.27091/7.23966/7.19522 while growing state
+48.0/71.2/132.2 MB and reducing throughput 10.08k/9.56k/8.36k token steps/s.
+A dense-output 16k-vocabulary control did not complete the 1M smoke within 15
+minutes and was stopped; it is not currently a practical first-line diagnostic.
