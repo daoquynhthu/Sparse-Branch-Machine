@@ -678,3 +678,15 @@ capacity 64/128/512 produced NLL 7.27091/7.23966/7.19522 while growing state
 48.0/71.2/132.2 MB and reducing throughput 10.08k/9.56k/8.36k token steps/s.
 A dense-output 16k-vocabulary control did not complete the 1M smoke within 15
 minutes and was stopped; it is not currently a practical first-line diagnostic.
+
+Two follow-up 1M probes clarified the limit of this local tuning direction.
+Raising address specializations per bucket from 4 to 16 made quality worse:
+NLL changed from 7.27091 to 7.29730 at default output capacity and from 7.19522
+to 7.24182 at output cap 512, while increasing state and lowering throughput.
+This rejects simple address-bucket expansion as the repair. At output cap 512,
+raising token learning rates to 0.8/0.2 improved the 1M seed-7 NLL to 6.99106,
+while lowering them to 0.15/0.04 worsened NLL to 7.35162. The high-rate result
+confirms local output adaptation was underpowered, but it remains a better
+short-context frequency fit, not evidence for the intended content-conditioned
+attention/binding mechanism. Further cap/rate sweeps are therefore deprioritized
+in favor of architecture work on content-conditioned selection.
