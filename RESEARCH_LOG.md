@@ -638,3 +638,26 @@ passes the unigram predictive gate; and the available token-block artifact is
 still inadmissible for R0 because source documents, tokenizer provenance and
 cross-split deduplication evidence are missing. Exact data cursors are available,
 but model-state checkpoint serialization remains unimplemented.
+
+## 2026-06-26 — document-level FineWeb-Edu R1 smoke
+
+The local release from the SPM data pipeline was converted into SBM mapped
+token shards with source revision, tokenizer hash, document-level splits and
+validation report recorded in the manifest. The first smoke corpus used
+`train-10000000.parquet` capped to 998,833 train tokens and validation/test
+capped to 999,359/999,423 tokens. The generated manifest hash was
+`a2cd979af3e154a647ea440eea5aa9d77b9b7f2410813b146ab13a762da3b6a9`.
+
+Fixed-topology sparse output completed seeds 7, 11 and 19. Validation NLLs were
+7.27091, 7.27127 and 7.27070, with mean 7.27096 and population standard
+deviation 0.00024. The unigram control was 7.54050, current-token control was
+7.77112 on seed 7, pair-context control was 8.78053 and interpolated multiscale
+control was 8.11875. Mean throughput was 16.19k token steps/s and mean
+estimated state was 48.0 MB.
+
+Adaptive topology on the same corpus and seeds also beat unigram but lost to
+the fixed control: NLLs were 7.41534, 7.41547 and 7.41545, mean 7.41542 with
+standard deviation 0.00006. Mean throughput fell to 10.78k token steps/s and
+mean estimated state rose to 270.8 MB. This is a negative result for using the
+current adaptive topology as the default path for larger R1 runs. The next run
+should scale the fixed-topology control before revisiting adaptive proposals.

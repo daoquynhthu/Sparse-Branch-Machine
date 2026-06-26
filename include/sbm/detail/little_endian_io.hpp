@@ -32,4 +32,10 @@ void write_little_endian(std::ostream& output, std::span<const Value> values) {
     }
 }
 
+template <typename Container>
+void write_little_endian(std::ostream& output, const Container& values) {
+    using Value = typename Container::value_type;
+    write_little_endian(output, std::span<const Value>(values.data(), values.size()));
+}
+
 } // namespace sbm::detail
