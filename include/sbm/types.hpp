@@ -19,6 +19,7 @@ enum class AddressOp : std::uint8_t {
     Tuple = 0U,
     DeltaMod = 1U,
     ContentMatch = 2U,
+    ContentFollow = 3U,
 };
 
 struct AddressProgram {

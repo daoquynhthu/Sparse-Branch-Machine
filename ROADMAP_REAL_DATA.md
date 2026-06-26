@@ -541,8 +541,8 @@ Hard gate:
 
 This phase has begun early because the R1 real-data short-context gate exposed
 a reproducible failure that positional/capacity tuning did not explain.
-`ContentMatch(max_lag)` is the first bounded primitive and remains a prototype,
-not the final binding architecture.
+`ContentMatch(max_lag)` and `ContentFollow(pattern_lag, max_lag)` are the first
+bounded primitives and remain prototypes, not the final binding architecture.
 
 Hard gate: the new primitive improves held-out codelength or transfer at matched
 persistent bytes and active work, and its complete lineage is auditable.

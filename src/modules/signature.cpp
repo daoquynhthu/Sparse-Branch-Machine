@@ -4,6 +4,55 @@
 #include <cstring>
 
 namespace sbm {
+namespace {
+
+struct ContentAddressBinding {
+    bool matched{};
+    std::uint32_t distance{};
+    std::uint32_t successor{};
+};
+
+ContentAddressBinding bind_content_follow(
+    std::span<const std::uint32_t> window,
+    std::span<const std::uint32_t> lags,
+    bool use_pattern_lags) noexcept {
+    if (window.size() < 2U) return {};
+    const auto current_index = window.size() - 1U;
+    const auto current = window[current_index];
+    const std::uint32_t max_lag = lags.empty()
+        ? static_cast<std::uint32_t>(current_index)
+        : lags.back();
+    const auto bounded_lag = std::min<std::size_t>(
+        static_cast<std::size_t>(max_lag), current_index);
+    const std::size_t pattern_lag_count = use_pattern_lags && lags.size() > 1U
+        ? lags.size() - 1U
+        : 0U;
+
+    for (std::size_t distance = 1U; distance <= bounded_lag; ++distance) {
+        const auto candidate_index = current_index - distance;
+        if (window[candidate_index] != current) continue;
+        bool pattern_matches = true;
+        for (std::size_t index = 0; index < pattern_lag_count; ++index) {
+            const auto lag = static_cast<std::size_t>(lags[index]);
+            if (lag > current_index || lag > candidate_index) {
+                pattern_matches = false;
+                break;
+            }
+            if (window[current_index - lag] != window[candidate_index - lag]) {
+                pattern_matches = false;
+                break;
+            }
+        }
+        if (!pattern_matches) continue;
+        const auto successor_index = std::min(candidate_index + 1U, current_index);
+        return {true, static_cast<std::uint32_t>(distance),
+                window[successor_index]};
+    }
+    return {};
+}
+
+} // namespace
+
 std::uint64_t mix64(std::uint64_t x) noexcept { x^=x>>30U;x*=0xbf58476d1ce4e5b9ULL;x^=x>>27U;x*=0x94d049bb133111ebULL;x^=x>>31U;return x; }
 std::uint64_t rolling_signature(std::span<const std::uint32_t> w,std::uint64_t seed) noexcept {
     // Preserve recent-token locality in the high bits used by the bucket index.
@@ -91,24 +140,12 @@ std::uint64_t address_program_signature(std::span<const std::uint32_t> window,
     const auto current = window.back();
     selected[count++] = current;
     std::uint32_t matched_distance = 0U;
-    if (op == AddressOp::ContentMatch) {
-        const std::uint32_t max_lag = lags.empty()
-            ? static_cast<std::uint32_t>(window.size() - 1U)
-            : lags.front();
-        const auto bounded_lag = std::min<std::size_t>(
-            static_cast<std::size_t>(max_lag), window.size() - 1U);
-        bool matched = false;
-        std::uint32_t successor = 0U;
-        for (std::size_t distance = 1U; distance <= bounded_lag; ++distance) {
-            const auto match_index = window.size() - 1U - distance;
-            if (window[match_index] != current) continue;
-            matched = true;
-            matched_distance = static_cast<std::uint32_t>(distance);
-            successor = match_index + 1U < window.size() ? window[match_index + 1U] : current;
-            break;
-        }
-        selected[count++] = matched ? 1U : 0U;
-        selected[count++] = matched ? successor : 0U;
+    if (op == AddressOp::ContentMatch || op == AddressOp::ContentFollow) {
+        const auto binding = bind_content_follow(
+            window, lags, op == AddressOp::ContentFollow);
+        matched_distance = binding.distance;
+        selected[count++] = binding.matched ? 1U : 0U;
+        selected[count++] = binding.matched ? binding.successor : 0U;
     } else {
         for (const auto lag : lags) {
             if (count >= std::size(selected)) break;
@@ -126,9 +163,17 @@ std::uint64_t address_program_signature(std::span<const std::uint32_t> window,
 
     std::uint64_t mixed = seed ^ mix64(static_cast<std::uint64_t>(count)) ^
         mix64(static_cast<std::uint64_t>(op) + 0xD1B54A32D192ED03ULL);
-    if (op == AddressOp::ContentMatch) {
+    if (op == AddressOp::ContentMatch || op == AddressOp::ContentFollow) {
         mixed ^= mix64(static_cast<std::uint64_t>(matched_distance) +
                        0xA24BAED4963EE407ULL);
+        for (std::size_t index = 0; index < lags.size(); ++index) {
+            const auto lag = static_cast<std::size_t>(lags[index]);
+            const auto pattern = window.size() > lag ? window[window.size() - 1U - lag]
+                                                     : window.front();
+            mixed ^= std::rotl(mix64(static_cast<std::uint64_t>(pattern) +
+                                     0xD6E8ULL * (index + 1U)),
+                               static_cast<int>(((index + 3U) * 11U) & 63U));
+        }
     }
     for (std::size_t index = 0; index < count; ++index) {
         mixed ^= std::rotl(mix64(static_cast<std::uint64_t>(selected[index]) +

@@ -715,3 +715,28 @@ quality band as the earlier adaptive-topology smoke without content matching
 and remains worse than the fixed-topology 1M control and the high-rate capacity
 diagnostic. The result proves the primitive is integrated and can receive local
 credit, but it does not repair the R1 short-context-control failure.
+
+## 2026-06-27 — bounded ContentFollow address primitive
+
+The content-addressing path was expanded from a single match operator to a
+small semantic family. `ContentFollow(pattern_lag, max_lag)` treats the final
+lag as the bounded search radius and earlier lags as local pattern constraints.
+For `[1, 2]`, the interpreter searches for a previous occurrence matching the
+current token and the preceding token, then encodes the historical successor
+after that occurrence. This is the first implemented Bind/Follow-like address
+operation; it is still target-blind, label-free and bounded by retained history.
+
+Regression coverage now verifies that `ContentFollow` separates equal-current
+contexts whose matched historical successor differs, and separates matched from
+unmatched local patterns. Adaptive topology proposal now includes
+`ContentMatch(max_lag)` and two-lag `ContentFollow(pattern_lag, max_lag)`
+programs under the same validation and rollback lifecycle.
+
+A 1M FineWeb-Edu smoke disabled Delta proposals to bring content programs into
+the early topology budget. Learned operations were `[0, 0, 0, 2, 3, 0]`.
+`ContentMatch([2])` was accepted with credit 0.00838 and
+`ContentFollow([1,2])` was accepted with credit 0.00349. Validation NLL was
+7.41103, train NLL was 7.40035, throughput was 7.73k steps/s and estimated
+state was 256.5 MB. This is a real semantic integration result, but not a
+predictive breakthrough: quality remains in the adaptive-topology band and
+still does not approach the fixed-topology/high-rate diagnostics.

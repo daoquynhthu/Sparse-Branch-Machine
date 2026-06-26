@@ -68,6 +68,19 @@ int main() {
     assert(content_signature_a != content_signature_b);
     assert(content_signature_a != content_signature_c);
 
+    const std::array<std::uint32_t, 2> follow_lags{1U, 6U};
+    const std::array<std::uint32_t, 8> follow_context_a{2, 5, 9, 2, 5, 7, 2, 5};
+    const std::array<std::uint32_t, 8> follow_context_b{2, 5, 9, 2, 5, 8, 2, 5};
+    const std::array<std::uint32_t, 8> follow_context_c{3, 5, 9, 2, 6, 7, 2, 5};
+    const auto follow_signature_a = sbm::address_program_signature(
+        follow_context_a, 64, follow_lags, sbm::AddressOp::ContentFollow);
+    const auto follow_signature_b = sbm::address_program_signature(
+        follow_context_b, 64, follow_lags, sbm::AddressOp::ContentFollow);
+    const auto follow_signature_c = sbm::address_program_signature(
+        follow_context_c, 64, follow_lags, sbm::AddressOp::ContentFollow);
+    assert(follow_signature_a != follow_signature_b);
+    assert(follow_signature_a != follow_signature_c);
+
     auto dataset = sbm::generate_vector_process(8000, 32, 16, 20, 9);
     assert(dataset.tokens.size() == 8000);
     assert(dataset.targets.size() == 8000 * 16);
@@ -313,7 +326,7 @@ int main() {
         assert(program.arity >= 1U &&
                program.arity <= topology_config.topology_max_arity);
         assert(static_cast<unsigned>(program.op) <=
-               static_cast<unsigned>(sbm::AddressOp::ContentMatch));
+               static_cast<unsigned>(sbm::AddressOp::ContentFollow));
     }
 
     sbm::Config fixed_topology_config = token_config;

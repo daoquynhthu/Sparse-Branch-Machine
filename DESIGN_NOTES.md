@@ -179,12 +179,18 @@ rejected because it produced sample-starved addresses.
 searches only the retained history, bounded by `max_lag`, for the nearest prior
 token equal to the current token. Its address key encodes the current token, a
 match-exists bit and the historical successor following the matched position;
-the matched distance is mixed into the residual signature bits. This is a
-generic Match/Follow operation over token identity and sequence order. It does
-not use target tokens, linguistic labels, document metadata or an unbounded
-program search, and it remains subject to the same probe/validation/rollback
-lifecycle as other address programs. The operation is intentionally a minimal
-prototype rather than a full binding/call system.
+the matched distance is mixed into the residual signature bits.
+
+`ContentFollow(pattern_lag, max_lag)` is the first bounded Bind/Follow variant.
+It matches the current token plus the token at `pattern_lag` against a previous
+occurrence inside `max_lag`, then follows the historical successor after the
+matched occurrence. More generally, all lags before the final lag are local
+pattern constraints and the final lag is the search radius. This is a generic
+operation over token identity and sequence order. It does not use target tokens,
+linguistic labels, document metadata or an unbounded program search, and it
+remains subject to the same probe/validation/rollback lifecycle as other
+address programs. These operations are prototypes rather than a full binding,
+caller or dependency-tracking system.
 
 Evaluation is strictly read-only. `freeze_topology()` rejects incomplete probes
 at the training boundary, and counterfactual credit is not accumulated on
@@ -205,9 +211,10 @@ The next phase is governed by `ROADMAP_REAL_DATA.md`. Any real-corpus implementa
 ## Program-language boundary
 
 Current programs remain primarily positional selectors, with experimental
-generic modular-difference and bounded content-match variants. `ContentMatch`
-may be described as a content-conditioned address primitive, but not as a
-complete binding, call or attention mechanism. Stronger relation primitives
-still require explicit state, local lineage, dependency-aware ablation and
-complete rollback. They may not encode linguistic labels or rely on an
-unbounded search over arbitrary programs.
+generic modular-difference, bounded content-match and bounded content-follow
+variants. `ContentMatch` and `ContentFollow` may be described as
+content-conditioned address primitives, but not as complete binding, call or
+attention mechanisms. Stronger relation primitives still require explicit
+state, local lineage, dependency-aware ablation and complete rollback. They may
+not encode linguistic labels or rely on an unbounded search over arbitrary
+programs.

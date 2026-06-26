@@ -41,6 +41,17 @@ std::optional<AddressProgram> proposal_at(std::uint64_t ordinal,
             content.op = AddressOp::ContentMatch;
             if (ordinal == 0U) return content;
             --ordinal;
+            if (max_arity >= 2U) {
+                for (std::uint32_t inner = 1U; inner < outer; ++inner) {
+                    AddressProgram follow;
+                    follow.lags[0] = inner;
+                    follow.lags[1] = outer;
+                    follow.arity = 2U;
+                    follow.op = AddressOp::ContentFollow;
+                    if (ordinal == 0U) return follow;
+                    --ordinal;
+                }
+            }
         }
     }
     return std::nullopt;
