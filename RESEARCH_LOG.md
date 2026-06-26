@@ -740,3 +740,39 @@ the early topology budget. Learned operations were `[0, 0, 0, 2, 3, 0]`.
 state was 256.5 MB. This is a real semantic integration result, but not a
 predictive breakthrough: quality remains in the adaptive-topology band and
 still does not approach the fixed-topology/high-rate diagnostics.
+
+## 2026-06-27 — multi-channel token residual diagnosis
+
+The content-addressing failure was decomposed with fixed-topology controls.
+The key question was whether content semantics were weak, or whether any added
+channel damages the token residual/output path.
+
+Fixed lag-1 on the 1M FineWeb-Edu smoke reached validation NLL 7.27091 at
+`max_sparse_decisions_per_node=64`. Fixed `address_lags=1,2,4`, with no
+adaptive topology and no content primitive, regressed to 7.37680 while growing
+state from 48.0 MB to 138.2 MB and increasing admission rejections from 17.8M
+to 29.5M. This isolates a multi-channel problem independent of content
+semantics.
+
+The same pattern held after removing the obvious output-capacity/learning-rate
+constraint. Lag-1 with cap512 and high token learning rates reached NLL
+6.99106. Fixed `1,2,4` with the same cap512/high-rate setting reached only
+7.16674 while using 371.9 MB state and 10.54M sparse output entries. Thus the
+extra channels remain harmful even when local output capacity is much larger.
+
+Lowering `residual_channel_gain` to 0.25 partially recovered the multi-channel
+runs: cap64 improved from 7.37680 to 7.32561, and cap512/high-rate improved
+from 7.16674 to 7.08197. This is direct evidence that channel responsibility
+mass and fusion policy are causal. It does not fully recover lag-1 quality,
+which points to a second contributor: sparse-output entries and admissions are
+fragmented across many more address nodes.
+
+Code inspection found a concrete asymmetry. The vector residual path learns each
+stage in channel-local coordinates, dividing the desired residual and within
+channel update by channel mass. Token dense and sparse objectives instead scale
+local logit updates directly by node responsibility, while inference also
+multiplies the same local logits by responsibility. With multiple represented
+channels this makes the aggregate-logit learning signal effectively too small,
+and it weakens the seed channel when new channels are added. This explains why
+adaptive/content channels can show positive ablation credit but still reduce
+global held-out NLL relative to the single-channel control.

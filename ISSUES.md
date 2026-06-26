@@ -15,6 +15,31 @@
 
 ## P0: predictive-learning blockers
 
+### P0-7: Token multi-channel residual dilution
+
+The token objectives do not train channel-local residual logits in the same
+coordinate system used by the vector residual path. In inference, every local
+token residual is multiplied by node responsibility. In training, dense and
+sparse token objectives also scale the local logit update by node
+responsibility. When multiple represented channels split responsibility mass,
+the effective aggregate-logit learning signal is therefore diluted twice. The
+vector regression path explicitly compensates for channel mass when learning
+residual stages; token paths do not.
+
+The failure is observable without content-conditioned addressing. On the 1M
+FineWeb-Edu smoke, fixed lag-1 with cap64 reached NLL 7.2709, while fixed
+`address_lags=1,2,4` regressed to 7.3768. With cap512 and high token learning
+rates, lag-1 reached 6.9911 but fixed `1,2,4` still regressed to 7.1667. Lowering
+`residual_channel_gain` to 0.25 partially recovered the multi-channel runs
+to 7.3256 and 7.0820 respectively, confirming that responsibility/fusion mass
+is a causal contributor. The remaining gap indicates additional sparse-output
+capacity fragmentation across many address nodes.
+
+Until this is repaired, accepted adaptive/content channels with positive local
+credit should not be interpreted as useful global structure. The next fix should
+make token residual learning channel-local, or otherwise prevent added channels
+from weakening the seed channel's already learned short-context distribution.
+
 ### P0-6: Real-data R1 short-context control failure
 
 On the admissible document-level FineWeb-Edu R1 corpus, the fixed-topology
