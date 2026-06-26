@@ -15,7 +15,11 @@ inline constexpr std::size_t kMaxAddressProgramArity = 2U;
 enum class NodePhase : std::uint8_t { Cold, Warm, Mature, Dormant };
 enum class ChannelPhase : std::uint8_t { Seed, Probe, Active, Retired };
 enum class TopologyDecision : std::uint8_t { Proposed, Accepted, Rejected, Pruned };
-enum class AddressOp : std::uint8_t { Tuple = 0U, DeltaMod = 1U };
+enum class AddressOp : std::uint8_t {
+    Tuple = 0U,
+    DeltaMod = 1U,
+    ContentMatch = 2U,
+};
 
 struct AddressProgram {
     std::array<std::uint32_t, kMaxAddressProgramArity> lags{};
@@ -97,6 +101,7 @@ struct Config {
     std::uint32_t topology_max_lag{16};
     std::uint32_t topology_max_arity{2};
     bool topology_enable_delta{true};
+    bool topology_enable_content_match{true};
     std::uint32_t topology_probe_interval{2048};
     std::uint32_t topology_probe_warmup{512};
     std::uint32_t topology_probe_steps{4096};

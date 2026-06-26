@@ -30,6 +30,14 @@ estimated state 48.0/71.2/132.2 MB and reducing throughput. This identifies
 sparse-output capacity/churn as a contributor, but not a sufficient explanation
 for the R1 failure.
 
+The first bounded content-conditioned address primitive has also not repaired
+the blocker. A 1M adaptive-topology smoke accepted `ContentMatch(lag=2)` with
+positive local validation credit, but overall validation NLL remained 7.4130,
+essentially the same quality band as the earlier adaptive run and still worse
+than fixed topology. Current evidence therefore points to a broader structural
+credit/fusion/output-use problem, not merely the absence of a content-match
+address op.
+
 Until this is repaired, larger real-data runs should be treated as diagnostics
 only and should not be interpreted as passing the R1 predictive-learning gate.
 

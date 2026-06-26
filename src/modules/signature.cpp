@@ -90,21 +90,46 @@ std::uint64_t address_program_signature(std::span<const std::uint32_t> window,
     std::size_t count = 0U;
     const auto current = window.back();
     selected[count++] = current;
-    for (const auto lag : lags) {
-        if (count >= std::size(selected)) break;
-        const auto historical = window.size() > lag
-            ? window[window.size() - 1U - static_cast<std::size_t>(lag)]
-            : window.front();
-        if (op == AddressOp::DeltaMod) {
-            const auto modulus = std::max(1U, alphabet);
-            selected[count++] = (current + modulus - (historical % modulus)) % modulus;
-        } else {
-            selected[count++] = historical;
+    std::uint32_t matched_distance = 0U;
+    if (op == AddressOp::ContentMatch) {
+        const std::uint32_t max_lag = lags.empty()
+            ? static_cast<std::uint32_t>(window.size() - 1U)
+            : lags.front();
+        const auto bounded_lag = std::min<std::size_t>(
+            static_cast<std::size_t>(max_lag), window.size() - 1U);
+        bool matched = false;
+        std::uint32_t successor = 0U;
+        for (std::size_t distance = 1U; distance <= bounded_lag; ++distance) {
+            const auto match_index = window.size() - 1U - distance;
+            if (window[match_index] != current) continue;
+            matched = true;
+            matched_distance = static_cast<std::uint32_t>(distance);
+            successor = match_index + 1U < window.size() ? window[match_index + 1U] : current;
+            break;
+        }
+        selected[count++] = matched ? 1U : 0U;
+        selected[count++] = matched ? successor : 0U;
+    } else {
+        for (const auto lag : lags) {
+            if (count >= std::size(selected)) break;
+            const auto historical = window.size() > lag
+                ? window[window.size() - 1U - static_cast<std::size_t>(lag)]
+                : window.front();
+            if (op == AddressOp::DeltaMod) {
+                const auto modulus = std::max(1U, alphabet);
+                selected[count++] = (current + modulus - (historical % modulus)) % modulus;
+            } else {
+                selected[count++] = historical;
+            }
         }
     }
 
     std::uint64_t mixed = seed ^ mix64(static_cast<std::uint64_t>(count)) ^
         mix64(static_cast<std::uint64_t>(op) + 0xD1B54A32D192ED03ULL);
+    if (op == AddressOp::ContentMatch) {
+        mixed ^= mix64(static_cast<std::uint64_t>(matched_distance) +
+                       0xA24BAED4963EE407ULL);
+    }
     for (std::size_t index = 0; index < count; ++index) {
         mixed ^= std::rotl(mix64(static_cast<std::uint64_t>(selected[index]) +
                                  0x9E37ULL * (index + 1U)),

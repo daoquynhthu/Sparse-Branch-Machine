@@ -539,8 +539,10 @@ Hard gate:
 
 ### Phase R4 — content-conditioned program prototype
 
-Only begin after R2 identifies a reproducible failure that positional programs
-cannot solve.
+This phase has begun early because the R1 real-data short-context gate exposed
+a reproducible failure that positional/capacity tuning did not explain.
+`ContentMatch(max_lag)` is the first bounded primitive and remains a prototype,
+not the final binding architecture.
 
 Hard gate: the new primitive improves held-out codelength or transfer at matched
 persistent bytes and active work, and its complete lineage is auditable.

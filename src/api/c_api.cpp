@@ -202,6 +202,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"topology_max_lag", "uint32", "16", "2", "256", "log", true, false, false, "Largest temporal lag eligible for proposal."},
     {"topology_max_arity", "uint32", "2", "1", "2", "linear", true, false, false, "Maximum number of history offsets in an address program."},
     {"topology_enable_delta", "bool", "true", "", "", "categorical", false, false, false, "Allow the generic modular-difference address operator to be proposed."},
+    {"topology_enable_content_match", "bool", "true", "", "", "categorical", false, false, false, "Allow bounded content-conditioned match/follow address operators to be proposed."},
     {"topology_probe_interval", "uint32", "2048", "128", "16384", "log", true, false, false, "Delay between topology proposals."},
     {"topology_probe_warmup", "uint32", "512", "0", "4096", "linear", true, false, false, "Probe steps ignored before credit collection."},
     {"topology_probe_steps", "uint32", "4096", "512", "32768", "log", true, false, false, "Lifetime of a candidate address channel."},
@@ -271,6 +272,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(topology_max_lag)
     SBM_SET_UINT(topology_max_arity)
     SBM_SET_BOOL(topology_enable_delta)
+    SBM_SET_BOOL(topology_enable_content_match)
     SBM_SET_UINT(topology_probe_interval)
     SBM_SET_UINT(topology_probe_warmup)
     SBM_SET_UINT(topology_probe_steps)
@@ -348,6 +350,8 @@ std::string config_json(const sbm::Config& c) {
         << "  \"topology_max_lag\": " << c.topology_max_lag << ",\n"
         << "  \"topology_max_arity\": " << c.topology_max_arity << ",\n"
         << "  \"topology_enable_delta\": " << c.topology_enable_delta << ",\n"
+        << "  \"topology_enable_content_match\": "
+        << c.topology_enable_content_match << ",\n"
         << "  \"topology_probe_interval\": " << c.topology_probe_interval << ",\n"
         << "  \"topology_probe_warmup\": " << c.topology_probe_warmup << ",\n"
         << "  \"topology_probe_steps\": " << c.topology_probe_steps << ",\n"

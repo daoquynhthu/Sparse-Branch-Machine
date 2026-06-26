@@ -690,3 +690,28 @@ confirms local output adaptation was underpowered, but it remains a better
 short-context frequency fit, not evidence for the intended content-conditioned
 attention/binding mechanism. Further cap/rate sweeps are therefore deprioritized
 in favor of architecture work on content-conditioned selection.
+
+## 2026-06-26 — bounded ContentMatch address primitive
+
+The address-program language now includes `ContentMatch(max_lag)`, a bounded
+content-conditioned Match/Follow primitive. It searches the retained history for
+the nearest previous token equal to the current token, then encodes the current
+token, a match-exists bit, the historical successor after the matched position
+and the matched distance into the address signature. This uses only past input
+tokens and the current input token. It does not use the next-token target,
+linguistic labels, document metadata or unbounded search.
+
+The primitive is exposed through adaptive topology proposal and can be disabled
+with `topology_enable_content_match=false` for ablation. Regression coverage
+checks that different matched successors produce different signatures and that
+matched and unmatched contexts do not collapse to the same address.
+
+A 1M FineWeb-Edu smoke with adaptive topology and default sparse output accepted
+the new content channel: learned operations were `[0, 0, 0, 1, 1, 2]`, with
+`op=2` accepted for lag 2 at step 30,720 and positive validation credit
+0.00249. The run reached validation NLL 7.41302, train NLL 7.40241,
+10.09k steps/s and 263.8 MB estimated state. This is essentially the same
+quality band as the earlier adaptive-topology smoke without content matching
+and remains worse than the fixed-topology 1M control and the high-rate capacity
+diagnostic. The result proves the primitive is integrated and can receive local
+credit, but it does not repair the R1 short-context-control failure.

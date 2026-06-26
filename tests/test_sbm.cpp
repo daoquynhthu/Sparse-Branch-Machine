@@ -55,6 +55,19 @@ int main() {
         program_context_b, 64, program_lags, sbm::AddressOp::Tuple);
     assert(program_signature_a != program_signature_b);
 
+    const std::array<std::uint32_t, 1> content_lag{5U};
+    const std::array<std::uint32_t, 6> content_context_a{5, 9, 7, 5, 3, 5};
+    const std::array<std::uint32_t, 6> content_context_b{5, 9, 7, 5, 4, 5};
+    const std::array<std::uint32_t, 6> content_context_c{6, 9, 7, 8, 3, 5};
+    const auto content_signature_a = sbm::address_program_signature(
+        content_context_a, 64, content_lag, sbm::AddressOp::ContentMatch);
+    const auto content_signature_b = sbm::address_program_signature(
+        content_context_b, 64, content_lag, sbm::AddressOp::ContentMatch);
+    const auto content_signature_c = sbm::address_program_signature(
+        content_context_c, 64, content_lag, sbm::AddressOp::ContentMatch);
+    assert(content_signature_a != content_signature_b);
+    assert(content_signature_a != content_signature_c);
+
     auto dataset = sbm::generate_vector_process(8000, 32, 16, 20, 9);
     assert(dataset.tokens.size() == 8000);
     assert(dataset.targets.size() == 8000 * 16);
@@ -299,6 +312,8 @@ int main() {
     for (const auto& program : learned_programs) {
         assert(program.arity >= 1U &&
                program.arity <= topology_config.topology_max_arity);
+        assert(static_cast<unsigned>(program.op) <=
+               static_cast<unsigned>(sbm::AddressOp::ContentMatch));
     }
 
     sbm::Config fixed_topology_config = token_config;

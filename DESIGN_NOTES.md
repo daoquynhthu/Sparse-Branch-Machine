@@ -164,15 +164,27 @@ responsibility mass.
 ## Sparse address programs
 
 The adaptive topology object is an `AddressProgram`, not a task-specific lag
-channel. A program contains one or two sorted positive history offsets; current
-token inclusion is implicit. Proposal order expands by temporal radius and then
-arity. The acceptance rule is unchanged: local adaptation, frozen validation,
-exact whole-program ablation, then accept or erase.
+channel. A positional program contains one or two sorted positive history
+offsets; current token inclusion is implicit. Proposal order expands by
+temporal radius and then arity. The acceptance rule is unchanged: local
+adaptation, frozen validation, exact whole-program ablation, then accept or
+erase.
 
 The two-offset address uses coarse-to-fine storage. The current token and first
 offset define the coarse region; the second offset and longer context refine the
 full prototype inside that region. A fully joint top-level hash was tested and
 rejected because it produced sample-starved addresses.
+
+`ContentMatch(max_lag)` is the first content-conditioned address primitive. It
+searches only the retained history, bounded by `max_lag`, for the nearest prior
+token equal to the current token. Its address key encodes the current token, a
+match-exists bit and the historical successor following the matched position;
+the matched distance is mixed into the residual signature bits. This is a
+generic Match/Follow operation over token identity and sequence order. It does
+not use target tokens, linguistic labels, document metadata or an unbounded
+program search, and it remains subject to the same probe/validation/rollback
+lifecycle as other address programs. The operation is intentionally a minimal
+prototype rather than a full binding/call system.
 
 Evaluation is strictly read-only. `freeze_topology()` rejects incomplete probes
 at the training boundary, and counterfactual credit is not accumulated on
@@ -192,4 +204,10 @@ The next phase is governed by `ROADMAP_REAL_DATA.md`. Any real-corpus implementa
 
 ## Program-language boundary
 
-Current programs remain primarily positional selectors, with an experimental generic modular-difference variant. This must not be described as content-conditioned relation learning. A future binding or relation primitive requires explicit state, local lineage, dependency-aware ablation and complete rollback. It may not encode linguistic labels or rely on an unbounded search over arbitrary programs.
+Current programs remain primarily positional selectors, with experimental
+generic modular-difference and bounded content-match variants. `ContentMatch`
+may be described as a content-conditioned address primitive, but not as a
+complete binding, call or attention mechanism. Stronger relation primitives
+still require explicit state, local lineage, dependency-aware ablation and
+complete rollback. They may not encode linguistic labels or rely on an
+unbounded search over arbitrary programs.
