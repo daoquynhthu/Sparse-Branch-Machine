@@ -1007,3 +1007,20 @@ cases the resumed run matches the uninterrupted run on final eval
 cross-entropy. This closes the checkpoint/resume admission gate sufficiently to
 start multi-seed 10M/1M validation without wasting completed remote training
 after process interruption.
+
+## 2026-06-27 — address semantics 10M/1M multi-seed gate
+
+The completed address-semantics framework passed the three-seed 10M/1M gate on
+FineWeb-Edu validation. Seeds 7, 11 and 19 reached eval NLL 6.366367,
+6.366452 and 6.366331 respectively. The mean eval NLL is 6.366384 with
+population standard deviation 0.000051. All three beat the current-token
+control at 6.499756 and the interpolated multiscale control at 6.768842.
+
+All three seeds converged to the same learned program set:
+`[[1], [2], [1, 2], [2], [1, 2], [3]]` with operations
+`[0, 0, 0, 2, 3, 0]`. Each run accepted five topology programs, physically
+pruned zero accepted structures and emitted 10/10 positive-mean program
+attribution entries.
+
+This closes Task 9 Step 2. The next evidence gate is shard transfer: the same
+framework must remain competitive on a different FineWeb-Edu shard sample.

@@ -1139,11 +1139,16 @@ python tests\test_resumable_runner.py --library E:\SPM\build-fast\libsbm_api.dll
 Expected: uninterrupted training and checkpoint/resume training produce matching
 or explicitly bounded metrics on a deterministic corpus slice.
 
-- [ ] **Step 2: Run multi-seed 10M/1M validation**
+- [x] **Step 2: Run multi-seed 10M/1M validation**
 
 Run the completed address-semantics configuration on at least three seeds over
 the same 10M/1M manifest. Compare against current-token, interpolated
 multiscale and repaired fixed `[1,2,4]` controls.
+
+Completed for seeds 7, 11 and 19. All three seeds beat the current-token
+control, accepted five topology programs, physically pruned zero accepted
+structures and emitted 10/10 positive-mean program-attribution entries. The
+result is recorded in `research_results/address_semantics_10m_multiseed.md`.
 
 Acceptance boundary:
 
