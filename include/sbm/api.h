@@ -19,6 +19,7 @@ extern "C" {
 
 typedef struct sbm_config_handle sbm_config_handle;
 typedef struct sbm_dataset_handle sbm_dataset_handle;
+typedef struct sbm_machine_handle sbm_machine_handle;
 typedef struct sbm_token_shard_handle sbm_token_shard_handle;
 typedef struct sbm_token_corpus_handle sbm_token_corpus_handle;
 
@@ -32,6 +33,17 @@ typedef enum sbm_dataset_kind {
     SBM_DATASET_VECTOR_REGRESSION = 1,
     SBM_DATASET_TOKEN_CROSS_ENTROPY = 2
 } sbm_dataset_kind;
+
+typedef struct sbm_step_stats {
+    float cross_entropy;
+    float target_probability;
+    uint32_t active_nodes;
+    uint32_t candidates_examined;
+    uint32_t live_nodes;
+    uint32_t predicted_token;
+    int top1_correct;
+    int top5_correct;
+} sbm_step_stats;
 
 /* Stable C ABI version. Increment only for incompatible changes. */
 SBM_API uint32_t sbm_api_version(void);
@@ -47,6 +59,22 @@ SBM_API sbm_config_handle* sbm_config_clone(const sbm_config_handle* source);
 SBM_API void sbm_config_destroy(sbm_config_handle* config);
 SBM_API int sbm_config_set(sbm_config_handle* config, const char* name, const char* value);
 SBM_API char* sbm_config_get_json(const sbm_config_handle* config);
+
+/* Stateful token machine API used by resumable corpus runners. */
+SBM_API sbm_machine_handle* sbm_machine_create(const sbm_config_handle* config);
+SBM_API sbm_machine_handle* sbm_machine_load_checkpoint(const char* path);
+SBM_API int sbm_machine_save_checkpoint(
+    const sbm_machine_handle* machine,
+    const char* path);
+SBM_API void sbm_machine_destroy(sbm_machine_handle* machine);
+SBM_API int sbm_machine_step_token(
+    sbm_machine_handle* machine,
+    uint32_t input_token,
+    uint32_t target_token,
+    int learn,
+    sbm_step_stats* stats);
+SBM_API void sbm_machine_reset_sequence(sbm_machine_handle* machine);
+SBM_API char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine);
 
 /* Dataset ownership is explicit. Dataset objects are immutable after creation. */
 SBM_API sbm_dataset_handle* sbm_dataset_generate(

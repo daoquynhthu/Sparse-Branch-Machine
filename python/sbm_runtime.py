@@ -27,6 +27,19 @@ class _TokenShardCursor(ctypes.Structure):
     ]
 
 
+class _StepStats(ctypes.Structure):
+    _fields_ = [
+        ("cross_entropy", ctypes.c_float),
+        ("target_probability", ctypes.c_float),
+        ("active_nodes", ctypes.c_uint32),
+        ("candidates_examined", ctypes.c_uint32),
+        ("live_nodes", ctypes.c_uint32),
+        ("predicted_token", ctypes.c_uint32),
+        ("top1_correct", ctypes.c_int),
+        ("top5_correct", ctypes.c_int),
+    ]
+
+
 def _candidate_library_names() -> list[str]:
     system = platform.system()
     if system == "Windows":
@@ -120,6 +133,25 @@ class Runtime:
         lib.sbm_config_set.restype = ctypes.c_int
         lib.sbm_config_get_json.argtypes = [ctypes.c_void_p]
         lib.sbm_config_get_json.restype = ctypes.c_void_p
+
+        lib.sbm_machine_create.argtypes = [ctypes.c_void_p]
+        lib.sbm_machine_create.restype = ctypes.c_void_p
+        lib.sbm_machine_load_checkpoint.argtypes = [ctypes.c_char_p]
+        lib.sbm_machine_load_checkpoint.restype = ctypes.c_void_p
+        lib.sbm_machine_save_checkpoint.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+        lib.sbm_machine_save_checkpoint.restype = ctypes.c_int
+        lib.sbm_machine_destroy.argtypes = [ctypes.c_void_p]
+        lib.sbm_machine_step_token.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.c_int,
+            ctypes.POINTER(_StepStats),
+        ]
+        lib.sbm_machine_step_token.restype = ctypes.c_int
+        lib.sbm_machine_reset_sequence.argtypes = [ctypes.c_void_p]
+        lib.sbm_machine_diagnostics_json.argtypes = [ctypes.c_void_p]
+        lib.sbm_machine_diagnostics_json.restype = ctypes.c_void_p
 
         lib.sbm_dataset_generate.argtypes = [
             ctypes.c_size_t,
@@ -361,6 +393,18 @@ class Runtime:
     def token_corpus(self) -> "TokenCorpus":
         return TokenCorpus(self)
 
+    def machine(self, config: "Config") -> "Machine":
+        pointer = self.lib.sbm_machine_create(config.pointer)
+        if not pointer:
+            raise self._error("create machine")
+        return Machine(self, pointer)
+
+    def load_machine_checkpoint(self, path: str | os.PathLike[str]) -> "Machine":
+        pointer = self.lib.sbm_machine_load_checkpoint(os.fsencode(path))
+        if not pointer:
+            raise self._error("load machine checkpoint")
+        return Machine(self, pointer)
+
     def open_token_corpus(
         self,
         manifest_path: str | os.PathLike[str],
@@ -534,6 +578,70 @@ class Dataset:
             merge_interval,
         )
         return self.runtime._take_json(pointer, "run experiment")
+
+
+class Machine:
+    def __init__(self, runtime: Runtime, pointer: int):
+        self.runtime = runtime
+        self.pointer = pointer
+
+    def close(self) -> None:
+        if self.pointer:
+            self.runtime.lib.sbm_machine_destroy(self.pointer)
+            self.pointer = None
+
+    def __enter__(self) -> "Machine":
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass
+
+    def step_token(
+        self,
+        input_token: int,
+        target_token: int,
+        learn: bool = True,
+    ) -> Dict[str, Any]:
+        stats = _StepStats()
+        status = self.runtime.lib.sbm_machine_step_token(
+            self.pointer,
+            int(input_token),
+            int(target_token),
+            int(learn),
+            ctypes.byref(stats),
+        )
+        if status != 0:
+            raise self.runtime._error("step machine token")
+        return {
+            "cross_entropy": float(stats.cross_entropy),
+            "target_probability": float(stats.target_probability),
+            "active_nodes": int(stats.active_nodes),
+            "candidates_examined": int(stats.candidates_examined),
+            "live_nodes": int(stats.live_nodes),
+            "predicted_token": int(stats.predicted_token),
+            "top1_correct": bool(stats.top1_correct),
+            "top5_correct": bool(stats.top5_correct),
+        }
+
+    def reset_sequence(self) -> None:
+        self.runtime.lib.sbm_machine_reset_sequence(self.pointer)
+
+    def save_checkpoint(self, path: str | os.PathLike[str]) -> None:
+        status = self.runtime.lib.sbm_machine_save_checkpoint(
+            self.pointer, os.fsencode(path)
+        )
+        if status != 0:
+            raise self.runtime._error("save machine checkpoint")
+
+    def diagnostics(self) -> Dict[str, Any]:
+        pointer = self.runtime.lib.sbm_machine_diagnostics_json(self.pointer)
+        return self.runtime._take_json(pointer, "machine diagnostics")
 
 
 class TokenShard:

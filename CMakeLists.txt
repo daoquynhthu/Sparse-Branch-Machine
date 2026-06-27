@@ -149,6 +149,11 @@ if(SBM_BUILD_TESTS)
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tune_scheduler.py
                 --library $<TARGET_FILE:sbm_api>)
+      add_test(
+        NAME sbm_resumable_runner
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_resumable_runner.py
+                --library $<TARGET_FILE:sbm_api>)
     endif()
   endif()
 endif()

@@ -1,6 +1,7 @@
 #include "sbm/api.h"
 
 #include <cassert>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -89,6 +90,54 @@ int main() {
     assert(token_view.find("\"structural_execution_cost\"") !=
            std::string_view::npos);
     sbm_string_free(token_result);
+
+    sbm_config_handle* machine_config = sbm_config_create();
+    assert(machine_config != nullptr);
+    assert(sbm_config_set(machine_config, "objective", "TokenCrossEntropy") != 0);
+    assert(sbm_config_set(machine_config, "token_alphabet", "16") == 0);
+    assert(sbm_config_set(machine_config, "vector_dim", "16") == 0);
+    assert(sbm_config_set(machine_config, "bucket_bits", "8") == 0);
+    assert(sbm_config_set(machine_config, "seed", "13") == 0);
+    sbm_machine_handle* left = sbm_machine_create(machine_config);
+    sbm_machine_handle* source = sbm_machine_create(machine_config);
+    assert(left != nullptr);
+    assert(source != nullptr);
+    sbm_step_stats left_stats{};
+    sbm_step_stats source_stats{};
+    for (uint32_t i = 0; i < 128U; ++i) {
+        const uint32_t input_token = i % 16U;
+        const uint32_t target_token = (i + 1U) % 16U;
+        assert(sbm_machine_step_token(left, input_token, target_token, 1,
+                                      &left_stats) == 0);
+        assert(sbm_machine_step_token(source, input_token, target_token, 1,
+                                      &source_stats) == 0);
+    }
+    const char* machine_checkpoint_path = "sbm_c_api_machine.sbc";
+    std::remove(machine_checkpoint_path);
+    assert(sbm_machine_save_checkpoint(source, machine_checkpoint_path) == 0);
+    sbm_machine_handle* resumed = sbm_machine_load_checkpoint(machine_checkpoint_path);
+    assert(resumed != nullptr);
+    std::remove(machine_checkpoint_path);
+    for (uint32_t i = 128U; i < 192U; ++i) {
+        const uint32_t input_token = i % 16U;
+        const uint32_t target_token = (i + 1U) % 16U;
+        assert(sbm_machine_step_token(left, input_token, target_token, 1,
+                                      &left_stats) == 0);
+        assert(sbm_machine_step_token(resumed, input_token, target_token, 1,
+                                      &source_stats) == 0);
+        assert(left_stats.predicted_token == source_stats.predicted_token);
+        assert(left_stats.live_nodes == source_stats.live_nodes);
+        assert(std::abs(left_stats.cross_entropy - source_stats.cross_entropy) < 1e-6F);
+    }
+    char* machine_diag = sbm_machine_diagnostics_json(resumed);
+    assert(machine_diag != nullptr);
+    assert(std::string_view(machine_diag).find("\"steps\": 192") !=
+           std::string_view::npos);
+    sbm_string_free(machine_diag);
+    sbm_machine_destroy(left);
+    sbm_machine_destroy(source);
+    sbm_machine_destroy(resumed);
+    sbm_config_destroy(machine_config);
     sbm_dataset_destroy(token_dataset);
 
     const uint32_t ids[]{1, 2, 3, 1, 2, 4};

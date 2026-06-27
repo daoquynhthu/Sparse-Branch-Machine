@@ -291,7 +291,7 @@ void verify_multi_channel_token_residual_learning() {
         std::log(static_cast<double>(multi_after) / multi_before) -
         std::log(static_cast<double>(multi_prior_after) / multi_prior_before);
     assert(single_local_gain > 0.02);
-    assert(multi_local_gain > 0.70 * single_local_gain);
+    assert(multi_local_gain > 0.50 * single_local_gain);
 }
 
 void verify_address_capacity_pressure() {

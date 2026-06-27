@@ -55,6 +55,35 @@ assert token_result["unigram_baseline_eval_top1_accuracy"] is None
 assert math.isfinite(token_result["interpolated_multiscale_baseline_eval_cross_entropy"])
 assert token_result["baseline_elapsed_seconds"] >= 0.0
 
+with tempfile.TemporaryDirectory() as directory:
+    checkpoint_path = Path(directory) / "machine.sbc"
+    with runtime.config({"seed": 13, "bucket_bits": 8, "vector_dim": 16}) as config:
+        left = runtime.machine(config)
+        source = runtime.machine(config)
+        try:
+            for step in range(128):
+                assert left.step_token(step % 16, (step + 1) % 16)["live_nodes"] > 0
+                source.step_token(step % 16, (step + 1) % 16)
+            source.save_checkpoint(checkpoint_path)
+            resumed = runtime.load_machine_checkpoint(checkpoint_path)
+            try:
+                for step in range(128, 192):
+                    left_stats = left.step_token(step % 16, (step + 1) % 16)
+                    resumed_stats = resumed.step_token(step % 16, (step + 1) % 16)
+                    assert left_stats["predicted_token"] == resumed_stats["predicted_token"]
+                    assert left_stats["live_nodes"] == resumed_stats["live_nodes"]
+                    assert math.isclose(
+                        left_stats["cross_entropy"],
+                        resumed_stats["cross_entropy"],
+                        abs_tol=1e-6,
+                    )
+                assert resumed.diagnostics()["steps"] == 192
+            finally:
+                resumed.close()
+        finally:
+            left.close()
+            source.close()
+
 with runtime.token_dataset_from_ids([1, 2, 3, 1, 2, 4], 8, [0, 3, 6]) as external:
     assert external.sequence_count == 2
     assert external.example_count == 4

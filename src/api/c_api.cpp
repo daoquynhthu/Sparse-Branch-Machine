@@ -2,6 +2,7 @@
 
 #include "sbm/dataset.hpp"
 #include "sbm/experiment.hpp"
+#include "sbm/machine.hpp"
 #include "sbm/types.hpp"
 
 #include <algorithm>
@@ -28,6 +29,10 @@ struct sbm_config_handle {
 
 struct sbm_dataset_handle {
     std::variant<sbm::VectorDataset, sbm::TokenDataset> value;
+};
+
+struct sbm_machine_handle {
+    sbm::SparseBranchMachine value;
 };
 
 struct sbm_token_shard_handle {
@@ -560,6 +565,102 @@ char* sbm_config_get_json(const sbm_config_handle* config) {
     return guarded([&] {
         if (config == nullptr) throw std::invalid_argument("config is null");
         return duplicate_string(config_json(config->value));
+    });
+}
+
+sbm_machine_handle* sbm_machine_create(const sbm_config_handle* config) {
+    return guarded([&] {
+        if (config == nullptr) throw std::invalid_argument("config is null");
+        auto resolved = config->value;
+        resolved.objective = sbm::ObjectiveKind::TokenCrossEntropy;
+        resolved.token_alphabet = resolved.vector_dim;
+        return new sbm_machine_handle{sbm::SparseBranchMachine(resolved)};
+    });
+}
+
+sbm_machine_handle* sbm_machine_load_checkpoint(const char* path) {
+    return guarded([&] {
+        if (path == nullptr) throw std::invalid_argument("path is null");
+        return new sbm_machine_handle{sbm::load_checkpoint(path)};
+    });
+}
+
+int sbm_machine_save_checkpoint(const sbm_machine_handle* machine,
+                                const char* path) {
+    clear_error();
+    try {
+        if (machine == nullptr || path == nullptr) {
+            throw std::invalid_argument("machine and path must be non-null");
+        }
+        sbm::save_checkpoint(machine->value, path);
+        return 0;
+    } catch (const std::exception& error) {
+        set_error(error.what());
+        return -1;
+    } catch (...) {
+        set_error("unknown C++ exception");
+        return -1;
+    }
+}
+
+void sbm_machine_destroy(sbm_machine_handle* machine) { delete machine; }
+
+int sbm_machine_step_token(sbm_machine_handle* machine,
+                           uint32_t input_token,
+                           uint32_t target_token,
+                           int learn,
+                           sbm_step_stats* stats) {
+    clear_error();
+    try {
+        if (machine == nullptr || stats == nullptr) {
+            throw std::invalid_argument("machine and stats must be non-null");
+        }
+        const auto result = machine->value.step_token(
+            input_token, target_token, learn != 0);
+        stats->cross_entropy = result.cross_entropy;
+        stats->target_probability = result.target_probability;
+        stats->active_nodes = result.active_nodes;
+        stats->candidates_examined = result.candidates_examined;
+        stats->live_nodes = result.live_nodes;
+        stats->predicted_token = result.predicted_token;
+        stats->top1_correct = result.top1_correct ? 1 : 0;
+        stats->top5_correct = result.top5_correct ? 1 : 0;
+        return 0;
+    } catch (const std::exception& error) {
+        set_error(error.what());
+        return -1;
+    } catch (...) {
+        set_error("unknown C++ exception");
+        return -1;
+    }
+}
+
+void sbm_machine_reset_sequence(sbm_machine_handle* machine) {
+    if (machine != nullptr) machine->value.reset_sequence();
+}
+
+char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
+    return guarded([&] {
+        if (machine == nullptr) throw std::invalid_argument("machine is null");
+        const auto diagnostics = machine->value.diagnostics();
+        std::ostringstream out;
+        out << "{"
+            << "\"steps\": " << diagnostics.steps
+            << ", \"live_nodes\": " << diagnostics.live_nodes
+            << ", \"logical_ids_issued\": " << diagnostics.logical_ids_issued
+            << ", \"avg_active\": " << diagnostics.avg_active
+            << ", \"avg_candidates\": " << diagnostics.avg_candidates
+            << ", \"address_execution_frames\": "
+            << diagnostics.address_execution_frames
+            << ", \"address_binding_hits\": " << diagnostics.address_binding_hits
+            << ", \"address_binding_misses\": "
+            << diagnostics.address_binding_misses
+            << ", \"topology_proposals\": " << diagnostics.topology_proposals
+            << ", \"topology_accepted\": " << diagnostics.topology_accepted
+            << ", \"topology_rejected\": " << diagnostics.topology_rejected
+            << ", \"topology_pruned\": " << diagnostics.topology_pruned
+            << "}";
+        return duplicate_string(out.str());
     });
 }
 

@@ -971,3 +971,22 @@ This is not yet complete long-run resume. The remaining runner-level work must
 store corpus shard identity, cursor position, consumed-example counters and
 output metadata so remote training can resume without replaying already
 processed data.
+
+## 2026-06-27 — resumable corpus training runner
+
+The model checkpoint is now exposed through the stable C ABI and Python runtime:
+callers can create a token machine, step it, save/load checkpoint state and read
+diagnostics. `scripts/run_resumable_corpus_training.py` uses that API to save a
+runner checkpoint with manifest path, train shard paths, current shard cursor,
+consumed examples, accumulated train metrics, config overrides, output path and
+the model checkpoint file.
+
+`tests/test_resumable_runner.py` verifies the core property: a small mapped
+corpus trained uninterrupted for 48 examples and the same corpus interrupted at
+24 examples then resumed to 48 examples produce matching train cross-entropy
+and target-probability metrics.
+
+This removes the training-replay blocker for long remote runs. It is not yet a
+drop-in replacement for canonical `run_corpus_training.py`, because eval shard
+resume, strict-freeze transition reporting, baseline/control metrics and final
+program-attribution JSON assembly still need to be integrated.

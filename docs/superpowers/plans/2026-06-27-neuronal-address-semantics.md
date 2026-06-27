@@ -1109,19 +1109,30 @@ diagnostic counters. The regression test saves after 512 token steps, reloads
 and verifies that 256 more training steps match an uninterrupted model
 step-by-step.
 
-- [ ] **Step 1b: Implement corpus-run checkpoint**
+- [x] **Step 1b: Implement corpus training-run checkpoint**
 
-The model checkpoint is not sufficient for unattended long runs. Add a
-runner-level checkpoint that also records train/eval shard identity, split,
-cursor position, examples consumed, sequence reset boundary, config overrides
-and output path. This is the part that makes remote long training resumable
-without reprocessing the corpus.
+The model checkpoint is not sufficient for unattended long runs. The first
+runner-level implementation is now `scripts/run_resumable_corpus_training.py`.
+It records manifest identity, train shard paths, current shard, cursor position,
+examples consumed, accumulated train metrics, config overrides, output path and
+the associated model checkpoint. The regression test interrupts at 24 examples,
+resumes to 48 examples and checks that the final train metrics match an
+uninterrupted run on the same mapped shard.
+
+- [ ] **Step 1c: Integrate resumable evaluation and final report assembly**
+
+The current resumable runner solves the training replay problem but does not
+yet replace `run_corpus_training.py` for full research reports. Add eval shard
+identity, eval cursor, strict-freeze transition, baseline/control metrics and
+program-attribution result assembly so interrupted train+eval jobs can resume
+and still emit the canonical experiment JSON.
 
 Verification target:
 
 ```powershell
 build-fast\sbm_tests.exe --gtest_filter=*Checkpoint*
 python tests\test_python_api.py --library E:\SPM\build-fast\libsbm_api.dll
+python tests\test_resumable_runner.py --library E:\SPM\build-fast\libsbm_api.dll
 ```
 
 Expected: uninterrupted training and checkpoint/resume training produce matching
