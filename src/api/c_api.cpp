@@ -210,7 +210,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"topology_min_observations", "uint32", "512", "64", "8192", "log", true, false, false, "Minimum probe observations before a decision."},
     {"topology_accept_credit", "float", "0.0005", "0.0", "0.05", "linear", true, false, false, "Mean counterfactual NLL gain required to retain a channel."},
     {"topology_credit_decay", "float", "0.995", "0.90", "0.9999", "linear", true, false, false, "EMA decay for address-channel credit."},
-    {"topology_prune_patience", "uint32", "32768", "512", "65536", "log", true, false, false, "Mature observations required before channel retirement."},
+    {"topology_prune_patience", "uint32", "4294967295", "512", "4294967295", "log", true, false, false, "Mature observations required before channel retirement; the default preserves accepted channels."},
     {"topology_prune_credit", "float", "-0.01", "-0.05", "0.0", "linear", true, false, false, "Credit threshold for retiring an accepted channel."},
     {"residual_channel_gain", "float", "1.0", "0.25", "2.0", "linear", true, true, false, "Gain applied to additive residual channels."},
     {"residual_learning_rate", "float", "0.10", "0.005", "0.50", "log", true, false, false, "Legacy residual update cap used by non-mean paths."},

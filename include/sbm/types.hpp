@@ -110,7 +110,7 @@ struct Config {
     std::uint32_t topology_min_observations{512};
     float topology_accept_credit{0.0005F};
     float topology_credit_decay{0.995F};
-    std::uint32_t topology_prune_patience{32768};
+    std::uint32_t topology_prune_patience{UINT32_MAX};
     float topology_prune_credit{-0.01F};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};
