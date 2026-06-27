@@ -79,7 +79,7 @@ complete address-semantics framework exists.
 - Modify: `RESEARCH_LOG.md`
 - Test: documentation consistency through `rg`
 
-- [ ] **Step 1: Replace P0-8 framing**
+- [x] **Step 1: Replace P0-8 framing**
 
 In `ISSUES.md`, replace the old fusion-only P0-8 title with:
 
@@ -98,7 +98,7 @@ control. Treating this as a fusion or learning-rate problem would continue
 optimizing an incomplete address framework.
 ```
 
-- [ ] **Step 2: Replace the P0-8 fix plan**
+- [x] **Step 2: Replace the P0-8 fix plan**
 
 Replace the old P0-8 fix list with this exact list:
 
@@ -117,7 +117,7 @@ Fix plan:
   attribution tests pass.
 ```
 
-- [ ] **Step 3: Update `ROADMAP_REAL_DATA.md` immediate work**
+- [x] **Step 3: Update `ROADMAP_REAL_DATA.md` immediate work**
 
 Replace the R2 immediate work list with:
 
@@ -133,7 +133,7 @@ Immediate work before R3:
   implemented and verified.
 ```
 
-- [ ] **Step 4: Update `DESIGN_NOTES.md` program-language boundary**
+- [x] **Step 4: Update `DESIGN_NOTES.md` program-language boundary**
 
 Append this paragraph to the `Program-language boundary` section:
 
@@ -145,7 +145,7 @@ recoverable lifecycle state. Until that exists, experiments may diagnose but
 may not claim that the neuron-like address mechanism is complete.
 ```
 
-- [ ] **Step 5: Run documentation consistency checks**
+- [x] **Step 5: Run documentation consistency checks**
 
 Run:
 
@@ -157,9 +157,11 @@ Expected:
 
 - no remaining active-plan instruction that frames P0-8 as only a fusion sweep;
 - one reference to `2026-06-27-neuronal-address-semantics.md`;
-- one active P0-8 title using the new address-semantics framing.
+- one P0-8 title using the new address-semantics framing at Task 1 time. After
+  Task 8 validation, this item is expected to live under `ISSUES.md` resolved
+  history rather than the active queue.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add ISSUES.md ROADMAP_REAL_DATA.md DESIGN_NOTES.md RESEARCH_LOG.md docs/superpowers/plans/2026-06-27-neuronal-address-semantics.md
@@ -175,7 +177,7 @@ git commit -m "docs: redirect plan to address semantics"
 - Modify: `src/api/c_api.cpp`
 - Test: `tests/test_c_api.cpp`
 
-- [ ] **Step 1: Add failing schema and diagnostics tests**
+- [x] **Step 1: Add failing schema and diagnostics tests**
 
 In `tests/test_c_api.cpp`, add assertions that the config schema contains:
 
@@ -197,7 +199,7 @@ expect_json_field(result, "structural_description_cost");
 expect_json_field(result, "structural_execution_cost");
 ```
 
-- [ ] **Step 2: Run the failing test**
+- [x] **Step 2: Run the failing test**
 
 Run:
 
@@ -208,7 +210,7 @@ build-fast\sbm_c_api_tests.exe
 
 Expected: fail because the schema and diagnostics fields do not exist.
 
-- [ ] **Step 3: Extend public types**
+- [x] **Step 3: Extend public types**
 
 Add to `include/sbm/types.hpp`:
 
@@ -267,7 +269,7 @@ double structural_description_cost{};
 double structural_execution_cost{};
 ```
 
-- [ ] **Step 4: Emit zero-valued diagnostics**
+- [x] **Step 4: Emit zero-valued diagnostics**
 
 In `src/modules/machine_maintenance.cpp`, initialize the new diagnostics from
 machine counters. Before interpreter implementation, counters may be zero except
@@ -285,7 +287,7 @@ In `src/api/c_api.cpp`, register:
 {"structural_execution_cost_weight", "float", "0.0", "0.0", "10.0", "linear", true, false, false, "Weight applied to measured address execution cost."},
 ```
 
-- [ ] **Step 5: Run schema tests**
+- [x] **Step 5: Run schema tests**
 
 Run:
 
@@ -296,7 +298,7 @@ build-fast\sbm_c_api_tests.exe
 
 Expected: pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add include/sbm/types.hpp src/modules/machine_maintenance.cpp src/modules/token_experiment.cpp src/api/c_api.cpp tests/test_c_api.cpp
@@ -312,7 +314,7 @@ git commit -m "feat: add address execution diagnostics"
 - Modify: `src/modules/machine_topology.cpp`
 - Test: `tests/test_sbm.cpp`
 
-- [ ] **Step 1: Write failing interpreter tests**
+- [x] **Step 1: Write failing interpreter tests**
 
 In `tests/test_sbm.cpp`, add tests:
 
@@ -354,7 +356,7 @@ TEST(AddressInterpreter, ContentFollowReportsBindingAndDependency) {
 }
 ```
 
-- [ ] **Step 2: Run the failing tests**
+- [x] **Step 2: Run the failing tests**
 
 Run:
 
@@ -365,7 +367,7 @@ build-fast\sbm_tests.exe --gtest_filter=*AddressInterpreter*
 
 Expected: fail because `execute_address_program` is undefined.
 
-- [ ] **Step 3: Add interpreter header**
+- [x] **Step 3: Add interpreter header**
 
 Create `include/sbm/detail/address_interpreter.hpp`:
 
@@ -389,7 +391,7 @@ namespace sbm {
 } // namespace sbm
 ```
 
-- [ ] **Step 4: Implement interpreter semantics**
+- [x] **Step 4: Implement interpreter semantics**
 
 Create `src/modules/address_interpreter.cpp` with these semantics:
 
@@ -477,14 +479,14 @@ bool execute_address_program(std::span<const std::uint32_t> window,
 } // namespace sbm
 ```
 
-- [ ] **Step 5: Wire the target**
+- [x] **Step 5: Wire the target**
 
 Add `src/modules/address_interpreter.cpp` to `CMakeLists.txt` wherever other
 `src/modules/*.cpp` files are compiled into the SBM library.
 
 Include the header from `src/modules/machine_topology.cpp`.
 
-- [ ] **Step 6: Run interpreter tests**
+- [x] **Step 6: Run interpreter tests**
 
 Run:
 
@@ -495,7 +497,7 @@ build-fast\sbm_tests.exe --gtest_filter=*AddressInterpreter*
 
 Expected: pass.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add CMakeLists.txt include/sbm/detail/address_interpreter.hpp src/modules/address_interpreter.cpp src/modules/machine_topology.cpp tests/test_sbm.cpp
@@ -512,7 +514,7 @@ git commit -m "feat: interpret address programs as frames"
 - Modify: `src/modules/machine_learning.cpp`
 - Test: `tests/test_scaling.cpp`
 
-- [ ] **Step 1: Add failing bounded-work test**
+- [x] **Step 1: Add failing bounded-work test**
 
 In `tests/test_scaling.cpp`, add a mode `address_frames` that:
 
@@ -537,7 +539,7 @@ EXPECT_LE(diag.max_bucket_candidates_inspected,
 EXPECT_LE(diag.avg_active, static_cast<double>(config.beam_width));
 ```
 
-- [ ] **Step 2: Run the failing scaling mode**
+- [x] **Step 2: Run the failing scaling mode**
 
 Run:
 
@@ -548,7 +550,7 @@ build-fast\sbm_scaling_tests.exe address_frames
 
 Expected: fail because frame counters are not updated.
 
-- [ ] **Step 3: Add interpreter buffers**
+- [x] **Step 3: Add interpreter buffers**
 
 In `include/sbm/machine.hpp`, add:
 
@@ -568,7 +570,7 @@ Change `make_signatures` into a compatibility wrapper that fills frames first:
     std::span<const std::uint32_t> window);
 ```
 
-- [ ] **Step 4: Implement frame production**
+- [x] **Step 4: Implement frame production**
 
 In `src/modules/machine_topology.cpp`, implement `execute_address_programs`:
 
@@ -606,13 +608,13 @@ std::span<const std::uint64_t> SparseBranchMachine::make_signatures(
 }
 ```
 
-- [ ] **Step 5: Preserve routing behavior**
+- [x] **Step 5: Preserve routing behavior**
 
 Do not change scoring or bucket lookup yet. `src/modules/machine_routing.cpp`
 continues to use `signature_buffer_`. This task verifies that the interpreter
 is behavior-preserving before semantic routing changes.
 
-- [ ] **Step 6: Run full tests**
+- [x] **Step 6: Run full tests**
 
 Run:
 
@@ -626,7 +628,7 @@ python tests\test_python_api.py --library E:\SPM\build-fast\libsbm_api.dll
 
 Expected: all pass.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add include/sbm/machine.hpp src/modules/machine_topology.cpp src/modules/machine_routing.cpp src/modules/token_sparse_output.cpp src/modules/machine_learning.cpp tests/test_scaling.cpp
@@ -643,7 +645,7 @@ git commit -m "feat: route through address execution frames"
 - Modify: `src/modules/token_experiment.cpp`
 - Test: `tests/test_sbm.cpp`
 
-- [ ] **Step 1: Add failing persistence test**
+- [x] **Step 1: Add failing persistence test**
 
 In `tests/test_sbm.cpp`, add:
 
@@ -668,7 +670,7 @@ TEST(TopologyLifecycle, AcceptedChannelsAreNotPhysicallyErasedByDefault) {
 }
 ```
 
-- [ ] **Step 2: Run failing lifecycle test**
+- [x] **Step 2: Run failing lifecycle test**
 
 Run:
 
@@ -679,7 +681,7 @@ build-fast\sbm_tests.exe --gtest_filter=*TopologyLifecycle*
 
 Expected: fail until lifecycle policy is implemented.
 
-- [ ] **Step 3: Extend channel phases**
+- [x] **Step 3: Extend channel phases**
 
 In `include/sbm/types.hpp`, extend `ChannelPhase` with:
 
@@ -691,7 +693,7 @@ RecoverableRetired = 5U
 Keep `Retired` as the physical deletion state for probe rejection and explicit
 legacy erase policy.
 
-- [ ] **Step 4: Add lifecycle helpers**
+- [x] **Step 4: Add lifecycle helpers**
 
 In `include/sbm/machine.hpp`, declare:
 
@@ -704,7 +706,7 @@ void physically_erase_channel(std::size_t channel);
 Rename the old `retire_channel` implementation in `src/modules/machine_topology.cpp`
 to `physically_erase_channel`.
 
-- [ ] **Step 5: Implement policy**
+- [x] **Step 5: Implement policy**
 
 In `maybe_finalize_topology_probe`:
 
@@ -729,12 +731,12 @@ return;
 indexes intact. `recoverably_retire_channel` sets phase to `RecoverableRetired`
 and disables routing while retaining state for audit.
 
-- [ ] **Step 6: Update diagnostics**
+- [x] **Step 6: Update diagnostics**
 
 In `diagnostics()`, count `Quarantined` and `RecoverableRetired` channels into
 the new fields.
 
-- [ ] **Step 7: Run lifecycle and scaling tests**
+- [x] **Step 7: Run lifecycle and scaling tests**
 
 Run:
 
@@ -746,7 +748,7 @@ build-fast\sbm_scaling_tests.exe
 
 Expected: pass.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```powershell
 git add include/sbm/types.hpp include/sbm/machine.hpp src/modules/machine_topology.cpp src/modules/machine_maintenance.cpp src/modules/token_experiment.cpp tests/test_sbm.cpp
@@ -763,7 +765,7 @@ git commit -m "fix: quarantine accepted structures instead of deleting them"
 - Modify: `scripts/run_corpus_training.py`
 - Test: `tests/test_scaling.cpp`
 
-- [ ] **Step 1: Add failing attribution test**
+- [x] **Step 1: Add failing attribution test**
 
 In `tests/test_scaling.cpp`, add a mode `dependency_attribution` that trains a
 small content-follow case, freezes evaluation and asserts:
@@ -782,7 +784,7 @@ Also assert the token experiment JSON contains:
 ]
 ```
 
-- [ ] **Step 2: Run failing attribution test**
+- [x] **Step 2: Run failing attribution test**
 
 Run:
 
@@ -793,7 +795,7 @@ build-fast\sbm_scaling_tests.exe dependency_attribution
 
 Expected: fail because program attribution JSON is missing.
 
-- [ ] **Step 3: Add attribution records**
+- [x] **Step 3: Add attribution records**
 
 In `include/sbm/types.hpp`, add:
 
@@ -812,7 +814,7 @@ struct ProgramAttribution {
 
 Add `std::vector<ProgramAttribution>` to `TokenExperimentResult`.
 
-- [ ] **Step 4: Compute separate ablations**
+- [x] **Step 4: Compute separate ablations**
 
 In `src/modules/token_sparse_output.cpp`, during frozen evaluation with
 `record_channel_attribution=true`, compute:
@@ -826,7 +828,7 @@ In `src/modules/token_sparse_output.cpp`, during frozen evaluation with
 Record credit as `without_loss - full_loss`. Accumulate description and
 execution cost from frames.
 
-- [ ] **Step 5: Emit JSON**
+- [x] **Step 5: Emit JSON**
 
 In `src/modules/token_experiment.cpp`, emit:
 
@@ -854,7 +856,7 @@ credit_sum
 - structural_execution_cost_weight * execution_cost
 ```
 
-- [ ] **Step 6: Run attribution tests**
+- [x] **Step 6: Run attribution tests**
 
 Run:
 
@@ -866,7 +868,7 @@ python tests\test_python_api.py --library E:\SPM\build-fast\libsbm_api.dll
 
 Expected: pass.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add include/sbm/types.hpp include/sbm/machine.hpp src/modules/token_sparse_output.cpp src/modules/token_experiment.cpp scripts/run_corpus_training.py tests/test_scaling.cpp
@@ -883,7 +885,7 @@ git commit -m "feat: attribute address programs with dependencies"
 - Test: `tests/test_sbm.cpp`
 - Test: `tests/test_python_api.py`
 
-- [ ] **Step 1: Add failing cost-gate test**
+- [x] **Step 1: Add failing cost-gate test**
 
 In `tests/test_sbm.cpp`, add:
 
@@ -909,7 +911,7 @@ TEST(TopologyLifecycle, AcceptanceReportsStructuralValue) {
 }
 ```
 
-- [ ] **Step 2: Run failing cost-gate test**
+- [x] **Step 2: Run failing cost-gate test**
 
 Run:
 
@@ -921,7 +923,7 @@ build-fast\sbm_tests.exe --gtest_filter=*AcceptanceReportsStructuralValue*
 Expected: fail if accepted events do not carry structural-value-compatible
 credit after cost penalties.
 
-- [ ] **Step 3: Apply value formula to reporting first**
+- [x] **Step 3: Apply value formula to reporting first**
 
 In `maybe_finalize_topology_probe`, keep the existing acceptance threshold for
 the first implementation but report:
@@ -938,7 +940,7 @@ const double structural_value =
 Store this value in the event credit field for accepted/rejected event JSON.
 Do not change acceptance decisions in this task.
 
-- [ ] **Step 4: Add an explicit gate flag**
+- [x] **Step 4: Add an explicit gate flag**
 
 In `Config`, add:
 
@@ -949,7 +951,7 @@ bool topology_accept_uses_structural_value{false};
 Register it in the C API schema. When true, compare `structural_value` to
 `topology_accept_credit`; when false, compare old `mean_credit`.
 
-- [ ] **Step 5: Verify old compatibility mode**
+- [x] **Step 5: Verify old compatibility mode**
 
 Run:
 
@@ -963,7 +965,7 @@ python tests\test_python_api.py --library E:\SPM\build-fast\libsbm_api.dll
 Expected: pass with default compatibility decisions unchanged except reported
 diagnostic fields.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add include/sbm/types.hpp src/modules/machine_topology.cpp src/modules/token_experiment.cpp src/api/c_api.cpp scripts/run_corpus_training.py tests/test_sbm.cpp tests/test_python_api.py
@@ -978,7 +980,7 @@ git commit -m "feat: report structural value for topology decisions"
 - Modify: `RESEARCH_LOG.md`
 - Test: build and corpus runs
 
-- [ ] **Step 1: Run unit and API verification**
+- [x] **Step 1: Run unit and API verification**
 
 Run:
 
@@ -993,7 +995,7 @@ git diff --check
 
 Expected: all pass.
 
-- [ ] **Step 2: Run a short semantic smoke**
+- [x] **Step 2: Run a short semantic smoke**
 
 Run:
 
@@ -1008,7 +1010,7 @@ Expected:
 - JSON contains lifecycle counts;
 - run completes without noisy multiline progress output.
 
-- [ ] **Step 3: Run the 10M/1M gate only after the smoke passes**
+- [x] **Step 3: Run the 10M/1M gate only after the smoke passes**
 
 Run:
 
@@ -1023,7 +1025,7 @@ Expected:
 - compare NLL against the current-token and repaired fixed `[1,2,4]` controls;
 - record if quality regresses and identify which structural gate still passed.
 
-- [ ] **Step 4: Record results**
+- [x] **Step 4: Record results**
 
 Create `research_results/address_semantics_10m_seed7.md` with:
 
@@ -1056,7 +1058,7 @@ not a hyperparameter sweep and does not by itself justify R3 scale-up unless
 the structural gates and predictive control both pass.
 ```
 
-- [ ] **Step 5: Update research log**
+- [x] **Step 5: Update research log**
 
 Append a concise entry to `RESEARCH_LOG.md`:
 
@@ -1070,12 +1072,80 @@ report dependency-aware structural value. The first validation run is recorded
 in `research_results/address_semantics_10m_seed7.md`.
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add scripts/run_corpus_training.py research_results/address_semantics_10m_seed7.md RESEARCH_LOG.md
 git commit -m "research: validate address semantics framework"
 ```
+
+### Task 9: R3 Admission Gates On The Completed Framework
+
+**Files:**
+- Modify: `ROADMAP_REAL_DATA.md`
+- Modify: `RESEARCH_LOG.md`
+- Modify: `ISSUES.md` only if a confirmed blocker appears
+- Modify: checkpoint/runtime files only when needed by the gate
+
+The 10M/1M seed-7 gate makes the completed framework admissible for serious
+validation, but it does not prove the research claim. The next work must test
+stability and reproducibility of the mature address-semantics framework, not
+continue local operator or rate tuning.
+
+- [ ] **Step 1: Define exact checkpoint/resume contract**
+
+Add a checkpoint contract that serializes enough model state to reproduce
+continued training after interruption, including accepted programs, channel
+phase, address buckets, sparse output state, learning counters, RNG seeds and
+data cursor.
+
+Verification target:
+
+```powershell
+build-fast\sbm_tests.exe --gtest_filter=*Checkpoint*
+python tests\test_python_api.py --library E:\SPM\build-fast\libsbm_api.dll
+```
+
+Expected: uninterrupted training and checkpoint/resume training produce matching
+or explicitly bounded metrics on a deterministic corpus slice.
+
+- [ ] **Step 2: Run multi-seed 10M/1M validation**
+
+Run the completed address-semantics configuration on at least three seeds over
+the same 10M/1M manifest. Compare against current-token, interpolated
+multiscale and repaired fixed `[1,2,4]` controls.
+
+Acceptance boundary:
+
+- at least two of three seeds beat the current-token control;
+- no seed loses without a clear structural diagnostic explanation;
+- attribution remains positive for accepted content programs;
+- accepted structures are not physically pruned under preserve policy.
+
+- [ ] **Step 3: Run shard-transfer validation**
+
+Repeat the gate on a different FineWeb-Edu shard sample. This tests whether the
+accepted address semantics survive corpus sampling rather than fitting one
+manifest.
+
+Acceptance boundary:
+
+- quality remains competitive with current-token control;
+- learned programs need not be identical, but program attribution must identify
+useful content-conditioned structures;
+- bounded-work diagnostics remain within configured limits.
+
+- [ ] **Step 4: Calibrate structural-value admission**
+
+Only after Steps 1-3, evaluate whether `topology_accept_uses_structural_value`
+can become an admissible gate. This is not a free hyperparameter sweep: compare
+raw-credit acceptance and structural-value acceptance under matched seeds and
+record when cost penalties reject programs with positive predictive value.
+
+- [ ] **Step 5: Commit each completed gate**
+
+Each gate must end with a research result file, a concise `RESEARCH_LOG.md`
+entry and either a commit or a confirmed blocker in `ISSUES.md`.
 
 ## Execution Policy
 

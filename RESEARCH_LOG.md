@@ -934,3 +934,26 @@ under the default preserve policy. The result is recorded in
 This smoke validates the completed semantic instrumentation and lifecycle path.
 It is not the full 10M/1M gate and does not replace the required comparison
 against the repaired fixed `[1,2,4]` control.
+
+## 2026-06-27 — address semantics 10M/1M gate
+
+The full FineWeb-Edu 10M/1M address-semantics gate completed with interpreted
+address frames, accepted-channel preservation and frozen program attribution.
+The model reached eval NLL 6.36637 after 9,989,918 training examples and
+998,482 validation examples. This beats the current-token control at 6.49976,
+the interpolated multiscale control at 6.76884 and the previous repaired fixed
+`[1,2,4]` R1 result at 6.47603.
+
+The run emitted 65,858,720 address execution frames, 43,990,050 binding hits
+and 21,868,670 binding misses. Five topology programs were accepted and none
+were physically pruned under the default preserve policy. Frozen evaluation
+emitted 10 program-attribution entries. Active work remained bounded:
+`avg_active = 5.99994` and `max_bucket_candidates_inspected = 8`.
+
+The strongest content primitives were `ContentMatch([2])` and
+`ContentFollow([1,2])`, both with positive full-document attribution. The
+result is recorded in `research_results/address_semantics_10m_seed7.md`.
+
+This is the first medium-scale positive result for the completed adaptive
+content-addressing framework. It does not yet prove R3 readiness: exact
+checkpoint/resume, multi-seed stability and shard transfer remain required.

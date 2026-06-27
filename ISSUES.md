@@ -15,40 +15,10 @@
 
 ## P0: predictive-learning blockers
 
-### P0-8: Address semantics are incomplete despite positive accepted-structure credit
-
-R2 attribution now shows that accepted content structures are real, but the
-complete adaptive model still fails the practical predictive-quality threshold.
-On the 10M/1M FineWeb-Edu run with content proposals enabled, Delta proposals
-disabled and frozen channel attribution enabled, the adaptive model reached
-validation NLL 6.5873 and test NLL 6.5749. The frozen current-token controls
-were 6.4998 and 6.4878 respectively.
-
-This is not an accepted-structure existence failure. `ContentFollow([2,3])`
-had positive held-out counterfactual credit on all 877 validation documents and
-all 994 test documents, with mean credit 0.1652 and 0.1670 nats/token. Multiple
-other accepted content channels also survived both held-out splits with
-positive-document fractions above 0.98.
-
-Failure mode: the current system has validated content-conditioned address
-primitives, but it still executes them as one-shot signature generators with
-weak caller/dependency semantics. Accepted structures can have positive frozen
-counterfactual credit while the complete model still loses to a current-token
-control. Treating this as a fusion or learning-rate problem would continue
-optimizing an incomplete address framework.
-
-Fix plan:
-
-- implement explicit address-program execution frames for Tuple, DeltaMod,
-  ContentMatch and ContentFollow;
-- preserve accepted structures by default through quarantine and masking rather
-  than physical deletion;
-- add dependency-aware attribution so callers and prerequisites can be ablated
-  separately;
-- report held-out codelength gain, description cost and execution cost for
-  every accepted program;
-- allow medium/large experiments only after the interpreter, lifecycle and
-  attribution tests pass.
+No active P0 issue remains after the 2026-06-27 address-semantics framework
+validation. R3 scale-up is still gated by checkpoint/resume, multi-seed
+stability and shard-transfer confirmation, but those are validation gates rather
+than confirmed current-implementation blockers.
 
 ## P1: diagnostic and recovery blockers
 
@@ -69,6 +39,30 @@ to interpret an already-running experiment.
 
 ## Resolved
 
+### P0-8: Address semantics are incomplete despite positive accepted-structure credit
+
+Resolved by implementing the neuron-like address-semantics framework and
+validating it on the FineWeb-Edu 10M/1M seed-7 gate. Address programs now
+execute as auditable frames, accepted structures are preserved by default,
+dependency-aware frozen program attribution is emitted, and structural costs
+are recorded.
+
+The original failure was real: the prior adaptive content model had positive
+accepted-channel counterfactual credit but still lost to current-token controls
+because content-conditioned operations were executed as one-shot signatures
+with weak caller/dependency semantics.
+
+The repaired framework reached eval NLL 6.366367 on 998,482 validation examples
+after 9,989,918 training examples, beating the current-token control at
+6.499756 and the previous repaired fixed `[1,2,4]` R1 result at 6.476030. The
+run emitted 65,858,720 execution frames, 43,990,050 binding hits, 21,868,670
+binding misses, five accepted topology programs, zero physical prunes and 10
+program-attribution entries.
+
+This resolves the active implementation blocker, not the full research claim.
+Checkpoint/resume exactness, multi-seed stability and shard transfer remain R3
+entry gates.
+
 ### P1-4: R2 accepted-structure attribution gap
 
 Resolved by `record_channel_attribution`, per-document channel attribution and
@@ -79,9 +73,9 @@ all 877 validation documents and all 994 test documents, with mean credit
 `ContentFollow([3,4])` also survived both splits with positive-document
 fractions above 0.98.
 
-This closes the attribution gap, not the adaptive model-quality gap. The latter
-is tracked separately as P0-8 because the full adaptive model still loses to
-the current-token baseline on both held-out splits.
+This closed the attribution gap but did not by itself close the adaptive
+model-quality gap. That later became P0-8 and was resolved by the explicit
+address-semantics framework plus the 2026-06-27 10M/1M gate.
 
 ### P2-2: Canonical current-state documentation
 
