@@ -1,4 +1,5 @@
 #include "sparse_branch_machine.hpp"
+#include "sbm/detail/address_interpreter.hpp"
 #include "sbm/detail/little_endian_io.hpp"
 
 #include <array>
@@ -81,6 +82,44 @@ int main() {
         follow_context_c, 64, follow_lags, sbm::AddressOp::ContentFollow);
     assert(follow_signature_a != follow_signature_b);
     assert(follow_signature_a != follow_signature_c);
+
+    {
+        sbm::Config interpreter_config;
+        interpreter_config.token_alphabet = 4096U;
+        const std::array<std::uint32_t, 5> data{11U, 29U, 31U, 47U, 53U};
+        auto program = sbm::singleton_address_program(2U);
+        sbm::AddressExecutionFrame frame{};
+        const bool matched = sbm::execute_address_program(
+            data, interpreter_config.token_alphabet, program, 7U, frame);
+        assert(matched);
+        assert(frame.binding == sbm::AddressBindingKind::Positional);
+        assert(frame.matched);
+        assert(frame.source_index == 2U);
+        assert(frame.signature == sbm::address_program_signature(
+            data, interpreter_config.token_alphabet,
+            std::span<const std::uint32_t>(program.lags.data(), program.arity),
+            program.op, 7U));
+    }
+
+    {
+        sbm::Config interpreter_config;
+        interpreter_config.token_alphabet = 4096U;
+        const std::array<std::uint32_t, 8> data{4U, 8U, 9U, 4U, 8U, 13U, 4U, 8U};
+        sbm::AddressProgram program;
+        program.lags[0] = 1U;
+        program.lags[1] = 6U;
+        program.arity = 2U;
+        program.op = sbm::AddressOp::ContentFollow;
+        sbm::AddressExecutionFrame frame{};
+        const bool matched = sbm::execute_address_program(
+            data, interpreter_config.token_alphabet, program, 11U, frame);
+        assert(matched);
+        assert(frame.binding == sbm::AddressBindingKind::ContentFollow);
+        assert(frame.matched);
+        assert(frame.successor == 13U);
+        assert(frame.dependency != 0U);
+        assert(frame.execution_cost > 0.0F);
+    }
 
     auto dataset = sbm::generate_vector_process(8000, 32, 16, 20, 9);
     assert(dataset.tokens.size() == 8000);
