@@ -173,3 +173,9 @@ python scripts/run_corpus_batch.py \
 
 Console output is limited to scheduler state transitions and one final compact
 summary. Full per-seed metrics are written under the output directory.
+
+Long mapped-corpus runs emit compact native progress lines to stderr for large
+corpora. Each line reports phase, processed examples, examples/s, ETA, running
+train/eval NLL, live nodes and estimated state MB. Redirect stderr to a log file
+for unattended runs; stdout remains reserved for explicit script output and the
+full result JSON is still written only to `--output`.

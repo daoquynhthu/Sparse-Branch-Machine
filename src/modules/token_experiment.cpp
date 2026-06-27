@@ -7,6 +7,8 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <iomanip>
+#include <iostream>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -115,6 +117,42 @@ std::uint32_t token_at_lag(const TokenDataView& dataset,
         : dataset.tokens[sequence_start];
 }
 
+void emit_progress(std::size_t processed,
+                   std::size_t total,
+                   std::size_t warmup,
+                   const TokenAccumulator& train,
+                   const TokenAccumulator& eval,
+                   const SparseBranchMachine& model,
+                   std::chrono::steady_clock::time_point started) {
+    const auto now = std::chrono::steady_clock::now();
+    const double elapsed = std::max(
+        std::chrono::duration<double>(now - started).count(), 1e-9);
+    const double speed = static_cast<double>(processed) / elapsed;
+    const double eta = speed <= 0.0
+        ? std::numeric_limits<double>::infinity()
+        : static_cast<double>(total - processed) / speed;
+    const auto diagnostics = model.diagnostics();
+    const auto train_nll = train.examples == 0U
+        ? std::numeric_limits<double>::quiet_NaN()
+        : train.cross_entropy / static_cast<double>(train.examples);
+    const auto eval_nll = eval.examples == 0U
+        ? std::numeric_limits<double>::quiet_NaN()
+        : eval.cross_entropy / static_cast<double>(eval.examples);
+    std::cerr << std::fixed << std::setprecision(2)
+              << "[sbm-progress] phase="
+              << (processed < warmup ? "train" : "eval")
+              << " examples=" << processed << '/' << total
+              << " speed=" << speed << "/s"
+              << " eta=" << eta << "s"
+              << " train_nll=" << train_nll
+              << " eval_nll=" << eval_nll
+              << " live_nodes=" << diagnostics.live_nodes
+              << " state_mb="
+              << static_cast<double>(diagnostics.estimated_bytes) /
+                     (1024.0 * 1024.0)
+              << '\n';
+}
+
 } // namespace
 
 static TokenExperimentResult run_token_views(std::span<const TokenDataView> datasets,
@@ -212,6 +250,16 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
 
     std::size_t example_index = 0U;
     double model_elapsed = 0.0;
+    const bool progress_enabled = total_examples >= 1000000U;
+    const auto progress_started = std::chrono::steady_clock::now();
+    auto next_progress = progress_started;
+    if (progress_enabled) {
+        std::cerr << "[sbm-progress] start examples=" << total_examples
+                  << " train=" << warmup_examples
+                  << " eval=" << (total_examples - warmup_examples)
+                  << " vocab=" << vocabulary << '\n';
+        next_progress += std::chrono::seconds(30);
+    }
     for (const auto& dataset : datasets) {
       for (std::size_t sequence = 0; sequence < dataset.sequence_count(); ++sequence) {
         const auto start = static_cast<std::size_t>(dataset.sequence_offsets[sequence]);
@@ -269,6 +317,16 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                 (void)model.merge_redundant();
             }
             ++example_index;
+            if (progress_enabled) {
+                const auto now = std::chrono::steady_clock::now();
+                if (now >= next_progress || example_index == warmup_examples ||
+                    example_index == total_examples) {
+                    emit_progress(example_index, total_examples, warmup_examples,
+                                  train_accumulator, eval_accumulator, model,
+                                  progress_started);
+                    next_progress = now + std::chrono::seconds(30);
+                }
+            }
         }
       }
     }
