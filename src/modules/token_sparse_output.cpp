@@ -140,7 +140,8 @@ float SparseBranchMachine::aggregate_sparse_logit(
 float SparseBranchMachine::aggregate_sparse_logit_masked(
     std::span<const ScoredNode> active,
     std::uint32_t decision,
-    std::uint32_t channel_mask) const noexcept {
+    std::uint32_t channel_mask,
+    float mass_scale) const noexcept {
     float value = 0.0F;
     for (const auto& node : active) {
         if (node.channel >= kMaxAddressChannels ||
@@ -150,7 +151,7 @@ float SparseBranchMachine::aggregate_sparse_logit_masked(
         }
         const auto slot = slot_of(node.id);
         if (slot == SIZE_MAX) continue;
-        value += node.responsibility * sparse_logit(slot, decision);
+        value += mass_scale * node.responsibility * sparse_logit(slot, decision);
     }
     return value;
 }
@@ -288,7 +289,7 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     std::uint32_t content_channel_mask = 0U;
     std::uint32_t tuple_channel_mask = 0U;
     std::array<float, kMaxAddressChannels> attribution_channel_mass{};
-    const bool measure_channel_subsets = config_.record_channel_attribution;
+    const bool measure_channel_subsets = config_.record_channel_attribution && !learn;
     if (measure_channel_subsets) {
         for (const auto& node : active) {
             if (node.channel >= kMaxAddressChannels) continue;
@@ -312,10 +313,18 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     }
 
     const auto masked_loss = [&](std::uint32_t channel_mask) {
+        float selected_mass = 0.0F;
+        for (const auto& node : active) {
+            if (node.channel < kMaxAddressChannels &&
+                (channel_mask & (1U << node.channel)) != 0U) {
+                selected_mass += node.responsibility;
+            }
+        }
+        const float mass_scale = selected_mass > 1e-6F ? 1.0F / selected_mass : 1.0F;
         float loss = 0.0F;
         for (const auto& step : token_path_scratch_) {
             const float logit = global_output_logit(step.id) +
-                aggregate_sparse_logit_masked(active, step.id, channel_mask);
+                aggregate_sparse_logit_masked(active, step.id, channel_mask, mass_scale);
             loss += branch_loss(logit / temperature, step.right);
         }
         return loss;
