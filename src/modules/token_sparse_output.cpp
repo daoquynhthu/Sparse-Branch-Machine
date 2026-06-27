@@ -289,8 +289,13 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     std::uint32_t content_channel_mask = 0U;
     std::uint32_t tuple_channel_mask = 0U;
     std::array<float, kMaxAddressChannels> attribution_channel_mass{};
+    std::array<std::uint32_t, kMaxAddressChannels> attribution_dependency{};
+    std::array<float, kMaxAddressChannels> attribution_description_cost{};
+    std::array<float, kMaxAddressChannels> attribution_execution_cost{};
     const bool measure_channel_subsets = config_.record_channel_attribution && !learn;
     if (measure_channel_subsets) {
+        const auto frames = last_execution_frames();
+        std::size_t frame_index = 0U;
         for (const auto& node : active) {
             if (node.channel >= kMaxAddressChannels) continue;
             attribution_channel_mass[node.channel] += node.responsibility;
@@ -298,6 +303,13 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         for (std::size_t channel = 0U; channel < topology_.size() &&
              channel < kMaxAddressChannels; ++channel) {
             if (!channel_enabled(channel)) continue;
+            if (frame_index < frames.size()) {
+                const auto& frame = frames[frame_index];
+                ++frame_index;
+                attribution_dependency[channel] = frame.dependency;
+                attribution_description_cost[channel] = frame.description_cost;
+                attribution_execution_cost[channel] = frame.execution_cost;
+            }
             const auto bit = 1U << channel;
             if (channel == 0U) seed_channel_mask |= bit;
             if (topology_[channel].phase == ChannelPhase::Active) {
@@ -567,6 +579,10 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             stats.channel_credit[channel] = channel_credit_buffer_[channel];
             stats.channel_responsibility_mass[channel] =
                 attribution_channel_mass[channel];
+            stats.channel_dependency[channel] = attribution_dependency[channel];
+            stats.channel_description_cost[channel] =
+                attribution_description_cost[channel];
+            stats.channel_execution_cost[channel] = attribution_execution_cost[channel];
         }
         stats.channel_subset_available = true;
         stats.seed_only_cross_entropy = masked_loss(seed_channel_mask);

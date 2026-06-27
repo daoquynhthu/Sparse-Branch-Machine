@@ -36,6 +36,16 @@ struct ChannelAttributionAccumulator {
     std::uint64_t positive_documents{};
 };
 
+struct ProgramAttributionAccumulator {
+    std::uint8_t channel{};
+    std::uint32_t dependency{};
+    double credit_sum{};
+    double description_cost{};
+    double execution_cost{};
+    std::uint64_t observations{};
+    std::uint64_t positive{};
+};
+
 void add_step(TokenAccumulator& accumulator, const StepStats& stats) {
     accumulator.cross_entropy += static_cast<double>(stats.cross_entropy);
     accumulator.target_probability += static_cast<double>(stats.target_probability);
@@ -105,6 +115,42 @@ std::vector<ChannelAttribution> finish_channel_attribution(
         }
         result.push_back(attribution);
     }
+    return result;
+}
+
+[[nodiscard]] std::uint64_t program_attribution_key(std::uint8_t channel,
+                                                    std::uint32_t dependency) noexcept {
+    return (static_cast<std::uint64_t>(channel) << 32U) |
+           static_cast<std::uint64_t>(dependency);
+}
+
+std::vector<ProgramAttribution> finish_program_attribution(
+    const std::unordered_map<std::uint64_t, ProgramAttributionAccumulator>& accumulators,
+    std::span<const AddressProgram> programs) {
+    std::vector<ProgramAttribution> result;
+    result.reserve(accumulators.size());
+    for (const auto& [key, accumulator] : accumulators) {
+        (void)key;
+        if (accumulator.channel >= programs.size()) continue;
+        ProgramAttribution attribution;
+        attribution.channel = accumulator.channel;
+        attribution.program = programs[accumulator.channel];
+        attribution.dependency = accumulator.dependency;
+        attribution.credit_sum = accumulator.credit_sum;
+        attribution.description_cost = accumulator.description_cost;
+        attribution.execution_cost = accumulator.execution_cost;
+        attribution.observations = accumulator.observations;
+        attribution.positive = accumulator.positive;
+        result.push_back(attribution);
+    }
+    std::sort(result.begin(), result.end(),
+              [](const ProgramAttribution& left,
+                 const ProgramAttribution& right) {
+                  if (left.channel != right.channel) {
+                      return left.channel < right.channel;
+                  }
+                  return left.dependency < right.dependency;
+              });
     return result;
 }
 
@@ -306,6 +352,8 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     TokenAccumulator tuple_channels_only_accumulator;
     std::array<ChannelAttributionAccumulator, kMaxAddressChannels>
         eval_channel_attribution{};
+    std::unordered_map<std::uint64_t, ProgramAttributionAccumulator>
+        eval_program_attribution{};
     std::array<double, kMaxAddressChannels> eval_channel_responsibility_sum{};
     double oracle_total = 0.0;
     std::uint64_t oracle_examples = 0U;
@@ -354,6 +402,24 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                         accumulator.credit_sum += credit;
                         ++accumulator.observations;
                         if (credit > 0.0) ++accumulator.positive;
+                        const auto dependency = stats.channel_dependency[channel];
+                        const auto key = program_attribution_key(
+                            static_cast<std::uint8_t>(channel), dependency);
+                        auto [program_iterator, inserted] =
+                            eval_program_attribution.try_emplace(key);
+                        auto& program_accumulator = program_iterator->second;
+                        if (inserted) {
+                            program_accumulator.channel =
+                                static_cast<std::uint8_t>(channel);
+                            program_accumulator.dependency = dependency;
+                        }
+                        program_accumulator.credit_sum += credit;
+                        program_accumulator.description_cost +=
+                            static_cast<double>(stats.channel_description_cost[channel]);
+                        program_accumulator.execution_cost +=
+                            static_cast<double>(stats.channel_execution_cost[channel]);
+                        ++program_accumulator.observations;
+                        if (credit > 0.0) ++program_accumulator.positive;
                         sequence_channel_credit[channel] += credit;
                         eval_channel_responsibility_sum[channel] +=
                             stats.channel_responsibility_mass[channel];
@@ -474,6 +540,8 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         result.eval_channel_attribution = finish_channel_attribution(
             eval_channel_attribution, result.learned_address_programs,
             result.learned_channel_phase);
+        result.eval_program_attribution = finish_program_attribution(
+            eval_program_attribution, result.learned_address_programs);
         result.eval_channel_mean_responsibility.reserve(
             result.eval_channel_attribution.size());
         for (std::size_t channel = 0U;
@@ -493,6 +561,10 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.label_smoothing = config.label_smoothing;
     result.sparse_token_output = config.sparse_token_output;
     result.output_tree_seed = config.output_tree_seed;
+    result.structural_description_cost_weight =
+        config.structural_description_cost_weight;
+    result.structural_execution_cost_weight =
+        config.structural_execution_cost_weight;
     return result;
 }
 
@@ -648,6 +720,37 @@ std::string to_json(const TokenExperimentResult& result) {
         if (i != 0U) out << ", ";
         out << result.eval_channel_mean_responsibility[i];
     }
+    out << "],\n  \"eval_program_attribution\": [";
+    for (std::size_t i = 0; i < result.eval_program_attribution.size(); ++i) {
+        if (i != 0U) out << ", ";
+        const auto& attribution = result.eval_program_attribution[i];
+        const double mean_credit = attribution.observations == 0U ? 0.0 :
+            attribution.credit_sum / static_cast<double>(attribution.observations);
+        const double positive_fraction = attribution.observations == 0U ? 0.0 :
+            static_cast<double>(attribution.positive) /
+                static_cast<double>(attribution.observations);
+        const double structural_value = attribution.credit_sum -
+            static_cast<double>(result.structural_description_cost_weight) *
+                attribution.description_cost -
+            static_cast<double>(result.structural_execution_cost_weight) *
+                attribution.execution_cost;
+        out << "{\"channel\":" << static_cast<unsigned>(attribution.channel)
+            << ",\"lags\":[";
+        for (std::size_t j = 0; j < attribution.program.arity; ++j) {
+            if (j != 0U) out << ',';
+            out << attribution.program.lags[j];
+        }
+        out << "],\"op\":" << static_cast<unsigned>(attribution.program.op)
+            << ",\"dependency\":" << attribution.dependency
+            << ",\"observations\":" << attribution.observations
+            << ",\"positive\":" << attribution.positive
+            << ",\"credit_sum\":" << attribution.credit_sum
+            << ",\"mean_credit\":" << mean_credit
+            << ",\"positive_fraction\":" << positive_fraction
+            << ",\"description_cost\":" << attribution.description_cost
+            << ",\"execution_cost\":" << attribution.execution_cost
+            << ",\"structural_value\":" << structural_value << "}";
+    }
     out << "],\n  \"topology_events\": [";
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -669,6 +772,10 @@ std::string to_json(const TokenExperimentResult& result) {
         << "  \"sparse_token_output\": "
         << (result.sparse_token_output ? "true" : "false") << ",\n"
         << "  \"output_tree_seed\": " << result.output_tree_seed << ",\n"
+        << "  \"structural_description_cost_weight\": "
+        << result.structural_description_cost_weight << ",\n"
+        << "  \"structural_execution_cost_weight\": "
+        << result.structural_execution_cost_weight << ",\n"
         << "  \"live_nodes\": " << result.diagnostics.live_nodes << ",\n"
         << "  \"edges\": " << result.diagnostics.edges << ",\n"
         << "  \"avg_active\": " << result.diagnostics.avg_active << ",\n"

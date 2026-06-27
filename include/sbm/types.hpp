@@ -212,6 +212,9 @@ struct StepStats {
     float active_only_cross_entropy{};
     float content_only_cross_entropy{};
     float tuple_only_cross_entropy{};
+    std::array<std::uint32_t, kMaxAddressChannels> channel_dependency{};
+    std::array<float, kMaxAddressChannels> channel_description_cost{};
+    std::array<float, kMaxAddressChannels> channel_execution_cost{};
 };
 
 struct Diagnostics {
@@ -269,6 +272,17 @@ struct Diagnostics {
     std::uint64_t sparse_output_admission_rejections{};
     std::uint64_t sparse_output_admission_promotions{};
     double max_responsibility_mass_error{};
+};
+
+struct ProgramAttribution {
+    std::uint8_t channel{};
+    AddressProgram program{};
+    std::uint32_t dependency{};
+    double credit_sum{};
+    double description_cost{};
+    double execution_cost{};
+    std::uint64_t observations{};
+    std::uint64_t positive{};
 };
 
 } // namespace sbm

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -336,6 +337,25 @@ void verify_address_execution_frames() {
     assert(diagnostics.avg_active <= static_cast<double>(config.beam_width));
 }
 
+void verify_dependency_attribution_json() {
+    auto dataset = sbm::generate_math_token_process(6U, 256U, 64U, 23U, 0.8F, 0.2F);
+    auto config = sparse_config(8U, 64U);
+    config.adaptive_topology = true;
+    config.max_address_channels = 4U;
+    config.beam_width = 4U;
+    config.address_lags = {1U};
+    config.topology_enable_delta = false;
+    config.max_sparse_decisions_per_node = 128U;
+    config.record_channel_attribution = true;
+    const auto result = sbm::run_token_experiment(dataset, 768U, config, true, 0U, 0U, 0U);
+    const auto json = sbm::to_json(result);
+    assert(json.find("\"eval_program_attribution\"") != std::string::npos);
+    assert(json.find("\"dependency\"") != std::string::npos);
+    assert(json.find("\"structural_value\"") != std::string::npos);
+    assert(result.diagnostics.structural_description_cost >= 0.0);
+    assert(result.diagnostics.structural_execution_cost >= 0.0);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -393,6 +413,11 @@ int main(int argc, char** argv) {
     if (mode == "address_frames") {
         verify_address_execution_frames();
         std::cout << "address execution frames passed\n";
+        return 0;
+    }
+    if (mode == "dependency_attribution") {
+        verify_dependency_attribution_json();
+        std::cout << "dependency attribution passed\n";
         return 0;
     }
     const auto address_10 = address_bytes(10U);

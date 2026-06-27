@@ -105,6 +105,7 @@ struct TokenExperimentResult {
     std::vector<std::uint8_t> learned_channel_phase;
     std::vector<ChannelAttribution> eval_channel_attribution;
     std::vector<double> eval_channel_mean_responsibility;
+    std::vector<ProgramAttribution> eval_program_attribution;
     std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
     float edge_score_weight{};
@@ -112,6 +113,8 @@ struct TokenExperimentResult {
     float label_smoothing{};
     bool sparse_token_output{};
     std::uint64_t output_tree_seed{};
+    float structural_description_cost_weight{};
+    float structural_execution_cost_weight{};
 };
 
 [[nodiscard]] ExperimentResult run_experiment(

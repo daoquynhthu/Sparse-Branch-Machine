@@ -44,6 +44,10 @@ public:
     [[nodiscard]] std::vector<AddressProgram> learned_address_programs() const;
     [[nodiscard]] std::vector<float> learned_channel_credit() const;
     [[nodiscard]] std::vector<std::uint8_t> learned_channel_phase() const;
+    [[nodiscard]] std::span<const AddressExecutionFrame> last_execution_frames()
+        const noexcept {
+        return execution_frames_;
+    }
     [[nodiscard]] const std::vector<TopologyEvent>& topology_events() const noexcept {
         return topology_events_;
     }
