@@ -129,11 +129,27 @@ int main() {
         assert(left_stats.live_nodes == source_stats.live_nodes);
         assert(std::abs(left_stats.cross_entropy - source_stats.cross_entropy) < 1e-6F);
     }
+    sbm_machine_freeze_topology(resumed);
+    assert(sbm_machine_step_token(resumed, 1U, 3U, 0, &source_stats) == 0);
+    assert(source_stats.channel_credit_count <= 8U);
+    if (source_stats.channel_subset_available) {
+        assert(std::isfinite(source_stats.seed_only_cross_entropy));
+        assert(std::isfinite(source_stats.active_only_cross_entropy));
+    }
     char* machine_diag = sbm_machine_diagnostics_json(resumed);
     assert(machine_diag != nullptr);
-    assert(std::string_view(machine_diag).find("\"steps\": 192") !=
+    assert(std::string_view(machine_diag).find("\"steps\": 193") !=
            std::string_view::npos);
     sbm_string_free(machine_diag);
+    char* machine_summary = sbm_machine_summary_json(resumed);
+    assert(machine_summary != nullptr);
+    assert(std::string_view(machine_summary).find("\"learned_address_programs\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"learned_channel_phase\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"topology_events\"") !=
+           std::string_view::npos);
+    sbm_string_free(machine_summary);
     sbm_machine_destroy(left);
     sbm_machine_destroy(source);
     sbm_machine_destroy(resumed);

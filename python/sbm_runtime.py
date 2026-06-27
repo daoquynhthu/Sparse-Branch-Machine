@@ -37,6 +37,17 @@ class _StepStats(ctypes.Structure):
         ("predicted_token", ctypes.c_uint32),
         ("top1_correct", ctypes.c_int),
         ("top5_correct", ctypes.c_int),
+        ("channel_credit_count", ctypes.c_uint8),
+        ("channel_credit", ctypes.c_float * 8),
+        ("channel_responsibility_mass", ctypes.c_float * 8),
+        ("channel_dependency", ctypes.c_uint32 * 8),
+        ("channel_description_cost", ctypes.c_float * 8),
+        ("channel_execution_cost", ctypes.c_float * 8),
+        ("channel_subset_available", ctypes.c_int),
+        ("seed_only_cross_entropy", ctypes.c_float),
+        ("active_only_cross_entropy", ctypes.c_float),
+        ("content_only_cross_entropy", ctypes.c_float),
+        ("tuple_only_cross_entropy", ctypes.c_float),
     ]
 
 
@@ -150,8 +161,11 @@ class Runtime:
         ]
         lib.sbm_machine_step_token.restype = ctypes.c_int
         lib.sbm_machine_reset_sequence.argtypes = [ctypes.c_void_p]
+        lib.sbm_machine_freeze_topology.argtypes = [ctypes.c_void_p]
         lib.sbm_machine_diagnostics_json.argtypes = [ctypes.c_void_p]
         lib.sbm_machine_diagnostics_json.restype = ctypes.c_void_p
+        lib.sbm_machine_summary_json.argtypes = [ctypes.c_void_p]
+        lib.sbm_machine_summary_json.restype = ctypes.c_void_p
 
         lib.sbm_dataset_generate.argtypes = [
             ctypes.c_size_t,
@@ -627,10 +641,38 @@ class Machine:
             "predicted_token": int(stats.predicted_token),
             "top1_correct": bool(stats.top1_correct),
             "top5_correct": bool(stats.top5_correct),
+            "channel_credit_count": int(stats.channel_credit_count),
+            "channel_credit": [
+                float(stats.channel_credit[i]) for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_responsibility_mass": [
+                float(stats.channel_responsibility_mass[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_dependency": [
+                int(stats.channel_dependency[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_description_cost": [
+                float(stats.channel_description_cost[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_execution_cost": [
+                float(stats.channel_execution_cost[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_subset_available": bool(stats.channel_subset_available),
+            "seed_only_cross_entropy": float(stats.seed_only_cross_entropy),
+            "active_only_cross_entropy": float(stats.active_only_cross_entropy),
+            "content_only_cross_entropy": float(stats.content_only_cross_entropy),
+            "tuple_only_cross_entropy": float(stats.tuple_only_cross_entropy),
         }
 
     def reset_sequence(self) -> None:
         self.runtime.lib.sbm_machine_reset_sequence(self.pointer)
+
+    def freeze_topology(self) -> None:
+        self.runtime.lib.sbm_machine_freeze_topology(self.pointer)
 
     def save_checkpoint(self, path: str | os.PathLike[str]) -> None:
         status = self.runtime.lib.sbm_machine_save_checkpoint(
@@ -642,6 +684,10 @@ class Machine:
     def diagnostics(self) -> Dict[str, Any]:
         pointer = self.runtime.lib.sbm_machine_diagnostics_json(self.pointer)
         return self.runtime._take_json(pointer, "machine diagnostics")
+
+    def summary(self) -> Dict[str, Any]:
+        pointer = self.runtime.lib.sbm_machine_summary_json(self.pointer)
+        return self.runtime._take_json(pointer, "machine summary")
 
 
 class TokenShard:

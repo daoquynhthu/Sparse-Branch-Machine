@@ -625,6 +625,21 @@ int sbm_machine_step_token(sbm_machine_handle* machine,
         stats->predicted_token = result.predicted_token;
         stats->top1_correct = result.top1_correct ? 1 : 0;
         stats->top5_correct = result.top5_correct ? 1 : 0;
+        stats->channel_credit_count = result.channel_credit_count;
+        for (std::size_t i = 0; i < sbm::kMaxAddressChannels; ++i) {
+            stats->channel_credit[i] = result.channel_credit[i];
+            stats->channel_responsibility_mass[i] =
+                result.channel_responsibility_mass[i];
+            stats->channel_dependency[i] = result.channel_dependency[i];
+            stats->channel_description_cost[i] = result.channel_description_cost[i];
+            stats->channel_execution_cost[i] = result.channel_execution_cost[i];
+        }
+        stats->channel_subset_available =
+            result.channel_subset_available ? 1 : 0;
+        stats->seed_only_cross_entropy = result.seed_only_cross_entropy;
+        stats->active_only_cross_entropy = result.active_only_cross_entropy;
+        stats->content_only_cross_entropy = result.content_only_cross_entropy;
+        stats->tuple_only_cross_entropy = result.tuple_only_cross_entropy;
         return 0;
     } catch (const std::exception& error) {
         set_error(error.what());
@@ -637,6 +652,10 @@ int sbm_machine_step_token(sbm_machine_handle* machine,
 
 void sbm_machine_reset_sequence(sbm_machine_handle* machine) {
     if (machine != nullptr) machine->value.reset_sequence();
+}
+
+void sbm_machine_freeze_topology(sbm_machine_handle* machine) {
+    if (machine != nullptr) machine->value.freeze_topology();
 }
 
 char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
@@ -660,6 +679,64 @@ char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
             << ", \"topology_rejected\": " << diagnostics.topology_rejected
             << ", \"topology_pruned\": " << diagnostics.topology_pruned
             << "}";
+        return duplicate_string(out.str());
+    });
+}
+
+char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
+    return guarded([&] {
+        if (machine == nullptr) throw std::invalid_argument("machine is null");
+        const auto programs = machine->value.learned_address_programs();
+        const auto lags = machine->value.learned_address_lags();
+        const auto credit = machine->value.learned_channel_credit();
+        const auto phase = machine->value.learned_channel_phase();
+        std::ostringstream out;
+        out << "{";
+        out << "\"learned_address_lags\": [";
+        for (std::size_t i = 0; i < lags.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << lags[i];
+        }
+        out << "], \"learned_address_programs\": [";
+        for (std::size_t i = 0; i < programs.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << '[';
+            for (std::size_t j = 0; j < programs[i].arity; ++j) {
+                if (j != 0U) out << ", ";
+                out << programs[i].lags[j];
+            }
+            out << ']';
+        }
+        out << "], \"learned_address_operations\": [";
+        for (std::size_t i = 0; i < programs.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << static_cast<unsigned>(programs[i].op);
+        }
+        out << "], \"learned_channel_credit\": [";
+        for (std::size_t i = 0; i < credit.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << credit[i];
+        }
+        out << "], \"learned_channel_phase\": [";
+        for (std::size_t i = 0; i < phase.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << static_cast<unsigned>(phase[i]);
+        }
+        out << "], \"topology_events\": [";
+        const auto& events = machine->value.topology_events();
+        for (std::size_t i = 0; i < events.size(); ++i) {
+            if (i != 0U) out << ", ";
+            const auto& event = events[i];
+            out << "{\"step\":" << event.step << ",\"lags\":[";
+            for (std::size_t j = 0; j < event.program.arity; ++j) {
+                if (j != 0U) out << ',';
+                out << event.program.lags[j];
+            }
+            out << "],\"op\":" << static_cast<unsigned>(event.program.op)
+                << ",\"decision\":" << static_cast<unsigned>(event.decision)
+                << ",\"credit\":" << event.credit << "}";
+        }
+        out << "]}";
         return duplicate_string(out.str());
     });
 }

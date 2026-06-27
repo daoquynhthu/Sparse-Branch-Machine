@@ -43,6 +43,17 @@ typedef struct sbm_step_stats {
     uint32_t predicted_token;
     int top1_correct;
     int top5_correct;
+    uint8_t channel_credit_count;
+    float channel_credit[8];
+    float channel_responsibility_mass[8];
+    uint32_t channel_dependency[8];
+    float channel_description_cost[8];
+    float channel_execution_cost[8];
+    int channel_subset_available;
+    float seed_only_cross_entropy;
+    float active_only_cross_entropy;
+    float content_only_cross_entropy;
+    float tuple_only_cross_entropy;
 } sbm_step_stats;
 
 /* Stable C ABI version. Increment only for incompatible changes. */
@@ -74,7 +85,9 @@ SBM_API int sbm_machine_step_token(
     int learn,
     sbm_step_stats* stats);
 SBM_API void sbm_machine_reset_sequence(sbm_machine_handle* machine);
+SBM_API void sbm_machine_freeze_topology(sbm_machine_handle* machine);
 SBM_API char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine);
+SBM_API char* sbm_machine_summary_json(const sbm_machine_handle* machine);
 
 /* Dataset ownership is explicit. Dataset objects are immutable after creation. */
 SBM_API sbm_dataset_handle* sbm_dataset_generate(

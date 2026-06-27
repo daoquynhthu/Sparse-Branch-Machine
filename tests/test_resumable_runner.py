@@ -43,7 +43,10 @@ with tempfile.TemporaryDirectory() as directory_text:
         json.dumps(
             {
                 "schema": "sbm-corpus-manifest",
-                "splits": {"train": {"shards": [{"path": shard_path.name}]}},
+                "splits": {
+                    "train": {"shards": [{"path": shard_path.name}]},
+                    "validation": {"shards": [{"path": shard_path.name}]},
+                },
             }
         ),
         encoding="utf-8",
@@ -62,6 +65,8 @@ with tempfile.TemporaryDirectory() as directory_text:
         "6",
         "--max-train-examples",
         "48",
+        "--max-eval-examples",
+        "12",
         "--checkpoint-every-examples",
         "8",
         "--set",
@@ -104,6 +109,7 @@ with tempfile.TemporaryDirectory() as directory_text:
     assert complete["completed"] is True
     assert resumed["completed"] is True
     assert resumed["train_examples"] == 48
+    assert resumed["eval_examples"] == 12
     assert complete["train_examples"] == resumed["train_examples"]
     assert math.isclose(
         complete["train_cross_entropy"],
@@ -113,6 +119,53 @@ with tempfile.TemporaryDirectory() as directory_text:
     assert math.isclose(
         complete["train_mean_target_probability"],
         resumed["train_mean_target_probability"],
+        abs_tol=1e-6,
+    )
+    assert math.isclose(
+        complete["eval_cross_entropy"],
+        resumed["eval_cross_entropy"],
+        abs_tol=1e-6,
+    )
+    assert "result" in resumed
+    assert resumed["result"]["objective"] == "token_cross_entropy"
+    assert resumed["result"]["eval_examples"] == 12
+    assert "current_token_baseline_eval_cross_entropy" in resumed["result"]
+    assert "eval_program_attribution" in resumed["result"]
+
+    eval_resume_output = directory / "eval_resumed.json"
+    eval_resume_checkpoint = directory / "eval_resumed.ckpt.json"
+    subprocess.run(
+        base_command
+        + [
+            "--output",
+            str(eval_resume_output),
+            "--checkpoint",
+            str(eval_resume_checkpoint),
+            "--stop-after-eval-examples",
+            "5",
+        ],
+        check=True,
+    )
+    interrupted_eval = json.loads(eval_resume_output.read_text(encoding="utf-8"))
+    assert interrupted_eval["train_examples"] == 48
+    assert interrupted_eval["eval_examples"] == 5
+    subprocess.run(
+        base_command
+        + [
+            "--output",
+            str(eval_resume_output),
+            "--checkpoint",
+            str(eval_resume_checkpoint),
+            "--resume",
+        ],
+        check=True,
+    )
+    eval_resumed = json.loads(eval_resume_output.read_text(encoding="utf-8"))
+    assert eval_resumed["completed"] is True
+    assert eval_resumed["eval_examples"] == 12
+    assert math.isclose(
+        complete["eval_cross_entropy"],
+        eval_resumed["eval_cross_entropy"],
         abs_tol=1e-6,
     )
 

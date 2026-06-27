@@ -990,3 +990,20 @@ This removes the training-replay blocker for long remote runs. It is not yet a
 drop-in replacement for canonical `run_corpus_training.py`, because eval shard
 resume, strict-freeze transition reporting, baseline/control metrics and final
 program-attribution JSON assembly still need to be integrated.
+
+## 2026-06-27 — resumable canonical-style report
+
+The resumable corpus runner now covers both train and eval phases. It persists
+eval split identity, eval shard cursor, strict-freeze state, baseline tables,
+channel/program attribution accumulators and final model summary. Its output
+retains resumable-run metadata at the top level and embeds a canonical-style
+`result` object with model eval metrics, current-token/interpolated baselines,
+seed/active/content/tuple controls when available, learned address programs,
+topology events and program attribution.
+
+`tests/test_resumable_runner.py` now checks both interruption points: train is
+interrupted at 24/48 examples and eval is interrupted at 5/12 examples. In both
+cases the resumed run matches the uninterrupted run on final eval
+cross-entropy. This closes the checkpoint/resume admission gate sufficiently to
+start multi-seed 10M/1M validation without wasting completed remote training
+after process interruption.

@@ -77,7 +77,14 @@ with tempfile.TemporaryDirectory() as directory:
                         resumed_stats["cross_entropy"],
                         abs_tol=1e-6,
                     )
-                assert resumed.diagnostics()["steps"] == 192
+                resumed.freeze_topology()
+                eval_stats = resumed.step_token(1, 3, learn=False)
+                assert "channel_credit" in eval_stats
+                assert "channel_subset_available" in eval_stats
+                assert resumed.diagnostics()["steps"] == 193
+                summary = resumed.summary()
+                assert "learned_address_programs" in summary
+                assert "learned_channel_phase" in summary
             finally:
                 resumed.close()
         finally:

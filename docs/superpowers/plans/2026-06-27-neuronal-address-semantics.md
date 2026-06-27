@@ -1119,13 +1119,14 @@ the associated model checkpoint. The regression test interrupts at 24 examples,
 resumes to 48 examples and checks that the final train metrics match an
 uninterrupted run on the same mapped shard.
 
-- [ ] **Step 1c: Integrate resumable evaluation and final report assembly**
+- [x] **Step 1c: Integrate resumable evaluation and final report assembly**
 
 The current resumable runner solves the training replay problem but does not
-yet replace `run_corpus_training.py` for full research reports. Add eval shard
-identity, eval cursor, strict-freeze transition, baseline/control metrics and
-program-attribution result assembly so interrupted train+eval jobs can resume
-and still emit the canonical experiment JSON.
+yet replace `run_corpus_training.py` for every historical field, but it now
+resumes both train and eval phases. It records eval shard identity, eval cursor,
+strict-freeze transition state, baseline/control metrics, topology summary and
+program-attribution result assembly. The output keeps top-level resumable-run
+metadata and embeds a canonical-style `result` object for experiment consumers.
 
 Verification target:
 
