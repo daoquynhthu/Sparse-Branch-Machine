@@ -20,8 +20,34 @@ repair and the repaired 10M/1M R1 run.
 
 ## P1: diagnostic and recovery blockers
 
-No active P1 issue remains after the 2026-06-24 capacity, diagnostics and
-cursor repairs.
+### P1-4: R2 accepted-structure attribution gap
+
+The repaired R1 run passes the short-context predictive gate, but the current
+evidence does not satisfy the R2 structural hard gate. The successful medium
+run used fixed programs `[1]`, `[2]` and `[4]`; it did not contain an accepted
+adaptive structure whose held-out codelength contribution can be traced across
+multiple documents.
+
+The offline R2 structural-control report strengthens the blocker. On the
+10M/1M FineWeb-Edu split, a frozen current-token conditional table reached NLL
+6.4048, while fixed lag1/lag2/lag4 controls reached 7.1816, 7.3531 and 7.4723.
+The lag1/2/4 interpolation reached 6.5653, losing 0.1604 nats/token against
+current-token conditioning, and only 143 of 877 validation documents had
+positive current-minus-interpolated gain.
+
+Failure mode: if this remains unresolved, the R1 model improvement can be
+reported as predictive progress but cannot be interpreted as evidence for the
+intended address-structure mechanism. Advancing directly to larger R3 runs
+would make attribution worse, not better.
+
+Fix plan:
+
+- add frozen-evaluation attribution for accepted programs/channels, reporting
+  per-structure codelength deltas against parent/current residual paths;
+- run an adaptive R2 validation block with content-addressing proposals enabled
+  and a separately sampled validation block;
+- require at least one accepted structure to show positive held-out codelength
+  contribution across multiple documents before moving this issue to resolved.
 
 ## P2: portability and documentation defects
 

@@ -835,3 +835,33 @@ change was native progress logging: large corpus runs now emit compact stderr
 lines with phase, processed examples, examples/s, ETA, running NLL, live nodes
 and estimated state MB. The successful R1 run wrote regular progress lines and
 ended at running eval NLL 6.48 with state about 1.14 GiB.
+
+## 2026-06-27 — R2 fixed-structure diagnosis
+
+An aggregate-only R2 diagnostic script was added and run on the repaired
+10M/1M R1 corpus. It analyzes the fixed lag structures used by the successful
+R1 run before any example inspection, with cuts by document position, target
+train frequency, address-key reuse and cross-document codelength gain.
+
+The structural-control result is negative for the fixed lag keys themselves.
+The validation current-token conditional table reached NLL 6.40482, while
+lag1/lag2/lag4 controls reached 7.18158, 7.35314 and 7.47228. The equal-weight
+lag1/2/4 interpolation reached 6.56526, losing 0.16043 nats/token against the
+current-token table. Across 877 validation documents, only 143 documents had
+positive current-minus-interpolated gain; the mean document gain was -0.12826
+nats/token.
+
+The only clean positive aggregate bucket was early document position 1-3, where
+interpolated lags beat the current-token table by 0.21772 nats/token. Most
+later positions and most address-reuse buckets were negative, especially high
+reuse buckets, which is consistent with sparse address-key memorization rather
+than robust reusable structure.
+
+This does not invalidate the repaired R1 pass: the trained model still beat the
+frozen current-token control. It does mean that R1 cannot be interpreted as
+evidence that fixed lag address keys are the causal mechanism. The R2 hard gate
+also remains open because the successful R1 run used fixed programs `[1]`,
+`[2]` and `[4]`, with no accepted adaptive topology event to attribute across
+documents. The next work must add model-level accepted-structure attribution
+under frozen evaluation and run an adaptive validation block, rather than scale
+the same fixed experiment.

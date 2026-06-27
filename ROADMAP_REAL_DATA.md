@@ -526,6 +526,23 @@ reuse. Inspect examples only after aggregate metrics are frozen.
 Hard gate: at least one accepted structure contributes held-out codelength across
 multiple documents and survives an independently sampled validation block.
 
+Status 2026-06-27: aggregate fixed-structure diagnosis is implemented in
+`scripts/analyze_r2_structure.py` and recorded in
+`research_results/r2_structure_diagnosis_10m_seed7.md`. This completes the
+first diagnostic pass but does not satisfy the R2 hard gate. The fixed lag
+controls themselves lose to current-token conditioning on held-out data, and
+the repaired R1 pass used fixed programs rather than accepted adaptive
+structures.
+
+Immediate R2 work:
+
+- add model-level frozen-evaluation attribution for accepted
+  programs/channels;
+- run an adaptive content-addressing validation block on the admissible
+  FineWeb-Edu split;
+- require cross-document positive codelength contribution on an independently
+  sampled validation block before moving to R3 scale.
+
 ### Phase R3 — 100M-token heterogeneous stream
 
 Use D2 fixed web sample.
