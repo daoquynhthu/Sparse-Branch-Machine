@@ -137,6 +137,50 @@ bool parse_bool(std::string_view text, const char* name) {
     throw std::invalid_argument(std::string("invalid boolean for ") + name);
 }
 
+sbm::AddressExecutionMode parse_address_execution_mode(std::string_view text) {
+    if (text == "LegacySignature" || text == "legacy" || text == "legacy_signature" ||
+        text == "0") {
+        return sbm::AddressExecutionMode::LegacySignature;
+    }
+    if (text == "InterpretedFrames" || text == "interpreted" ||
+        text == "interpreted_frames" || text == "1") {
+        return sbm::AddressExecutionMode::InterpretedFrames;
+    }
+    throw std::invalid_argument("invalid enum for address_execution_mode");
+}
+
+sbm::AcceptedChannelRetirement parse_accepted_channel_retirement(
+    std::string_view text) {
+    if (text == "Preserve" || text == "preserve" || text == "0") {
+        return sbm::AcceptedChannelRetirement::Preserve;
+    }
+    if (text == "Quarantine" || text == "quarantine" || text == "1") {
+        return sbm::AcceptedChannelRetirement::Quarantine;
+    }
+    if (text == "PhysicalErase" || text == "physical_erase" ||
+        text == "erase" || text == "2") {
+        return sbm::AcceptedChannelRetirement::PhysicalErase;
+    }
+    throw std::invalid_argument("invalid enum for accepted_channel_retirement");
+}
+
+std::string_view to_string(sbm::AddressExecutionMode value) noexcept {
+    switch (value) {
+        case sbm::AddressExecutionMode::LegacySignature: return "LegacySignature";
+        case sbm::AddressExecutionMode::InterpretedFrames: return "InterpretedFrames";
+    }
+    return "InterpretedFrames";
+}
+
+std::string_view to_string(sbm::AcceptedChannelRetirement value) noexcept {
+    switch (value) {
+        case sbm::AcceptedChannelRetirement::Preserve: return "Preserve";
+        case sbm::AcceptedChannelRetirement::Quarantine: return "Quarantine";
+        case sbm::AcceptedChannelRetirement::PhysicalErase: return "PhysicalErase";
+    }
+    return "Preserve";
+}
+
 std::vector<std::uint32_t> parse_lags(std::string_view text) {
     std::vector<std::uint32_t> result;
     std::size_t offset = 0;
@@ -212,6 +256,10 @@ constexpr ParameterDescriptor kParameters[] = {
     {"topology_credit_decay", "float", "0.995", "0.90", "0.9999", "linear", true, false, false, "EMA decay for address-channel credit."},
     {"topology_prune_patience", "uint32", "4294967295", "512", "4294967295", "log", true, false, false, "Mature observations required before channel retirement; the default preserves accepted channels."},
     {"topology_prune_credit", "float", "-0.01", "-0.05", "0.0", "linear", true, false, false, "Credit threshold for retiring an accepted channel."},
+    {"address_execution_mode", "enum", "InterpretedFrames", "", "", "categorical", false, false, false, "Address execution backend: LegacySignature or InterpretedFrames."},
+    {"accepted_channel_retirement", "enum", "Preserve", "", "", "categorical", false, false, false, "Lifecycle policy for accepted channels: Preserve, Quarantine or PhysicalErase."},
+    {"structural_description_cost_weight", "float", "1.0", "0.0", "10.0", "linear", true, false, false, "Weight applied to program description cost."},
+    {"structural_execution_cost_weight", "float", "0.0", "0.0", "10.0", "linear", true, false, false, "Weight applied to measured address execution cost."},
     {"residual_channel_gain", "float", "1.0", "0.25", "2.0", "linear", true, true, false, "Gain applied to additive residual channels."},
     {"residual_learning_rate", "float", "0.10", "0.005", "0.50", "log", true, false, false, "Legacy residual update cap used by non-mean paths."},
     {"residual_mature_learning_rate", "float", "0.03", "0.001", "0.20", "log", true, false, false, "Legacy mature residual update cap."},
@@ -283,6 +331,16 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_FLOAT(topology_credit_decay)
     SBM_SET_UINT(topology_prune_patience)
     SBM_SET_FLOAT(topology_prune_credit)
+    if (name == "address_execution_mode") {
+        config.address_execution_mode = parse_address_execution_mode(value);
+        return true;
+    }
+    if (name == "accepted_channel_retirement") {
+        config.accepted_channel_retirement = parse_accepted_channel_retirement(value);
+        return true;
+    }
+    SBM_SET_FLOAT(structural_description_cost_weight)
+    SBM_SET_FLOAT(structural_execution_cost_weight)
     SBM_SET_FLOAT(residual_channel_gain)
     SBM_SET_FLOAT(residual_learning_rate)
     SBM_SET_FLOAT(residual_mature_learning_rate)
@@ -363,6 +421,14 @@ std::string config_json(const sbm::Config& c) {
         << "  \"topology_credit_decay\": " << c.topology_credit_decay << ",\n"
         << "  \"topology_prune_patience\": " << c.topology_prune_patience << ",\n"
         << "  \"topology_prune_credit\": " << c.topology_prune_credit << ",\n"
+        << "  \"address_execution_mode\": \""
+        << to_string(c.address_execution_mode) << "\",\n"
+        << "  \"accepted_channel_retirement\": \""
+        << to_string(c.accepted_channel_retirement) << "\",\n"
+        << "  \"structural_description_cost_weight\": "
+        << c.structural_description_cost_weight << ",\n"
+        << "  \"structural_execution_cost_weight\": "
+        << c.structural_execution_cost_weight << ",\n"
         << "  \"residual_channel_gain\": " << c.residual_channel_gain << ",\n"
         << "  \"residual_learning_rate\": " << c.residual_learning_rate << ",\n"
         << "  \"residual_mature_learning_rate\": " << c.residual_mature_learning_rate << ",\n"

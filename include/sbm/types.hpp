@@ -22,12 +22,43 @@ enum class AddressOp : std::uint8_t {
     ContentFollow = 3U,
 };
 
+enum class AddressExecutionMode : std::uint8_t {
+    LegacySignature = 0U,
+    InterpretedFrames = 1U,
+};
+
+enum class AcceptedChannelRetirement : std::uint8_t {
+    Preserve = 0U,
+    Quarantine = 1U,
+    PhysicalErase = 2U,
+};
+
+enum class AddressBindingKind : std::uint8_t {
+    None = 0U,
+    Positional = 1U,
+    ContentMatch = 2U,
+    ContentFollow = 3U,
+};
+
 struct AddressProgram {
     std::array<std::uint32_t, kMaxAddressProgramArity> lags{};
     std::uint8_t arity{1U};
     AddressOp op{AddressOp::Tuple};
 
     [[nodiscard]] bool operator==(const AddressProgram&) const noexcept = default;
+};
+
+struct AddressExecutionFrame {
+    AddressProgram program{};
+    AddressBindingKind binding{AddressBindingKind::None};
+    std::uint32_t source_index{};
+    std::uint32_t matched_index{};
+    std::uint32_t successor{};
+    std::uint32_t dependency{};
+    std::uint64_t signature{};
+    float description_cost{};
+    float execution_cost{};
+    bool matched{};
 };
 
 [[nodiscard]] inline AddressProgram singleton_address_program(std::uint32_t lag) noexcept {
@@ -112,6 +143,11 @@ struct Config {
     float topology_credit_decay{0.995F};
     std::uint32_t topology_prune_patience{UINT32_MAX};
     float topology_prune_credit{-0.01F};
+    AddressExecutionMode address_execution_mode{AddressExecutionMode::InterpretedFrames};
+    AcceptedChannelRetirement accepted_channel_retirement{
+        AcceptedChannelRetirement::Preserve};
+    float structural_description_cost_weight{1.0F};
+    float structural_execution_cost_weight{0.0F};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};
     float residual_mature_learning_rate{0.030F};
@@ -199,6 +235,14 @@ struct Diagnostics {
     std::uint64_t probe_channels{};
     std::uint64_t active_channels{};
     std::uint64_t retired_channels{};
+    std::uint64_t address_execution_frames{};
+    std::uint64_t address_binding_hits{};
+    std::uint64_t address_binding_misses{};
+    std::uint64_t quarantined_channels{};
+    std::uint64_t recoverable_retired_channels{};
+    double structural_value_nats{};
+    double structural_description_cost{};
+    double structural_execution_cost{};
     bool simd_enabled{};
     std::uint64_t address_index_bytes{};
     std::uint64_t address_occupied_buckets{};

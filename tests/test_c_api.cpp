@@ -15,6 +15,8 @@ int main() {
     assert(schema.find("classification_learning_rate") != std::string_view::npos);
     assert(schema.find("max_sparse_decisions_per_node") != std::string_view::npos);
     assert(schema.find("output_tree_seed") != std::string_view::npos);
+    assert(schema.find("address_execution_mode") != std::string_view::npos);
+    assert(schema.find("accepted_channel_retirement") != std::string_view::npos);
     assert(schema.find("search_default") != std::string_view::npos);
 
     sbm_config_handle* config = sbm_config_create();
@@ -23,6 +25,10 @@ int main() {
     assert(sbm_config_set(config, "address_lags", "1,2,4") == 0);
     assert(sbm_config_set(config, "label_smoothing", "0.02") == 0);
     assert(sbm_config_set(config, "output_tree_seed", "29") == 0);
+    assert(sbm_config_set(config, "address_execution_mode", "LegacySignature") == 0);
+    assert(sbm_config_set(config, "accepted_channel_retirement", "Quarantine") == 0);
+    assert(sbm_config_set(config, "structural_description_cost_weight", "0.5") == 0);
+    assert(sbm_config_set(config, "structural_execution_cost_weight", "0.25") == 0);
     assert(sbm_config_set(config, "does_not_exist", "1") != 0);
     assert(std::strlen(sbm_last_error()) > 0U);
 
@@ -32,6 +38,10 @@ int main() {
            std::string_view::npos);
     assert(std::string_view(config_json).find("\"output_tree_seed\": 29") !=
            std::string_view::npos);
+    assert(std::string_view(config_json).find(
+        "\"address_execution_mode\": \"LegacySignature\"") != std::string_view::npos);
+    assert(std::string_view(config_json).find(
+        "\"accepted_channel_retirement\": \"Quarantine\"") != std::string_view::npos);
     sbm_string_free(config_json);
 
     sbm_dataset_handle* vector_dataset = sbm_dataset_generate(8000, 32, 16, 20, 9, 0.035F);
@@ -60,6 +70,17 @@ int main() {
     const std::string_view token_view(token_result);
     assert(token_view.find("\"eval_cross_entropy\"") != std::string_view::npos);
     assert(token_view.find("\"objective\": \"token_cross_entropy\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"address_execution_frames\"") != std::string_view::npos);
+    assert(token_view.find("\"address_binding_hits\"") != std::string_view::npos);
+    assert(token_view.find("\"address_binding_misses\"") != std::string_view::npos);
+    assert(token_view.find("\"quarantined_channels\"") != std::string_view::npos);
+    assert(token_view.find("\"recoverable_retired_channels\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"structural_value_nats\"") != std::string_view::npos);
+    assert(token_view.find("\"structural_description_cost\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"structural_execution_cost\"") !=
            std::string_view::npos);
     sbm_string_free(token_result);
     sbm_dataset_destroy(token_dataset);

@@ -335,14 +335,37 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
             case ChannelPhase::Retired: ++retired_channels; break;
         }
     }
-    Diagnostics result{total_steps_, ids_.size(), next_id_, edge_count,
-            static_cast<double>(total_active_) / static_cast<double>(denominator),
-            static_cast<double>(total_candidates_) / static_cast<double>(denominator),
-            total_created_, total_merged_, total_pruned_, cold, warm, mature, dormant,
-            anchor, residual, stale_bucket_refs_skipped_, stale_edge_refs_skipped_,
-            bytes, sparse_entries, topology_proposals_, topology_accepted_, topology_rejected_,
-            topology_pruned_, seed_channels, probe_channels, active_channels, retired_channels,
-            simd_available()};
+    Diagnostics result;
+    result.steps = total_steps_;
+    result.live_nodes = ids_.size();
+    result.logical_ids_issued = next_id_;
+    result.edges = edge_count;
+    result.avg_active =
+        static_cast<double>(total_active_) / static_cast<double>(denominator);
+    result.avg_candidates =
+        static_cast<double>(total_candidates_) / static_cast<double>(denominator);
+    result.created_total = total_created_;
+    result.merged_total = total_merged_;
+    result.pruned_total = total_pruned_;
+    result.cold_nodes = cold;
+    result.warm_nodes = warm;
+    result.mature_nodes = mature;
+    result.dormant_nodes = dormant;
+    result.anchor_nodes = anchor;
+    result.residual_nodes = residual;
+    result.stale_bucket_refs_skipped = stale_bucket_refs_skipped_;
+    result.stale_edge_refs_skipped = stale_edge_refs_skipped_;
+    result.estimated_bytes = bytes;
+    result.sparse_output_entries = sparse_entries;
+    result.topology_proposals = topology_proposals_;
+    result.topology_accepted = topology_accepted_;
+    result.topology_rejected = topology_rejected_;
+    result.topology_pruned = topology_pruned_;
+    result.seed_channels = seed_channels;
+    result.probe_channels = probe_channels;
+    result.active_channels = active_channels;
+    result.retired_channels = retired_channels;
+    result.simd_enabled = simd_available();
     result.address_index_bytes = address_index_bytes;
     result.address_occupied_buckets = occupied_buckets;
     result.address_full_buckets = full_buckets;
