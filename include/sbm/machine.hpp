@@ -9,11 +9,14 @@
 #include <deque>
 #include <optional>
 #include <span>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 namespace sbm {
+
+struct CheckpointAccess;
 
 class SparseBranchMachine {
 public:
@@ -51,6 +54,11 @@ public:
     [[nodiscard]] const std::vector<TopologyEvent>& topology_events() const noexcept {
         return topology_events_;
     }
+
+    friend void save_checkpoint(const SparseBranchMachine& machine,
+                                const std::string& path);
+    friend SparseBranchMachine load_checkpoint(const std::string& path);
+    friend struct CheckpointAccess;
 
 private:
     struct CandidateNode {
@@ -240,5 +248,8 @@ private:
     std::uint64_t sparse_output_admission_promotions_{};
     mutable double max_responsibility_mass_error_{};
 };
+
+void save_checkpoint(const SparseBranchMachine& machine, const std::string& path);
+[[nodiscard]] SparseBranchMachine load_checkpoint(const std::string& path);
 
 } // namespace sbm

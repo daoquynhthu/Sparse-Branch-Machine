@@ -298,6 +298,50 @@ int main() {
     assert(token_machine.last_prediction().empty());
 
     {
+        sbm::Config checkpoint_config = token_config;
+        checkpoint_config.adaptive_topology = true;
+        checkpoint_config.address_lags = {1U};
+        checkpoint_config.max_address_channels = 3U;
+        checkpoint_config.beam_width = 3U;
+        checkpoint_config.topology_probe_interval = 32U;
+        checkpoint_config.topology_probe_steps = 96U;
+        checkpoint_config.topology_validation_steps = 32U;
+        checkpoint_config.topology_min_observations = 16U;
+        sbm::SparseBranchMachine uninterrupted(checkpoint_config);
+        sbm::SparseBranchMachine resumed_source(checkpoint_config);
+        for (std::size_t i = 0; i < 512; ++i) {
+            const auto input = token_dataset.tokens[i];
+            const auto target = token_dataset.tokens[i + 1U];
+            (void)uninterrupted.step_token(input, target, true);
+            (void)resumed_source.step_token(input, target, true);
+        }
+        const char* checkpoint_path = "sbm_checkpoint_test.sbc";
+        std::remove(checkpoint_path);
+        sbm::save_checkpoint(resumed_source, checkpoint_path);
+        auto resumed = sbm::load_checkpoint(checkpoint_path);
+        std::remove(checkpoint_path);
+        for (std::size_t i = 512; i < 768; ++i) {
+            const auto input = token_dataset.tokens[i];
+            const auto target = token_dataset.tokens[i + 1U];
+            const auto left = uninterrupted.step_token(input, target, true);
+            const auto right = resumed.step_token(input, target, true);
+            assert(close(left.cross_entropy, right.cross_entropy));
+            assert(close(left.target_probability, right.target_probability));
+            assert(left.predicted_token == right.predicted_token);
+            assert(left.live_nodes == right.live_nodes);
+            assert(left.active_nodes == right.active_nodes);
+        }
+        const auto uninterrupted_diag = uninterrupted.diagnostics();
+        const auto resumed_diag = resumed.diagnostics();
+        assert(uninterrupted_diag.steps == resumed_diag.steps);
+        assert(uninterrupted_diag.live_nodes == resumed_diag.live_nodes);
+        assert(uninterrupted.learned_address_programs() ==
+               resumed.learned_address_programs());
+        assert(uninterrupted.learned_channel_phase() ==
+               resumed.learned_channel_phase());
+    }
+
+    {
         sbm::Config lifecycle_config;
         lifecycle_config.objective = sbm::ObjectiveKind::TokenCrossEntropy;
         lifecycle_config.token_alphabet = 64U;

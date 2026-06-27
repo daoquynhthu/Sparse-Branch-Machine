@@ -1099,6 +1099,24 @@ continued training after interruption, including accepted programs, channel
 phase, address buckets, sparse output state, learning counters, RNG seeds and
 data cursor.
 
+- [x] **Step 1a: Implement exact model-state checkpoint**
+
+`save_checkpoint` and `load_checkpoint` now serialize the full
+`SparseBranchMachine` training state: config, topology lifecycle, proposal
+cursor, topology events, node arrays, sparse output tables, sparse admission
+tables, global output priors, edges, bucket directory, route trace, history and
+diagnostic counters. The regression test saves after 512 token steps, reloads
+and verifies that 256 more training steps match an uninterrupted model
+step-by-step.
+
+- [ ] **Step 1b: Implement corpus-run checkpoint**
+
+The model checkpoint is not sufficient for unattended long runs. Add a
+runner-level checkpoint that also records train/eval shard identity, split,
+cursor position, examples consumed, sequence reset boundary, config overrides
+and output path. This is the part that makes remote long training resumable
+without reprocessing the corpus.
+
 Verification target:
 
 ```powershell

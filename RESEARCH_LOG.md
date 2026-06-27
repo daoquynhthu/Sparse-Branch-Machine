@@ -957,3 +957,17 @@ result is recorded in `research_results/address_semantics_10m_seed7.md`.
 This is the first medium-scale positive result for the completed adaptive
 content-addressing framework. It does not yet prove R3 readiness: exact
 checkpoint/resume, multi-seed stability and shard transfer remain required.
+
+## 2026-06-27 — model checkpoint foundation
+
+The first R3 admission subtask now has an exact model-state checkpoint. A C++
+regression trains two identical token models for 512 steps, saves one, reloads
+it and verifies that the next 256 training steps match the uninterrupted model
+on cross-entropy, target probability, predicted token, active nodes and live
+nodes. The checkpoint stores the full `SparseBranchMachine` state rather than
+only config/topology.
+
+This is not yet complete long-run resume. The remaining runner-level work must
+store corpus shard identity, cursor position, consumed-example counters and
+output metadata so remote training can resume without replaying already
+processed data.
