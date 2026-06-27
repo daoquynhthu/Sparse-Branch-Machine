@@ -137,6 +137,24 @@ float SparseBranchMachine::aggregate_sparse_logit(
     return value;
 }
 
+float SparseBranchMachine::aggregate_sparse_logit_masked(
+    std::span<const ScoredNode> active,
+    std::uint32_t decision,
+    std::uint32_t channel_mask) const noexcept {
+    float value = 0.0F;
+    for (const auto& node : active) {
+        if (node.channel >= kMaxAddressChannels ||
+            (channel_mask & (1U << node.channel)) == 0U ||
+            std::abs(node.responsibility) < 1e-8F) {
+            continue;
+        }
+        const auto slot = slot_of(node.id);
+        if (slot == SIZE_MAX) continue;
+        value += node.responsibility * sparse_logit(slot, decision);
+    }
+    return value;
+}
+
 float SparseBranchMachine::global_output_logit(
     std::uint32_t decision) const noexcept {
     return decision < global_output_logit_cache_.size()
@@ -264,6 +282,45 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     const float normalized_loss = cross_entropy /
         std::max(std::log(static_cast<float>(config_.vector_dim)), 1e-5F);
 
+    const bool measure_channel_credit = learn || config_.record_channel_attribution;
+    std::uint32_t seed_channel_mask = 0U;
+    std::uint32_t active_channel_mask = 0U;
+    std::uint32_t content_channel_mask = 0U;
+    std::uint32_t tuple_channel_mask = 0U;
+    std::array<float, kMaxAddressChannels> attribution_channel_mass{};
+    const bool measure_channel_subsets = config_.record_channel_attribution;
+    if (measure_channel_subsets) {
+        for (const auto& node : active) {
+            if (node.channel >= kMaxAddressChannels) continue;
+            attribution_channel_mass[node.channel] += node.responsibility;
+        }
+        for (std::size_t channel = 0U; channel < topology_.size() &&
+             channel < kMaxAddressChannels; ++channel) {
+            if (!channel_enabled(channel)) continue;
+            const auto bit = 1U << channel;
+            if (channel == 0U) seed_channel_mask |= bit;
+            if (topology_[channel].phase == ChannelPhase::Active) {
+                active_channel_mask |= bit;
+                if (topology_[channel].program.op == AddressOp::ContentMatch ||
+                    topology_[channel].program.op == AddressOp::ContentFollow) {
+                    content_channel_mask |= bit;
+                } else if (topology_[channel].program.op == AddressOp::Tuple) {
+                    tuple_channel_mask |= bit;
+                }
+            }
+        }
+    }
+
+    const auto masked_loss = [&](std::uint32_t channel_mask) {
+        float loss = 0.0F;
+        for (const auto& step : token_path_scratch_) {
+            const float logit = global_output_logit(step.id) +
+                aggregate_sparse_logit_masked(active, step.id, channel_mask);
+            loss += branch_loss(logit / temperature, step.right);
+        }
+        return loss;
+    };
+
     struct SearchItem {
         float log_probability{};
         std::uint32_t lo{};
@@ -319,7 +376,6 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     const bool top5 = std::find(top_tokens.begin(), top_tokens.end(), target_token) !=
                       top_tokens.end();
 
-    const bool measure_channel_credit = learn || config_.record_channel_attribution;
     if (measure_channel_credit) {
         std::fill(channel_credit_buffer_.begin(), channel_credit_buffer_.end(), 0.0F);
         std::array<std::uint8_t, kMaxAddressChannels> channel_members{};
@@ -495,12 +551,22 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     stats.top1_correct = predicted == target_token;
     stats.top5_correct = top5;
     stats.predicted_token = predicted;
-    if (measure_channel_credit) {
+    if (measure_channel_subsets) {
         stats.channel_credit_count = static_cast<std::uint8_t>(
             std::min<std::size_t>(topology_.size(), kMaxAddressChannels));
         for (std::size_t channel = 0U; channel < stats.channel_credit_count; ++channel) {
             stats.channel_credit[channel] = channel_credit_buffer_[channel];
+            stats.channel_responsibility_mass[channel] =
+                attribution_channel_mass[channel];
         }
+        stats.channel_subset_available = true;
+        stats.seed_only_cross_entropy = masked_loss(seed_channel_mask);
+        stats.active_only_cross_entropy = active_channel_mask == 0U
+            ? cross_entropy : masked_loss(active_channel_mask);
+        stats.content_only_cross_entropy = content_channel_mask == 0U
+            ? cross_entropy : masked_loss(content_channel_mask);
+        stats.tuple_only_cross_entropy = tuple_channel_mask == 0U
+            ? cross_entropy : masked_loss(tuple_channel_mask);
     }
     return stats;
 }

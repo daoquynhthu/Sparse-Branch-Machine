@@ -52,6 +52,13 @@ void add_target_probability(TokenAccumulator& accumulator, double probability) {
     accumulator.ranking_available = false;
 }
 
+void add_cross_entropy(TokenAccumulator& accumulator, double cross_entropy) {
+    accumulator.cross_entropy += cross_entropy;
+    accumulator.target_probability += std::exp(-std::min(cross_entropy, 80.0));
+    ++accumulator.examples;
+    accumulator.ranking_available = false;
+}
+
 TokenMetrics finish(const TokenAccumulator& accumulator) {
     TokenMetrics result;
     if (accumulator.examples == 0U) return result;
@@ -289,8 +296,13 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     TokenAccumulator current_accumulator;
     TokenAccumulator pair_accumulator;
     TokenAccumulator interpolated_multiscale_accumulator;
+    TokenAccumulator seed_only_accumulator;
+    TokenAccumulator active_channels_only_accumulator;
+    TokenAccumulator content_channels_only_accumulator;
+    TokenAccumulator tuple_channels_only_accumulator;
     std::array<ChannelAttributionAccumulator, kMaxAddressChannels>
         eval_channel_attribution{};
+    std::array<double, kMaxAddressChannels> eval_channel_responsibility_sum{};
     double oracle_total = 0.0;
     std::uint64_t oracle_examples = 0U;
 
@@ -338,10 +350,22 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                         ++accumulator.observations;
                         if (credit > 0.0) ++accumulator.positive;
                         sequence_channel_credit[channel] += credit;
+                        eval_channel_responsibility_sum[channel] +=
+                            stats.channel_responsibility_mass[channel];
                     }
                     sequence_channel_credit_count =
                         std::max(sequence_channel_credit_count, count);
                     sequence_has_eval_attribution = true;
+                }
+                if (stats.channel_subset_available) {
+                    add_cross_entropy(seed_only_accumulator,
+                                      stats.seed_only_cross_entropy);
+                    add_cross_entropy(active_channels_only_accumulator,
+                                      stats.active_only_cross_entropy);
+                    add_cross_entropy(content_channels_only_accumulator,
+                                      stats.content_only_cross_entropy);
+                    add_cross_entropy(tuple_channels_only_accumulator,
+                                      stats.tuple_only_cross_entropy);
                 }
                 const auto baseline_start = std::chrono::steady_clock::now();
                 const double unigram_probability = unigram[target];
@@ -417,6 +441,10 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.interpolated_multiscale_baseline_eval =
         finish(interpolated_multiscale_accumulator);
     result.multiscale_baseline_eval = result.interpolated_multiscale_baseline_eval;
+    result.seed_only_eval = finish(seed_only_accumulator);
+    result.active_channels_only_eval = finish(active_channels_only_accumulator);
+    result.content_channels_only_eval = finish(content_channels_only_accumulator);
+    result.tuple_channels_only_eval = finish(tuple_channels_only_accumulator);
     result.oracle_cross_entropy = oracle_examples == 0U
         ? std::numeric_limits<double>::quiet_NaN()
         : oracle_total / static_cast<double>(oracle_examples);
@@ -441,6 +469,17 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         result.eval_channel_attribution = finish_channel_attribution(
             eval_channel_attribution, result.learned_address_programs,
             result.learned_channel_phase);
+        result.eval_channel_mean_responsibility.reserve(
+            result.eval_channel_attribution.size());
+        for (std::size_t channel = 0U;
+             channel < result.eval_channel_attribution.size(); ++channel) {
+            const auto observations =
+                result.eval_channel_attribution[channel].eval_observations;
+            result.eval_channel_mean_responsibility.push_back(
+                observations == 0U ? 0.0 :
+                    eval_channel_responsibility_sum[channel] /
+                    static_cast<double>(observations));
+        }
     }
     result.topology_events = model.topology_events();
     result.exact_region_mass = config.exact_region_mass;
@@ -599,6 +638,11 @@ std::string to_json(const TokenExperimentResult& result) {
             << ",\"eval_positive_document_fraction\":"
             << attribution.eval_positive_document_fraction << "}";
     }
+    out << "],\n  \"eval_channel_mean_responsibility\": [";
+    for (std::size_t i = 0; i < result.eval_channel_mean_responsibility.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << result.eval_channel_mean_responsibility[i];
+    }
     out << "],\n  \"topology_events\": [";
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -675,6 +719,10 @@ std::string to_json(const TokenExperimentResult& result) {
     emit_metrics("multiscale_baseline_eval", result.multiscale_baseline_eval);
     emit_metrics("interpolated_multiscale_baseline_eval",
                  result.interpolated_multiscale_baseline_eval);
+    emit_metrics("seed_only_eval", result.seed_only_eval);
+    emit_metrics("active_channels_only_eval", result.active_channels_only_eval);
+    emit_metrics("content_channels_only_eval", result.content_channels_only_eval);
+    emit_metrics("tuple_channels_only_eval", result.tuple_channels_only_eval);
     if (std::isfinite(result.oracle_cross_entropy)) {
         out << "  \"oracle_cross_entropy\": " << result.oracle_cross_entropy << ",\n"
             << "  \"excess_cross_entropy\": " << result.excess_cross_entropy << ",\n";

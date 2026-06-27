@@ -83,6 +83,10 @@ struct TokenExperimentResult {
     TokenMetrics pair_context_baseline_eval;
     TokenMetrics multiscale_baseline_eval;
     TokenMetrics interpolated_multiscale_baseline_eval;
+    TokenMetrics seed_only_eval;
+    TokenMetrics active_channels_only_eval;
+    TokenMetrics content_channels_only_eval;
+    TokenMetrics tuple_channels_only_eval;
     double oracle_cross_entropy{};
     double excess_cross_entropy{};
     double steps_per_second{};
@@ -100,6 +104,7 @@ struct TokenExperimentResult {
     std::vector<float> learned_channel_credit;
     std::vector<std::uint8_t> learned_channel_phase;
     std::vector<ChannelAttribution> eval_channel_attribution;
+    std::vector<double> eval_channel_mean_responsibility;
     std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
     float edge_score_weight{};

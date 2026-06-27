@@ -351,6 +351,11 @@ int main() {
         token_dataset, 2500, attribution_config, true, 0, 0, 0);
     assert(attribution_result.eval_channel_attribution.size() ==
            attribution_config.address_lags.size());
+    assert(std::isfinite(attribution_result.seed_only_eval.cross_entropy));
+    assert(std::isfinite(attribution_result.active_channels_only_eval.cross_entropy));
+    assert(std::isfinite(attribution_result.tuple_channels_only_eval.cross_entropy));
+    assert(attribution_result.eval_channel_mean_responsibility.size() ==
+           attribution_result.eval_channel_attribution.size());
     for (const auto& attribution : attribution_result.eval_channel_attribution) {
         assert(attribution.eval_observations == attribution_result.eval_examples);
         assert(attribution.eval_documents > 0U);

@@ -163,6 +163,12 @@ struct StepStats {
     std::uint32_t predicted_token{};
     std::uint8_t channel_credit_count{};
     std::array<float, kMaxAddressChannels> channel_credit{};
+    std::array<float, kMaxAddressChannels> channel_responsibility_mass{};
+    bool channel_subset_available{};
+    float seed_only_cross_entropy{};
+    float active_only_cross_entropy{};
+    float content_only_cross_entropy{};
+    float tuple_only_cross_entropy{};
 };
 
 struct Diagnostics {

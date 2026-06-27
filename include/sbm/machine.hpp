@@ -95,6 +95,10 @@ private:
                                             bool force_admission = false);
     [[nodiscard]] float aggregate_sparse_logit(std::span<const ScoredNode> active,
                                                std::uint32_t decision) const noexcept;
+    [[nodiscard]] float aggregate_sparse_logit_masked(
+        std::span<const ScoredNode> active,
+        std::uint32_t decision,
+        std::uint32_t channel_mask) const noexcept;
     [[nodiscard]] float global_output_logit(std::uint32_t decision) const noexcept;
     void observe_global_output_path(
         std::span<const detail::ImplicitDecision> path);
