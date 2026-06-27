@@ -865,3 +865,10 @@ also remains open because the successful R1 run used fixed programs `[1]`,
 documents. The next work must add model-level accepted-structure attribution
 under frozen evaluation and run an adaptive validation block, rather than scale
 the same fixed experiment.
+
+Frozen-evaluation channel attribution has now been implemented behind
+`record_channel_attribution`. When enabled, token evaluation reports each
+address channel's counterfactual codelength credit sum, mean credit, positive
+count and positive fraction without updating topology credit or training state.
+The default remains disabled so normal training does not pay the attribution
+cost.

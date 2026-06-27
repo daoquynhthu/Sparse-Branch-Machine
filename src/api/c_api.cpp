@@ -232,6 +232,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"sparse_output_topk", "uint32", "5", "1", "32", "linear", true, false, false, "Number of hierarchical candidates reported by token decoding."},
     {"sparse_output_beam_width", "uint32", "16", "5", "128", "log", true, false, false, "Fixed candidate beam for O(B log V) hierarchical decoding."},
     {"max_sparse_decisions_per_node", "uint32", "64", "8", "4096", "log", true, false, false, "Hard bound on local hierarchical decisions stored by one address node."},
+    {"record_channel_attribution", "bool", "false", "", "", "categorical", false, false, false, "Record frozen-evaluation per-channel counterfactual codelength attribution."},
     {"output_tree_seed", "uint64", "7", "0", "18446744073709551615", "linear", true, false, false, "Seed for the fixed implicit output decomposition; keep constant across model seeds."},
     {"seed", "uint64", "7", "0", "18446744073709551615", "linear", false, false, false, "Model random seed."},
 };
@@ -302,6 +303,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(sparse_output_topk)
     SBM_SET_UINT(sparse_output_beam_width)
     SBM_SET_UINT(max_sparse_decisions_per_node)
+    SBM_SET_BOOL(record_channel_attribution)
     SBM_SET_U64(output_tree_seed)
     SBM_SET_U64(seed)
 #undef SBM_SET_UINT
@@ -382,6 +384,8 @@ std::string config_json(const sbm::Config& c) {
         << "  \"sparse_output_beam_width\": " << c.sparse_output_beam_width << ",\n"
         << "  \"max_sparse_decisions_per_node\": "
         << c.max_sparse_decisions_per_node << ",\n"
+        << "  \"record_channel_attribution\": "
+        << c.record_channel_attribution << ",\n"
         << "  \"output_tree_seed\": " << c.output_tree_seed << ",\n"
         << "  \"seed\": " << c.seed << "\n"
         << "}\n";
@@ -396,7 +400,8 @@ std::string_view parameter_tasks(std::string_view name) {
         name == "logit_decay" ||
         name == "sparse_output_topk" ||
         name == "sparse_output_beam_width" ||
-        name == "max_sparse_decisions_per_node") {
+        name == "max_sparse_decisions_per_node" ||
+        name == "record_channel_attribution") {
         return "token-ce";
     }
     if (name == "residual_learning_rate" ||

@@ -27,6 +27,17 @@ struct TokenMetrics {
     bool ranking_available{true};
 };
 
+struct ChannelAttribution {
+    std::uint8_t channel{};
+    AddressProgram program{};
+    std::uint8_t phase{};
+    std::uint64_t eval_observations{};
+    std::uint64_t eval_positive{};
+    double eval_credit_sum{};
+    double eval_mean_credit{};
+    double eval_positive_fraction{};
+};
+
 struct ExperimentResult {
     Diagnostics diagnostics;
     VectorMetrics train;
@@ -51,6 +62,7 @@ struct ExperimentResult {
     std::vector<AddressProgram> learned_address_programs;
     std::vector<float> learned_channel_credit;
     std::vector<std::uint8_t> learned_channel_phase;
+    std::vector<ChannelAttribution> eval_channel_attribution;
     std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
     float residual_channel_gain{};
@@ -84,6 +96,7 @@ struct TokenExperimentResult {
     std::vector<AddressProgram> learned_address_programs;
     std::vector<float> learned_channel_credit;
     std::vector<std::uint8_t> learned_channel_phase;
+    std::vector<ChannelAttribution> eval_channel_attribution;
     std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
     float edge_score_weight{};

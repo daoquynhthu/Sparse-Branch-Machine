@@ -10,6 +10,7 @@
 #include <iterator>
 #include <limits>
 #include <sstream>
+#include <string>
 #include <vector>
 
 namespace {
@@ -267,6 +268,7 @@ int main() {
     assert(token_result.baseline_elapsed_seconds >= 0.0);
     assert(token_result.eval_examples == token_dataset.example_count() - 2500);
     assert(token_result.oracle_cross_entropy > 0.0);
+    assert(token_result.eval_channel_attribution.empty());
 
     const auto balanced_dataset = sbm::make_token_dataset(
         std::vector<std::uint32_t>{0, 1, 0, 1, 0, 1, 0, 1},
@@ -340,6 +342,23 @@ int main() {
     assert(fixed_topology_machine.diagnostics().topology_proposals == 0U);
     assert(fixed_topology_machine.learned_address_lags() ==
            fixed_topology_config.address_lags);
+
+    sbm::Config attribution_config = token_config;
+    attribution_config.adaptive_topology = false;
+    attribution_config.address_lags = {1U, 2U, 4U};
+    attribution_config.record_channel_attribution = true;
+    const auto attribution_result = sbm::run_token_experiment(
+        token_dataset, 2500, attribution_config, true, 0, 0, 0);
+    assert(attribution_result.eval_channel_attribution.size() ==
+           attribution_config.address_lags.size());
+    for (const auto& attribution : attribution_result.eval_channel_attribution) {
+        assert(attribution.eval_observations == attribution_result.eval_examples);
+        assert(std::isfinite(attribution.eval_mean_credit));
+        assert(attribution.eval_positive <= attribution.eval_observations);
+    }
+    const auto attribution_json = sbm::to_json(attribution_result);
+    assert(attribution_json.find("\"eval_channel_attribution\"") !=
+           std::string::npos);
 
     std::cout << "all tests passed; SIMD=" << sbm::simd_available() << '\n';
 }

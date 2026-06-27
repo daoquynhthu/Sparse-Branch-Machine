@@ -3,6 +3,7 @@
 #include "sbm/machine.hpp"
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <chrono>
 #include <cmath>
@@ -25,6 +26,12 @@ struct TokenAccumulator {
     std::uint64_t top5{};
     std::uint64_t examples{};
     bool ranking_available{true};
+};
+
+struct ChannelAttributionAccumulator {
+    double credit_sum{};
+    std::uint64_t observations{};
+    std::uint64_t positive{};
 };
 
 void add_step(TokenAccumulator& accumulator, const StepStats& stats) {
@@ -54,6 +61,34 @@ TokenMetrics finish(const TokenAccumulator& accumulator) {
     result.top5_accuracy = static_cast<double>(accumulator.top5) * inverse;
     result.mean_target_probability = accumulator.target_probability * inverse;
     result.ranking_available = accumulator.ranking_available;
+    return result;
+}
+
+std::vector<ChannelAttribution> finish_channel_attribution(
+    std::span<const ChannelAttributionAccumulator> accumulators,
+    std::span<const AddressProgram> programs,
+    std::span<const std::uint8_t> phases) {
+    std::vector<ChannelAttribution> result;
+    const auto count = std::min({accumulators.size(), programs.size(), phases.size()});
+    result.reserve(count);
+    for (std::size_t channel = 0U; channel < count; ++channel) {
+        const auto& accumulator = accumulators[channel];
+        ChannelAttribution attribution;
+        attribution.channel = static_cast<std::uint8_t>(channel);
+        attribution.program = programs[channel];
+        attribution.phase = phases[channel];
+        attribution.eval_observations = accumulator.observations;
+        attribution.eval_positive = accumulator.positive;
+        attribution.eval_credit_sum = accumulator.credit_sum;
+        if (accumulator.observations != 0U) {
+            attribution.eval_mean_credit = accumulator.credit_sum /
+                static_cast<double>(accumulator.observations);
+            attribution.eval_positive_fraction =
+                static_cast<double>(accumulator.positive) /
+                static_cast<double>(accumulator.observations);
+        }
+        result.push_back(attribution);
+    }
     return result;
 }
 
@@ -245,6 +280,8 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     TokenAccumulator current_accumulator;
     TokenAccumulator pair_accumulator;
     TokenAccumulator interpolated_multiscale_accumulator;
+    std::array<ChannelAttributionAccumulator, kMaxAddressChannels>
+        eval_channel_attribution{};
     double oracle_total = 0.0;
     std::uint64_t oracle_examples = 0U;
 
@@ -279,6 +316,17 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
             add_step(learn ? train_accumulator : eval_accumulator, stats);
 
             if (!learn) {
+                if (stats.channel_credit_count != 0U) {
+                    const auto count = std::min<std::size_t>(
+                        stats.channel_credit_count, eval_channel_attribution.size());
+                    for (std::size_t channel = 0U; channel < count; ++channel) {
+                        auto& accumulator = eval_channel_attribution[channel];
+                        const double credit = stats.channel_credit[channel];
+                        accumulator.credit_sum += credit;
+                        ++accumulator.observations;
+                        if (credit > 0.0) ++accumulator.positive;
+                    }
+                }
                 const auto baseline_start = std::chrono::steady_clock::now();
                 const double unigram_probability = unigram[target];
                 add_target_probability(unigram_accumulator, unigram_probability);
@@ -363,6 +411,11 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.learned_address_programs = model.learned_address_programs();
     result.learned_channel_credit = model.learned_channel_credit();
     result.learned_channel_phase = model.learned_channel_phase();
+    if (config.record_channel_attribution) {
+        result.eval_channel_attribution = finish_channel_attribution(
+            eval_channel_attribution, result.learned_address_programs,
+            result.learned_channel_phase);
+    }
     result.topology_events = model.topology_events();
     result.exact_region_mass = config.exact_region_mass;
     result.edge_score_weight = config.edge_score_weight;
@@ -495,6 +548,25 @@ std::string to_json(const TokenExperimentResult& result) {
     for (std::size_t i = 0; i < result.learned_channel_phase.size(); ++i) {
         if (i != 0U) out << ", ";
         out << static_cast<unsigned>(result.learned_channel_phase[i]);
+    }
+    out << "],\n  \"eval_channel_attribution\": [";
+    for (std::size_t i = 0; i < result.eval_channel_attribution.size(); ++i) {
+        if (i != 0U) out << ", ";
+        const auto& attribution = result.eval_channel_attribution[i];
+        out << "{\"channel\":" << static_cast<unsigned>(attribution.channel)
+            << ",\"lags\":[";
+        for (std::size_t j = 0; j < attribution.program.arity; ++j) {
+            if (j != 0U) out << ',';
+            out << attribution.program.lags[j];
+        }
+        out << "],\"op\":" << static_cast<unsigned>(attribution.program.op)
+            << ",\"phase\":" << static_cast<unsigned>(attribution.phase)
+            << ",\"eval_observations\":" << attribution.eval_observations
+            << ",\"eval_positive\":" << attribution.eval_positive
+            << ",\"eval_credit_sum\":" << attribution.eval_credit_sum
+            << ",\"eval_mean_credit\":" << attribution.eval_mean_credit
+            << ",\"eval_positive_fraction\":"
+            << attribution.eval_positive_fraction << "}";
     }
     out << "],\n  \"topology_events\": [";
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {

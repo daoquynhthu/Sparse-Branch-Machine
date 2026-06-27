@@ -49,6 +49,10 @@ Fix plan:
 - require at least one accepted structure to show positive held-out codelength
   contribution across multiple documents before moving this issue to resolved.
 
+Status: frozen-evaluation per-channel attribution is implemented behind the
+explicit `record_channel_attribution` switch. The issue remains active until an
+adaptive R2 run produces accepted-structure attribution on held-out validation.
+
 ## P2: portability and documentation defects
 
 No active P2 issue remains after the 2026-06-24 shard portability and canonical

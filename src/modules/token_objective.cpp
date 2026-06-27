@@ -151,7 +151,8 @@ StepStats SparseBranchMachine::step_token_dense(std::uint32_t token,
         prediction_buffer_.begin(),
         std::max_element(prediction_buffer_.begin(), prediction_buffer_.end())));
 
-    if (learn) {
+    const bool measure_channel_credit = learn || config_.record_channel_attribution;
+    if (measure_channel_credit) {
         // Counterfactual credit is computed from log-sum-exp directly.  This
         // avoids allocating and normalizing a complete probability vector for
         // every node and every address program.
@@ -204,8 +205,10 @@ StepStats SparseBranchMachine::step_token_dense(std::uint32_t token,
                 node.responsibility, target_token, config_.softmax_temperature);
             node.contribution = without_loss - cross_entropy;
         }
-        observe_topology_credit(std::span<const float>(channel_credit_buffer_.data(),
-                                                        topology_.size()));
+        if (learn) {
+            observe_topology_credit(std::span<const float>(channel_credit_buffer_.data(),
+                                                            topology_.size()));
+        }
     }
 
     std::vector<NodeId> route;
@@ -335,6 +338,13 @@ StepStats SparseBranchMachine::step_token_dense(std::uint32_t token,
     }
     stats.top5_correct = better < std::min<std::size_t>(5U, prediction_buffer_.size());
     stats.predicted_token = predicted;
+    if (measure_channel_credit) {
+        stats.channel_credit_count = static_cast<std::uint8_t>(
+            std::min<std::size_t>(topology_.size(), kMaxAddressChannels));
+        for (std::size_t channel = 0U; channel < stats.channel_credit_count; ++channel) {
+            stats.channel_credit[channel] = channel_credit_buffer_[channel];
+        }
+    }
     return stats;
 }
 

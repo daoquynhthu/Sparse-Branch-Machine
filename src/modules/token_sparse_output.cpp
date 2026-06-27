@@ -319,7 +319,8 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     const bool top5 = std::find(top_tokens.begin(), top_tokens.end(), target_token) !=
                       top_tokens.end();
 
-    if (learn) {
+    const bool measure_channel_credit = learn || config_.record_channel_attribution;
+    if (measure_channel_credit) {
         std::fill(channel_credit_buffer_.begin(), channel_credit_buffer_.end(), 0.0F);
         std::array<std::uint8_t, kMaxAddressChannels> channel_members{};
         for (const auto& node : active) {
@@ -369,8 +370,10 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             }
             node.contribution = without_loss - cross_entropy;
         }
-        observe_topology_credit(std::span<const float>(channel_credit_buffer_.data(),
-                                                        topology_.size()));
+        if (learn) {
+            observe_topology_credit(std::span<const float>(channel_credit_buffer_.data(),
+                                                            topology_.size()));
+        }
     }
 
     std::vector<NodeId> route;
@@ -492,6 +495,13 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     stats.top1_correct = predicted == target_token;
     stats.top5_correct = top5;
     stats.predicted_token = predicted;
+    if (measure_channel_credit) {
+        stats.channel_credit_count = static_cast<std::uint8_t>(
+            std::min<std::size_t>(topology_.size(), kMaxAddressChannels));
+        for (std::size_t channel = 0U; channel < stats.channel_credit_count; ++channel) {
+            stats.channel_credit[channel] = channel_credit_buffer_[channel];
+        }
+    }
     return stats;
 }
 
