@@ -189,7 +189,7 @@ void emit_progress(std::size_t processed,
     const auto eval_nll = eval.examples == 0U
         ? std::numeric_limits<double>::quiet_NaN()
         : eval.cross_entropy / static_cast<double>(eval.examples);
-    std::cerr << std::fixed << std::setprecision(2)
+    std::cerr << '\r' << std::fixed << std::setprecision(2)
               << "[sbm-progress] phase="
               << (processed < warmup ? "train" : "eval")
               << " examples=" << processed << '/' << total
@@ -201,7 +201,11 @@ void emit_progress(std::size_t processed,
               << " state_mb="
               << static_cast<double>(diagnostics.estimated_bytes) /
                      (1024.0 * 1024.0)
-              << '\n';
+              << "        ";
+    if (processed == total) {
+        std::cerr << '\n';
+    }
+    std::cerr.flush();
 }
 
 } // namespace
@@ -312,11 +316,12 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     const auto progress_started = std::chrono::steady_clock::now();
     auto next_progress = progress_started;
     if (progress_enabled) {
-        std::cerr << "[sbm-progress] start examples=" << total_examples
+        std::cerr << '\r' << "[sbm-progress] start examples=" << total_examples
                   << " train=" << warmup_examples
                   << " eval=" << (total_examples - warmup_examples)
-                  << " vocab=" << vocabulary << '\n';
-        next_progress += std::chrono::seconds(30);
+                  << " vocab=" << vocabulary << "        ";
+        std::cerr.flush();
+        next_progress += std::chrono::seconds(120);
     }
     for (const auto& dataset : datasets) {
       for (std::size_t sequence = 0; sequence < dataset.sequence_count(); ++sequence) {
@@ -412,7 +417,7 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                     emit_progress(example_index, total_examples, warmup_examples,
                                   train_accumulator, eval_accumulator, model,
                                   progress_started);
-                    next_progress = now + std::chrono::seconds(30);
+                    next_progress = now + std::chrono::seconds(120);
                 }
             }
         }
