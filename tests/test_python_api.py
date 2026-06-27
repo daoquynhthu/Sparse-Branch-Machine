@@ -91,5 +91,13 @@ with runtime.token_dataset_from_ids([1, 2, 3, 1, 2, 4], 8, [0, 3, 6]) as externa
                 corpus_result = corpus.run(corpus_config)
             assert corpus_result["train_examples"] == 4
             assert corpus_result["eval_examples"] == 4
+            with runtime.config({"bucket_bits": 6}) as limited_config:
+                limited_result = corpus.run(
+                    limited_config,
+                    max_train_examples=2,
+                    max_eval_examples=2,
+                )
+            assert limited_result["train_examples"] == 2
+            assert limited_result["eval_examples"] == 2
 
 print("Python API tests passed")

@@ -627,6 +627,76 @@ TokenExperimentResult run_token_corpus_experiment(
                            "real_corpus_next_token_cross_entropy");
 }
 
+namespace {
+
+TokenDataset copy_limited_examples(
+    std::span<const MappedTokenShard* const> shards,
+    std::size_t max_examples) {
+    if (shards.empty()) {
+        throw std::invalid_argument("limited token corpus requires shards");
+    }
+    TokenDataset result;
+    result.sequence_offsets.push_back(0U);
+    std::size_t copied_examples = 0U;
+    for (const auto* shard : shards) {
+        if (shard == nullptr) throw std::invalid_argument("null token shard");
+        if (result.vocab_size == 0U) result.vocab_size = shard->vocab_size();
+        if (result.vocab_size != shard->vocab_size()) {
+            throw std::invalid_argument("limited corpus vocabularies differ");
+        }
+        const auto tokens = shard->tokens();
+        const auto offsets = shard->sequence_offsets();
+        for (std::size_t sequence = 0U;
+             sequence + 1U < offsets.size() && copied_examples < max_examples;
+             ++sequence) {
+            const auto start = static_cast<std::size_t>(offsets[sequence]);
+            const auto end = static_cast<std::size_t>(offsets[sequence + 1U]);
+            if (end <= start + 1U) continue;
+            const auto available_examples = end - start - 1U;
+            const auto take_examples =
+                std::min<std::size_t>(available_examples,
+                                      max_examples - copied_examples);
+            const auto take_tokens = take_examples + 1U;
+            result.tokens.insert(result.tokens.end(),
+                                 tokens.begin() + static_cast<std::ptrdiff_t>(start),
+                                 tokens.begin() +
+                                     static_cast<std::ptrdiff_t>(start + take_tokens));
+            result.sequence_offsets.push_back(result.tokens.size());
+            copied_examples += take_examples;
+        }
+        if (copied_examples >= max_examples) break;
+    }
+    if (result.vocab_size == 0U) {
+        throw std::invalid_argument("limited corpus has no vocabulary");
+    }
+    return result;
+}
+
+} // namespace
+
+TokenExperimentResult run_token_corpus_experiment_limited(
+    std::span<const MappedTokenShard* const> train_shards,
+    std::span<const MappedTokenShard* const> eval_shards,
+    std::size_t max_train_examples,
+    std::size_t max_eval_examples,
+    Config config,
+    bool strict_freeze,
+    std::size_t prefill,
+    std::size_t prune_interval,
+    std::size_t merge_interval) {
+    const auto train = copy_limited_examples(train_shards, max_train_examples);
+    const auto eval = copy_limited_examples(eval_shards, max_eval_examples);
+    const TokenDataView views[] = {
+        {train.vocab_size, train.tokens, train.sequence_offsets, {},
+         hash_dataset(train), "real_corpus_next_token_cross_entropy"},
+        {eval.vocab_size, eval.tokens, eval.sequence_offsets, {},
+         hash_dataset(eval), "real_corpus_next_token_cross_entropy"},
+    };
+    return run_token_views(views, train.example_count(), std::move(config),
+                           strict_freeze, prefill, prune_interval, merge_interval,
+                           "real_corpus_next_token_cross_entropy");
+}
+
 std::string to_json(const TokenExperimentResult& result) {
     std::ostringstream out;
     out.setf(std::ios::fixed);

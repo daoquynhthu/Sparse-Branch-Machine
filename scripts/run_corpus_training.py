@@ -22,6 +22,8 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--eval-split", default="validation")
     parser.add_argument("--bucket-bits", type=int, default=14)
+    parser.add_argument("--max-train-examples", type=int)
+    parser.add_argument("--max-eval-examples", type=int)
     parser.add_argument("--adaptive-topology", action="store_true")
     parser.add_argument(
         "--set",
@@ -49,7 +51,12 @@ def main() -> int:
         config_values[name] = value
     with runtime.open_token_corpus(args.manifest, eval_split=args.eval_split) as corpus:
         with runtime.config(config_values) as config:
-            result = corpus.run(config, strict_freeze=True)
+            result = corpus.run(
+                config,
+                strict_freeze=True,
+                max_train_examples=args.max_train_examples,
+                max_eval_examples=args.max_eval_examples,
+            )
     payload = {
         "manifest": str(args.manifest.resolve()),
         "seed": args.seed,

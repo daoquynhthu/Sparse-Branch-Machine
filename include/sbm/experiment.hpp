@@ -162,6 +162,17 @@ struct TokenExperimentResult {
     std::size_t prune_interval = 0,
     std::size_t merge_interval = 0);
 
+[[nodiscard]] TokenExperimentResult run_token_corpus_experiment_limited(
+    std::span<const MappedTokenShard* const> train_shards,
+    std::span<const MappedTokenShard* const> eval_shards,
+    std::size_t max_train_examples,
+    std::size_t max_eval_examples,
+    Config config,
+    bool strict_freeze = true,
+    std::size_t prefill = 0,
+    std::size_t prune_interval = 0,
+    std::size_t merge_interval = 0);
+
 [[nodiscard]] std::string to_json(const ExperimentResult& result);
 [[nodiscard]] std::string to_json(const TokenExperimentResult& result);
 

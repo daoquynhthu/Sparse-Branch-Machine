@@ -125,6 +125,16 @@ SBM_API char* sbm_run_token_corpus_experiment_json(
     size_t prune_interval,
     size_t merge_interval);
 
+SBM_API char* sbm_run_token_corpus_experiment_limited_json(
+    const sbm_token_corpus_handle* corpus,
+    size_t max_train_examples,
+    size_t max_eval_examples,
+    const sbm_config_handle* config,
+    int strict_freeze,
+    size_t prefill,
+    size_t prune_interval,
+    size_t merge_interval);
+
 /* Returns a malloc-compatible UTF-8 JSON string, or NULL on failure. */
 SBM_API char* sbm_run_experiment_json(
     const sbm_dataset_handle* dataset,

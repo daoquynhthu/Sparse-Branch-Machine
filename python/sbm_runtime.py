@@ -222,6 +222,17 @@ class Runtime:
             ctypes.c_size_t,
         ]
         lib.sbm_run_token_corpus_experiment_json.restype = ctypes.c_void_p
+        lib.sbm_run_token_corpus_experiment_limited_json.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+        ]
+        lib.sbm_run_token_corpus_experiment_limited_json.restype = ctypes.c_void_p
 
         lib.sbm_run_experiment_json.argtypes = [
             ctypes.c_void_p,
@@ -661,13 +672,29 @@ class TokenCorpus:
         prefill: int = 0,
         prune_interval: int = 0,
         merge_interval: int = 0,
+        max_train_examples: Optional[int] = None,
+        max_eval_examples: Optional[int] = None,
     ) -> Dict[str, Any]:
-        pointer = self.runtime.lib.sbm_run_token_corpus_experiment_json(
-            self.pointer,
-            config.pointer,
-            int(strict_freeze),
-            prefill,
-            prune_interval,
-            merge_interval,
-        )
+        if max_train_examples is None and max_eval_examples is None:
+            pointer = self.runtime.lib.sbm_run_token_corpus_experiment_json(
+                self.pointer,
+                config.pointer,
+                int(strict_freeze),
+                prefill,
+                prune_interval,
+                merge_interval,
+            )
+        else:
+            if max_train_examples is None or max_eval_examples is None:
+                raise ValueError("both max_train_examples and max_eval_examples are required")
+            pointer = self.runtime.lib.sbm_run_token_corpus_experiment_limited_json(
+                self.pointer,
+                max_train_examples,
+                max_eval_examples,
+                config.pointer,
+                int(strict_freeze),
+                prefill,
+                prune_interval,
+                merge_interval,
+            )
         return self.runtime._take_json(pointer, "run token corpus experiment")

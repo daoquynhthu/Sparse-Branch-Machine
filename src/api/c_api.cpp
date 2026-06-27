@@ -854,6 +854,34 @@ char* sbm_run_token_corpus_experiment_json(const sbm_token_corpus_handle* corpus
     });
 }
 
+char* sbm_run_token_corpus_experiment_limited_json(
+    const sbm_token_corpus_handle* corpus,
+    size_t max_train_examples,
+    size_t max_eval_examples,
+    const sbm_config_handle* config,
+    int strict_freeze,
+    size_t prefill,
+    size_t prune_interval,
+    size_t merge_interval) {
+    return guarded([&] {
+        if (corpus == nullptr || config == nullptr) {
+            throw std::invalid_argument("corpus and config must be non-null");
+        }
+        std::vector<const sbm::MappedTokenShard*> train;
+        std::vector<const sbm::MappedTokenShard*> eval;
+        train.reserve(corpus->train.size());
+        eval.reserve(corpus->eval.size());
+        for (const auto& shard : corpus->train) train.push_back(shard.get());
+        for (const auto& shard : corpus->eval) eval.push_back(shard.get());
+        auto resolved = config->value;
+        resolved.objective = sbm::ObjectiveKind::TokenCrossEntropy;
+        const auto result = sbm::run_token_corpus_experiment_limited(
+            train, eval, max_train_examples, max_eval_examples, resolved,
+            strict_freeze != 0, prefill, prune_interval, merge_interval);
+        return duplicate_string(sbm::to_json(result));
+    });
+}
+
 char* sbm_run_experiment_json(const sbm_dataset_handle* dataset, size_t warmup,
                               const sbm_config_handle* config, int strict_freeze,
                               size_t prefill, size_t prune_interval,
