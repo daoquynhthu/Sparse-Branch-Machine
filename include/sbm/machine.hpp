@@ -111,6 +111,8 @@ private:
                                               bool learn);
     [[nodiscard]] bool channel_enabled(std::size_t channel) const noexcept;
     [[nodiscard]] bool channel_learning_enabled(std::size_t channel) const noexcept;
+    [[nodiscard]] std::span<const AddressExecutionFrame> execute_address_programs(
+        std::span<const std::uint32_t> window);
     [[nodiscard]] std::span<const std::uint64_t> make_signatures(
         std::span<const std::uint32_t> window);
     void maybe_begin_topology_probe(bool learn);
@@ -202,6 +204,7 @@ private:
     std::vector<float> channel_output_buffer_;
     std::vector<float> channel_credit_buffer_;
     std::vector<std::uint64_t> signature_buffer_;
+    std::vector<AddressExecutionFrame> execution_frames_;
     std::vector<CandidateNode> candidate_scratch_;
     std::vector<ScoredNode> scored_scratch_;
     std::vector<ScoredNode> selected_scratch_;
@@ -219,6 +222,11 @@ private:
     mutable std::uint64_t stale_edge_refs_skipped_{};
     std::uint64_t max_bucket_candidates_inspected_{};
     std::uint64_t address_capacity_blocked_splits_{};
+    std::uint64_t address_execution_frames_{};
+    std::uint64_t address_binding_hits_{};
+    std::uint64_t address_binding_misses_{};
+    double structural_description_cost_{};
+    double structural_execution_cost_{};
     std::uint64_t sparse_output_insertions_{};
     std::uint64_t sparse_output_evictions_{};
     std::uint64_t sparse_output_probable_reconstructions_{};

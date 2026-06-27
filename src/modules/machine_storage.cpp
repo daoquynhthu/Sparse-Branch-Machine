@@ -95,6 +95,7 @@ SparseBranchMachine::SparseBranchMachine(Config config)
     order_scratch_.reserve(candidate_capacity);
     bucket_node_scratch_.reserve(config.bucket_scan_limit);
     topology_.reserve(config.max_address_channels);
+    execution_frames_.reserve(config.max_address_channels);
     proposed_program_keys_.reserve(config.max_address_channels * 4U);
     for (std::size_t index = 0; index < config.address_lags.size(); ++index) {
         const auto program = singleton_address_program(config.address_lags[index]);

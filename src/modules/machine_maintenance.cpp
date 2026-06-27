@@ -365,6 +365,11 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     result.probe_channels = probe_channels;
     result.active_channels = active_channels;
     result.retired_channels = retired_channels;
+    result.address_execution_frames = address_execution_frames_;
+    result.address_binding_hits = address_binding_hits_;
+    result.address_binding_misses = address_binding_misses_;
+    result.structural_description_cost = structural_description_cost_;
+    result.structural_execution_cost = structural_execution_cost_;
     result.simd_enabled = simd_available();
     result.address_index_bytes = address_index_bytes;
     result.address_occupied_buckets = occupied_buckets;

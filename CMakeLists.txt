@@ -127,6 +127,7 @@ if(SBM_BUILD_TESTS)
   add_test(NAME sbm_scaling_sparse_capacity COMMAND sbm_scaling_tests capacity)
   add_test(NAME sbm_scaling_prior COMMAND sbm_scaling_tests prior)
   add_test(NAME sbm_scaling_channels COMMAND sbm_scaling_tests channels)
+  add_test(NAME sbm_scaling_address_frames COMMAND sbm_scaling_tests address_frames)
 
   if(SBM_BUILD_PYTHON_SMOKE_TEST)
     find_package(Python3 COMPONENTS Interpreter)

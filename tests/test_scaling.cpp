@@ -311,6 +311,31 @@ void verify_address_capacity_pressure() {
     assert(diagnostics.address_capacity_blocked_splits > 0U);
 }
 
+void verify_address_execution_frames() {
+    auto config = sparse_config(8U, 4096U);
+    config.context_width = 16U;
+    config.address_execution_mode = sbm::AddressExecutionMode::InterpretedFrames;
+    config.adaptive_topology = true;
+    config.max_address_channels = 6U;
+    config.beam_width = 6U;
+    sbm::SparseBranchMachine machine(config);
+    for (std::uint32_t step = 0U; step < 20000U; ++step) {
+        (void)machine.step_token(
+            step % config.token_alphabet,
+            (step + 1U) % config.token_alphabet,
+            true);
+    }
+    const auto diagnostics = machine.diagnostics();
+    assert(diagnostics.address_execution_frames > 0U);
+    assert(diagnostics.address_binding_hits + diagnostics.address_binding_misses ==
+           diagnostics.address_execution_frames);
+    assert(diagnostics.structural_description_cost > 0.0);
+    assert(diagnostics.structural_execution_cost > 0.0);
+    assert(diagnostics.max_bucket_candidates_inspected <=
+           config.max_address_channels * config.bucket_scan_limit);
+    assert(diagnostics.avg_active <= static_cast<double>(config.beam_width));
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -363,6 +388,11 @@ int main(int argc, char** argv) {
         verify_conserved_channel_mass();
         verify_multi_channel_token_residual_learning();
         std::cout << "channel mass conservation passed\n";
+        return 0;
+    }
+    if (mode == "address_frames") {
+        verify_address_execution_frames();
+        std::cout << "address execution frames passed\n";
         return 0;
     }
     const auto address_10 = address_bytes(10U);

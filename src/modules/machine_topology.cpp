@@ -1,5 +1,6 @@
 #include "sbm/machine.hpp"
 
+#include "sbm/detail/address_interpreter.hpp"
 #include "sbm/math.hpp"
 
 #include <algorithm>
@@ -76,19 +77,48 @@ bool SparseBranchMachine::channel_learning_enabled(std::size_t channel) const no
     return age + validation < config_.topology_probe_steps;
 }
 
-std::span<const std::uint64_t> SparseBranchMachine::make_signatures(
+std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_programs(
     std::span<const std::uint32_t> window) {
+    execution_frames_.clear();
     std::fill(signature_buffer_.begin(), signature_buffer_.end(), 0U);
     for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
         if (!channel_enabled(channel)) continue;
         const auto& program = topology_[channel].program;
-        signature_buffer_[channel] = address_program_signature(
-            window, config_.token_alphabet,
-            std::span<const std::uint32_t>(program.lags.data(), program.arity),
-            program.op,
-            config_.seed ^ mix64(address_program_key(program) +
-                                 0x9E3779B97F4A7C15ULL));
+        AddressExecutionFrame frame{};
+        const auto seed = config_.seed ^ mix64(address_program_key(program) +
+                                              0x9E3779B97F4A7C15ULL);
+        const bool matched = execute_address_program(
+            window, config_.token_alphabet, program, seed, frame);
+        signature_buffer_[channel] = frame.signature;
+        execution_frames_.push_back(frame);
+        ++address_execution_frames_;
+        if (matched) ++address_binding_hits_;
+        else ++address_binding_misses_;
+        structural_description_cost_ += static_cast<double>(frame.description_cost);
+        structural_execution_cost_ += static_cast<double>(frame.execution_cost);
     }
+    return std::span<const AddressExecutionFrame>(
+        execution_frames_.data(), execution_frames_.size());
+}
+
+std::span<const std::uint64_t> SparseBranchMachine::make_signatures(
+    std::span<const std::uint32_t> window) {
+    if (config_.address_execution_mode == AddressExecutionMode::LegacySignature) {
+        std::fill(signature_buffer_.begin(), signature_buffer_.end(), 0U);
+        for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
+            if (!channel_enabled(channel)) continue;
+            const auto& program = topology_[channel].program;
+            signature_buffer_[channel] = address_program_signature(
+                window, config_.token_alphabet,
+                std::span<const std::uint32_t>(program.lags.data(), program.arity),
+                program.op,
+                config_.seed ^ mix64(address_program_key(program) +
+                                     0x9E3779B97F4A7C15ULL));
+        }
+        return std::span<const std::uint64_t>(
+            signature_buffer_.data(), topology_.size());
+    }
+    (void)execute_address_programs(window);
     return std::span<const std::uint64_t>(signature_buffer_.data(), topology_.size());
 }
 
