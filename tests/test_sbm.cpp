@@ -297,6 +297,56 @@ int main() {
     assert(first_token_stats.top5_correct || token_config.vector_dim > 5U);
     assert(token_machine.last_prediction().empty());
 
+    {
+        sbm::Config lifecycle_config;
+        lifecycle_config.objective = sbm::ObjectiveKind::TokenCrossEntropy;
+        lifecycle_config.token_alphabet = 64U;
+        lifecycle_config.vector_dim = 64U;
+        lifecycle_config.bucket_bits = 6U;
+        lifecycle_config.address_lags = {1U, 2U};
+        lifecycle_config.adaptive_topology = true;
+        lifecycle_config.max_address_channels = 2U;
+        lifecycle_config.beam_width = 2U;
+        lifecycle_config.topology_prune_patience = 16U;
+        lifecycle_config.topology_prune_credit = 1.0F;
+        lifecycle_config.accepted_channel_retirement =
+            sbm::AcceptedChannelRetirement::Preserve;
+        sbm::SparseBranchMachine lifecycle_model(lifecycle_config);
+        for (std::uint32_t step = 0U; step < 4096U; ++step) {
+            (void)lifecycle_model.step_token(
+                step % 64U, (step + 1U) % 64U, true);
+        }
+        const auto lifecycle_diag = lifecycle_model.diagnostics();
+        assert(lifecycle_diag.topology_pruned == 0U);
+        assert(lifecycle_diag.active_channels == 1U);
+        assert(lifecycle_diag.recoverable_retired_channels == 0U);
+    }
+    {
+        sbm::Config lifecycle_config;
+        lifecycle_config.objective = sbm::ObjectiveKind::TokenCrossEntropy;
+        lifecycle_config.token_alphabet = 64U;
+        lifecycle_config.vector_dim = 64U;
+        lifecycle_config.bucket_bits = 6U;
+        lifecycle_config.address_lags = {1U, 2U};
+        lifecycle_config.adaptive_topology = true;
+        lifecycle_config.max_address_channels = 2U;
+        lifecycle_config.beam_width = 2U;
+        lifecycle_config.topology_prune_patience = 16U;
+        lifecycle_config.topology_prune_credit = 1.0F;
+        lifecycle_config.accepted_channel_retirement =
+            sbm::AcceptedChannelRetirement::Quarantine;
+        sbm::SparseBranchMachine lifecycle_model(lifecycle_config);
+        for (std::uint32_t step = 0U; step < 4096U; ++step) {
+            (void)lifecycle_model.step_token(
+                step % 64U, (step + 1U) % 64U, true);
+        }
+        const auto lifecycle_diag = lifecycle_model.diagnostics();
+        assert(lifecycle_diag.topology_pruned > 0U);
+        assert(lifecycle_diag.quarantined_channels == 1U);
+        assert(lifecycle_diag.retired_channels == 0U);
+        assert(lifecycle_diag.live_nodes > 0U);
+    }
+
     const auto token_result = sbm::run_token_experiment(
         token_dataset, 2500, token_config, true, 0, 0, 0);
     assert(std::isfinite(token_result.eval.cross_entropy));

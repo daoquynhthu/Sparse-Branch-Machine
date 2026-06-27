@@ -122,7 +122,17 @@ std::span<const std::uint64_t> SparseBranchMachine::make_signatures(
     return std::span<const std::uint64_t>(signature_buffer_.data(), topology_.size());
 }
 
-void SparseBranchMachine::retire_channel(std::size_t channel) {
+void SparseBranchMachine::quarantine_channel(std::size_t channel) {
+    if (channel >= topology_.size() || channel == 0U) return;
+    topology_[channel].phase = ChannelPhase::Quarantined;
+}
+
+void SparseBranchMachine::recoverably_retire_channel(std::size_t channel) {
+    if (channel >= topology_.size() || channel == 0U) return;
+    topology_[channel].phase = ChannelPhase::RecoverableRetired;
+}
+
+void SparseBranchMachine::physically_erase_channel(std::size_t channel) {
     if (channel >= topology_.size() || channel == 0U) return;
     topology_[channel].phase = ChannelPhase::Retired;
 
@@ -171,7 +181,7 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
             topology_events_.push_back({total_steps_, state.program,
                                         TopologyDecision::Rejected,
                                         static_cast<float>(mean_credit)});
-            retire_channel(channel);
+            physically_erase_channel(channel);
             ++topology_rejected_;
         }
         next_probe_step_ = total_steps_ + config_.topology_probe_interval;
@@ -186,10 +196,19 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
             state.credit_ema >= config_.topology_prune_credit) {
             continue;
         }
+        if (config_.accepted_channel_retirement ==
+            AcceptedChannelRetirement::Preserve) {
+            continue;
+        }
         topology_events_.push_back({total_steps_, state.program,
                                     TopologyDecision::Pruned,
                                     state.credit_ema});
-        retire_channel(channel);
+        if (config_.accepted_channel_retirement ==
+            AcceptedChannelRetirement::Quarantine) {
+            quarantine_channel(channel);
+        } else {
+            physically_erase_channel(channel);
+        }
         ++topology_pruned_;
         next_probe_step_ = total_steps_ + config_.topology_probe_interval;
         return;
@@ -207,7 +226,7 @@ void SparseBranchMachine::freeze_topology() {
         topology_events_.push_back({total_steps_, state.program,
                                     TopologyDecision::Rejected,
                                     static_cast<float>(mean_credit)});
-        retire_channel(channel);
+        physically_erase_channel(channel);
         ++topology_rejected_;
     }
 }

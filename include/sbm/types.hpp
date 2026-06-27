@@ -13,7 +13,14 @@ inline constexpr std::size_t kMaxAddressChannels = 8U;
 inline constexpr std::size_t kMaxAddressProgramArity = 2U;
 
 enum class NodePhase : std::uint8_t { Cold, Warm, Mature, Dormant };
-enum class ChannelPhase : std::uint8_t { Seed, Probe, Active, Retired };
+enum class ChannelPhase : std::uint8_t {
+    Seed,
+    Probe,
+    Active,
+    Retired,
+    Quarantined,
+    RecoverableRetired,
+};
 enum class TopologyDecision : std::uint8_t { Proposed, Accepted, Rejected, Pruned };
 enum class AddressOp : std::uint8_t {
     Tuple = 0U,

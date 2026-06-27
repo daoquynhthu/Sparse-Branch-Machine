@@ -118,7 +118,9 @@ private:
     void maybe_begin_topology_probe(bool learn);
     void maybe_finalize_topology_probe();
     void observe_topology_credit(std::span<const float> channel_credit);
-    void retire_channel(std::size_t channel);
+    void quarantine_channel(std::size_t channel);
+    void recoverably_retire_channel(std::size_t channel);
+    void physically_erase_channel(std::size_t channel);
     [[nodiscard]] std::size_t bucket_index(std::uint8_t channel,
                                            std::uint64_t signature) const noexcept;
     [[nodiscard]] const BucketState* find_bucket(std::size_t index) const noexcept;

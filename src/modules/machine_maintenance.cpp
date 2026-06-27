@@ -327,12 +327,18 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     std::uint64_t probe_channels = 0U;
     std::uint64_t active_channels = 0U;
     std::uint64_t retired_channels = 0U;
+    std::uint64_t quarantined_channels = 0U;
+    std::uint64_t recoverable_retired_channels = 0U;
     for (const auto& state : topology_) {
         switch (state.phase) {
             case ChannelPhase::Seed: ++seed_channels; break;
             case ChannelPhase::Probe: ++probe_channels; break;
             case ChannelPhase::Active: ++active_channels; break;
             case ChannelPhase::Retired: ++retired_channels; break;
+            case ChannelPhase::Quarantined: ++quarantined_channels; break;
+            case ChannelPhase::RecoverableRetired:
+                ++recoverable_retired_channels;
+                break;
         }
     }
     Diagnostics result;
@@ -365,6 +371,8 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     result.probe_channels = probe_channels;
     result.active_channels = active_channels;
     result.retired_channels = retired_channels;
+    result.quarantined_channels = quarantined_channels;
+    result.recoverable_retired_channels = recoverable_retired_channels;
     result.address_execution_frames = address_execution_frames_;
     result.address_binding_hits = address_binding_hits_;
     result.address_binding_misses = address_binding_misses_;
