@@ -543,11 +543,13 @@ attribution gate is therefore satisfied.
 
 Immediate work before R3:
 
-- resolve P0-8: the full adaptive content model still loses to the
-  current-token control on both validation and test;
-- diagnose seed-only versus accepted-channel ablations under frozen evaluation;
-- move to R3 only after adaptive content improves held-out NLL, not merely
-  channel-local attribution.
+- execute `docs/superpowers/plans/2026-06-27-neuronal-address-semantics.md`;
+- stop cap/rate/fusion sweeps unless they test a completed semantic contract;
+- keep the 10M/1M FineWeb-Edu corpus as a validation gate, not as a substitute
+  for implementing the address framework;
+- move to R3 only after explicit address execution, persistent accepted
+  structures, dependency-aware attribution and structural value accounting are
+  implemented and verified.
 
 ### Phase R3 — 100M-token heterogeneous stream
 

@@ -897,3 +897,19 @@ So the architecture now has real accepted structure but still fails to convert
 that structure into better full-model held-out codelength. The next diagnosis
 must isolate seed-only, accepted-channel and fused-model behavior before any
 R3 scale-up.
+
+## 2026-06-27 — plan redirected to neuronal address semantics
+
+The immediate plan has been redirected away from fusion/rate/capacity sweeps.
+The current evidence no longer supports treating P0-8 as a narrow channel
+weighting problem: accepted content structures exist, but the implementation
+still executes address programs as one-shot signature recipes without explicit
+frames, lineage, dependency-aware attribution or recoverable accepted-structure
+lifecycle.
+
+The new canonical implementation plan is
+`docs/superpowers/plans/2026-06-27-neuronal-address-semantics.md`. It requires
+explicit address execution, persistent committed structures, dependency-aware
+structural attribution and codelength/cost accounting before R3 scale-up or
+large hyperparameter sweeps. Medium corpus runs remain validation gates for the
+completed framework, not a substitute for implementing it.

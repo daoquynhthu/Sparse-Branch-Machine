@@ -15,7 +15,7 @@
 
 ## P0: predictive-learning blockers
 
-### P0-8: Adaptive content fusion underperforms current-token baseline
+### P0-8: Address semantics are incomplete despite positive accepted-structure credit
 
 R2 attribution now shows that accepted content structures are real, but the
 complete adaptive model still fails the practical predictive-quality threshold.
@@ -30,22 +30,25 @@ all 994 test documents, with mean credit 0.1652 and 0.1670 nats/token. Multiple
 other accepted content channels also survived both held-out splits with
 positive-document fractions above 0.98.
 
-Failure mode: accepted content channels can be locally useful while the full
-adaptive mixture still loses to the simpler current-token path. Advancing to
-R3 scale before fixing this would turn a fusion/utilization defect into a more
-expensive experiment.
+Failure mode: the current system has validated content-conditioned address
+primitives, but it still executes them as one-shot signature generators with
+weak caller/dependency semantics. Accepted structures can have positive frozen
+counterfactual credit while the complete model still loses to a current-token
+control. Treating this as a fusion or learning-rate problem would continue
+optimizing an incomplete address framework.
 
 Fix plan:
 
-- diagnose seed-channel degradation versus content-channel benefit by reporting
-  full-model, seed-only and accepted-channel ablations under frozen evaluation;
-- inspect channel responsibility mass and residual contribution by document
-  position and address reuse to find whether useful content credit is being
-  diluted, overcounted or routed too late;
-- adjust fusion/responsibility policy only after the ablation identifies the
-  failing path;
-- require the adaptive content model to beat the current-token control on both
-  validation and independent test before moving this issue to resolved.
+- implement explicit address-program execution frames for Tuple, DeltaMod,
+  ContentMatch and ContentFollow;
+- preserve accepted structures by default through quarantine and masking rather
+  than physical deletion;
+- add dependency-aware attribution so callers and prerequisites can be ablated
+  separately;
+- report held-out codelength gain, description cost and execution cost for
+  every accepted program;
+- allow medium/large experiments only after the interpreter, lifecycle and
+  attribution tests pass.
 
 ## P1: diagnostic and recovery blockers
 
