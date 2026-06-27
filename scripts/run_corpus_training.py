@@ -20,6 +20,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--eval-split", default="validation")
     parser.add_argument("--bucket-bits", type=int, default=14)
     parser.add_argument("--adaptive-topology", action="store_true")
     parser.add_argument(
@@ -46,12 +47,13 @@ def main() -> int:
             parser.error(f"--set requires NAME=VALUE, got {override!r}")
         name, value = override.split("=", 1)
         config_values[name] = value
-    with runtime.open_token_corpus(args.manifest) as corpus:
+    with runtime.open_token_corpus(args.manifest, eval_split=args.eval_split) as corpus:
         with runtime.config(config_values) as config:
             result = corpus.run(config, strict_freeze=True)
     payload = {
         "manifest": str(args.manifest.resolve()),
         "seed": args.seed,
+        "eval_split": args.eval_split,
         "config": config_values,
         "result": result,
     }
