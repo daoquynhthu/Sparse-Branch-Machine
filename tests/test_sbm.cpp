@@ -353,8 +353,10 @@ int main() {
            attribution_config.address_lags.size());
     for (const auto& attribution : attribution_result.eval_channel_attribution) {
         assert(attribution.eval_observations == attribution_result.eval_examples);
+        assert(attribution.eval_documents > 0U);
         assert(std::isfinite(attribution.eval_mean_credit));
         assert(attribution.eval_positive <= attribution.eval_observations);
+        assert(attribution.eval_positive_documents <= attribution.eval_documents);
     }
     const auto attribution_json = sbm::to_json(attribution_result);
     assert(attribution_json.find("\"eval_channel_attribution\"") !=

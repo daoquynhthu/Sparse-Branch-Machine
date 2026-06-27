@@ -870,5 +870,6 @@ Frozen-evaluation channel attribution has now been implemented behind
 `record_channel_attribution`. When enabled, token evaluation reports each
 address channel's counterfactual codelength credit sum, mean credit, positive
 count and positive fraction without updating topology credit or training state.
-The default remains disabled so normal training does not pay the attribution
-cost.
+It also records positive-document counts so R2 can test cross-document reuse
+directly. The default remains disabled so normal training does not pay the
+attribution cost.

@@ -537,7 +537,8 @@ structures.
 Immediate R2 work:
 
 - use the implemented `record_channel_attribution` diagnostic to report
-  model-level frozen-evaluation attribution for accepted programs/channels;
+  model-level frozen-evaluation attribution for accepted programs/channels,
+  including positive-document counts;
 - run an adaptive content-addressing validation block on the admissible
   FineWeb-Edu split;
 - require cross-document positive codelength contribution on an independently

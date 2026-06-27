@@ -33,9 +33,12 @@ struct ChannelAttribution {
     std::uint8_t phase{};
     std::uint64_t eval_observations{};
     std::uint64_t eval_positive{};
+    std::uint64_t eval_documents{};
+    std::uint64_t eval_positive_documents{};
     double eval_credit_sum{};
     double eval_mean_credit{};
     double eval_positive_fraction{};
+    double eval_positive_document_fraction{};
 };
 
 struct ExperimentResult {

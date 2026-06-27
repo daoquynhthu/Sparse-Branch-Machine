@@ -50,8 +50,10 @@ Fix plan:
   contribution across multiple documents before moving this issue to resolved.
 
 Status: frozen-evaluation per-channel attribution is implemented behind the
-explicit `record_channel_attribution` switch. The issue remains active until an
-adaptive R2 run produces accepted-structure attribution on held-out validation.
+explicit `record_channel_attribution` switch, including token-level credit and
+per-document positive contribution counts. The issue remains active until an
+adaptive R2 run produces accepted-structure attribution on held-out validation
+and an independent validation block confirms the result.
 
 ## P2: portability and documentation defects
 

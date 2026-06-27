@@ -32,6 +32,8 @@ struct ChannelAttributionAccumulator {
     double credit_sum{};
     std::uint64_t observations{};
     std::uint64_t positive{};
+    std::uint64_t documents{};
+    std::uint64_t positive_documents{};
 };
 
 void add_step(TokenAccumulator& accumulator, const StepStats& stats) {
@@ -79,6 +81,8 @@ std::vector<ChannelAttribution> finish_channel_attribution(
         attribution.phase = phases[channel];
         attribution.eval_observations = accumulator.observations;
         attribution.eval_positive = accumulator.positive;
+        attribution.eval_documents = accumulator.documents;
+        attribution.eval_positive_documents = accumulator.positive_documents;
         attribution.eval_credit_sum = accumulator.credit_sum;
         if (accumulator.observations != 0U) {
             attribution.eval_mean_credit = accumulator.credit_sum /
@@ -86,6 +90,11 @@ std::vector<ChannelAttribution> finish_channel_attribution(
             attribution.eval_positive_fraction =
                 static_cast<double>(accumulator.positive) /
                 static_cast<double>(accumulator.observations);
+        }
+        if (accumulator.documents != 0U) {
+            attribution.eval_positive_document_fraction =
+                static_cast<double>(accumulator.positive_documents) /
+                static_cast<double>(accumulator.documents);
         }
         result.push_back(attribution);
     }
@@ -302,6 +311,9 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         const auto start = static_cast<std::size_t>(dataset.sequence_offsets[sequence]);
         const auto end = static_cast<std::size_t>(dataset.sequence_offsets[sequence + 1U]);
         model.reset_sequence();
+        std::array<double, kMaxAddressChannels> sequence_channel_credit{};
+        std::size_t sequence_channel_credit_count = 0U;
+        bool sequence_has_eval_attribution = false;
         for (std::size_t position = start; position + 1U < end; ++position) {
             const bool learn = example_index < warmup_examples;
             if (strict_freeze && example_index == warmup_examples) {
@@ -325,7 +337,11 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                         accumulator.credit_sum += credit;
                         ++accumulator.observations;
                         if (credit > 0.0) ++accumulator.positive;
+                        sequence_channel_credit[channel] += credit;
                     }
+                    sequence_channel_credit_count =
+                        std::max(sequence_channel_credit_count, count);
+                    sequence_has_eval_attribution = true;
                 }
                 const auto baseline_start = std::chrono::steady_clock::now();
                 const double unigram_probability = unigram[target];
@@ -373,6 +389,16 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                                   train_accumulator, eval_accumulator, model,
                                   progress_started);
                     next_progress = now + std::chrono::seconds(30);
+                }
+            }
+        }
+        if (sequence_has_eval_attribution) {
+            for (std::size_t channel = 0U; channel < sequence_channel_credit_count;
+                 ++channel) {
+                auto& accumulator = eval_channel_attribution[channel];
+                ++accumulator.documents;
+                if (sequence_channel_credit[channel] > 0.0) {
+                    ++accumulator.positive_documents;
                 }
             }
         }
@@ -563,10 +589,15 @@ std::string to_json(const TokenExperimentResult& result) {
             << ",\"phase\":" << static_cast<unsigned>(attribution.phase)
             << ",\"eval_observations\":" << attribution.eval_observations
             << ",\"eval_positive\":" << attribution.eval_positive
+            << ",\"eval_documents\":" << attribution.eval_documents
+            << ",\"eval_positive_documents\":"
+            << attribution.eval_positive_documents
             << ",\"eval_credit_sum\":" << attribution.eval_credit_sum
             << ",\"eval_mean_credit\":" << attribution.eval_mean_credit
             << ",\"eval_positive_fraction\":"
-            << attribution.eval_positive_fraction << "}";
+            << attribution.eval_positive_fraction
+            << ",\"eval_positive_document_fraction\":"
+            << attribution.eval_positive_document_fraction << "}";
     }
     out << "],\n  \"topology_events\": [";
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
