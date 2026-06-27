@@ -873,3 +873,27 @@ count and positive fraction without updating topology credit or training state.
 It also records positive-document counts so R2 can test cross-document reuse
 directly. The default remains disabled so normal training does not pay the
 attribution cost.
+
+## 2026-06-27 — R2 adaptive content attribution
+
+The adaptive content-addressing R2 run used the same 10M FineWeb-Edu training
+split with 1M validation and 1M independent test evaluation. Delta proposals
+were disabled to force the proposal budget toward content semantics; the seed
+program was lag 1, sparse-output capacity was 512 and token learning rates were
+the repaired high-rate settings.
+
+Accepted content structures survived held-out attribution on both splits.
+`ContentFollow([2,3])` was the strongest: mean counterfactual credit was
+0.16521 nats/token on validation and 0.16702 on test, with positive document
+contribution in all 877 validation documents and all 994 test documents.
+`ContentMatch([4])`, `ContentFollow([1,4])` and `ContentFollow([3,4])` also
+had positive-document fractions above 0.98 on both splits.
+
+This satisfies the R2 structural attribution requirement: accepted content
+structures are not merely training-set artifacts. The result also exposes the
+next blocker. The full adaptive model reached NLL 6.58731 on validation and
+6.57489 on test, while the current-token controls were 6.49976 and 6.48778.
+So the architecture now has real accepted structure but still fails to convert
+that structure into better full-model held-out codelength. The next diagnosis
+must isolate seed-only, accepted-channel and fused-model behavior before any
+R3 scale-up.

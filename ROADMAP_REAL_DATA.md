@@ -534,15 +534,20 @@ controls themselves lose to current-token conditioning on held-out data, and
 the repaired R1 pass used fixed programs rather than accepted adaptive
 structures.
 
-Immediate R2 work:
+Accepted-structure attribution was then implemented with
+`record_channel_attribution` and recorded in
+`research_results/r2_adaptive_content_attribution_10m_seed7.md`. The strongest
+accepted content structure, `ContentFollow([2,3])`, had positive held-out
+counterfactual credit in every validation and test document. The R2 structural
+attribution gate is therefore satisfied.
 
-- use the implemented `record_channel_attribution` diagnostic to report
-  model-level frozen-evaluation attribution for accepted programs/channels,
-  including positive-document counts;
-- run an adaptive content-addressing validation block on the admissible
-  FineWeb-Edu split;
-- require cross-document positive codelength contribution on an independently
-  sampled validation block before moving to R3 scale.
+Immediate work before R3:
+
+- resolve P0-8: the full adaptive content model still loses to the
+  current-token control on both validation and test;
+- diagnose seed-only versus accepted-channel ablations under frozen evaluation;
+- move to R3 only after adaptive content improves held-out NLL, not merely
+  channel-local attribution.
 
 ### Phase R3 — 100M-token heterogeneous stream
 

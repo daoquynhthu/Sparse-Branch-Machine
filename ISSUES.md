@@ -15,45 +15,41 @@
 
 ## P0: predictive-learning blockers
 
-No active P0 issue remains after the 2026-06-27 channel-local token residual
-repair and the repaired 10M/1M R1 run.
+### P0-8: Adaptive content fusion underperforms current-token baseline
 
-## P1: diagnostic and recovery blockers
+R2 attribution now shows that accepted content structures are real, but the
+complete adaptive model still fails the practical predictive-quality threshold.
+On the 10M/1M FineWeb-Edu run with content proposals enabled, Delta proposals
+disabled and frozen channel attribution enabled, the adaptive model reached
+validation NLL 6.5873 and test NLL 6.5749. The frozen current-token controls
+were 6.4998 and 6.4878 respectively.
 
-### P1-4: R2 accepted-structure attribution gap
+This is not an accepted-structure existence failure. `ContentFollow([2,3])`
+had positive held-out counterfactual credit on all 877 validation documents and
+all 994 test documents, with mean credit 0.1652 and 0.1670 nats/token. Multiple
+other accepted content channels also survived both held-out splits with
+positive-document fractions above 0.98.
 
-The repaired R1 run passes the short-context predictive gate, but the current
-evidence does not satisfy the R2 structural hard gate. The successful medium
-run used fixed programs `[1]`, `[2]` and `[4]`; it did not contain an accepted
-adaptive structure whose held-out codelength contribution can be traced across
-multiple documents.
-
-The offline R2 structural-control report strengthens the blocker. On the
-10M/1M FineWeb-Edu split, a frozen current-token conditional table reached NLL
-6.4048, while fixed lag1/lag2/lag4 controls reached 7.1816, 7.3531 and 7.4723.
-The lag1/2/4 interpolation reached 6.5653, losing 0.1604 nats/token against
-current-token conditioning, and only 143 of 877 validation documents had
-positive current-minus-interpolated gain.
-
-Failure mode: if this remains unresolved, the R1 model improvement can be
-reported as predictive progress but cannot be interpreted as evidence for the
-intended address-structure mechanism. Advancing directly to larger R3 runs
-would make attribution worse, not better.
+Failure mode: accepted content channels can be locally useful while the full
+adaptive mixture still loses to the simpler current-token path. Advancing to
+R3 scale before fixing this would turn a fusion/utilization defect into a more
+expensive experiment.
 
 Fix plan:
 
-- add frozen-evaluation attribution for accepted programs/channels, reporting
-  per-structure codelength deltas against parent/current residual paths;
-- run an adaptive R2 validation block with content-addressing proposals enabled
-  and a separately sampled validation block;
-- require at least one accepted structure to show positive held-out codelength
-  contribution across multiple documents before moving this issue to resolved.
+- diagnose seed-channel degradation versus content-channel benefit by reporting
+  full-model, seed-only and accepted-channel ablations under frozen evaluation;
+- inspect channel responsibility mass and residual contribution by document
+  position and address reuse to find whether useful content credit is being
+  diluted, overcounted or routed too late;
+- adjust fusion/responsibility policy only after the ablation identifies the
+  failing path;
+- require the adaptive content model to beat the current-token control on both
+  validation and independent test before moving this issue to resolved.
 
-Status: frozen-evaluation per-channel attribution is implemented behind the
-explicit `record_channel_attribution` switch, including token-level credit and
-per-document positive contribution counts. The issue remains active until an
-adaptive R2 run produces accepted-structure attribution on held-out validation
-and an independent validation block confirms the result.
+## P1: diagnostic and recovery blockers
+
+No active P1 issue remains after the R2 accepted-structure attribution repair.
 
 ## P2: portability and documentation defects
 
@@ -69,6 +65,20 @@ contract exists and the current code violates it, or when they become necessary
 to interpret an already-running experiment.
 
 ## Resolved
+
+### P1-4: R2 accepted-structure attribution gap
+
+Resolved by `record_channel_attribution`, per-document channel attribution and
+the paired validation/test R2 adaptive content runs. The accepted
+`ContentFollow([2,3])` channel had positive held-out counterfactual credit on
+all 877 validation documents and all 994 test documents, with mean credit
+0.1652 and 0.1670 nats/token. `ContentMatch([4])`, `ContentFollow([1,4])` and
+`ContentFollow([3,4])` also survived both splits with positive-document
+fractions above 0.98.
+
+This closes the attribution gap, not the adaptive model-quality gap. The latter
+is tracked separately as P0-8 because the full adaptive model still loses to
+the current-token baseline on both held-out splits.
 
 ### P2-2: Canonical current-state documentation
 
