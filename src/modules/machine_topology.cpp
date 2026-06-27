@@ -58,6 +58,18 @@ std::optional<AddressProgram> proposal_at(std::uint64_t ordinal,
     return std::nullopt;
 }
 
+[[nodiscard]] double program_description_cost(const AddressProgram& program) noexcept {
+    return 1.0 + static_cast<double>(program.arity);
+}
+
+[[nodiscard]] double program_execution_cost(const AddressProgram& program) noexcept {
+    if (program.op == AddressOp::ContentMatch || program.op == AddressOp::ContentFollow) {
+        return program.arity == 0U ? 1.0 :
+            1.0 + static_cast<double>(program.lags[program.arity - 1U]);
+    }
+    return 1.0 + static_cast<double>(program.arity);
+}
+
 } // namespace
 
 bool SparseBranchMachine::channel_enabled(std::size_t channel) const noexcept {
@@ -168,10 +180,21 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         }
         const double mean_credit = state.credit_sum /
             static_cast<double>(std::max<std::uint64_t>(1U, state.observations));
-        if (mean_credit >= static_cast<double>(config_.topology_accept_credit)) {
+        const double description_penalty =
+            static_cast<double>(config_.structural_description_cost_weight) *
+            program_description_cost(state.program) /
+            static_cast<double>(std::max<std::uint64_t>(1U, state.observations));
+        const double execution_penalty =
+            static_cast<double>(config_.structural_execution_cost_weight) *
+            program_execution_cost(state.program);
+        const double structural_value =
+            mean_credit - description_penalty - execution_penalty;
+        const double decision_value = config_.topology_accept_uses_structural_value
+            ? structural_value : mean_credit;
+        if (decision_value >= static_cast<double>(config_.topology_accept_credit)) {
             topology_events_.push_back({total_steps_, state.program,
                                         TopologyDecision::Accepted,
-                                        static_cast<float>(mean_credit)});
+                                        static_cast<float>(structural_value)});
             state.phase = ChannelPhase::Active;
             state.born_step = total_steps_;
             state.observations = 0U;
@@ -180,7 +203,7 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         } else {
             topology_events_.push_back({total_steps_, state.program,
                                         TopologyDecision::Rejected,
-                                        static_cast<float>(mean_credit)});
+                                        static_cast<float>(structural_value)});
             physically_erase_channel(channel);
             ++topology_rejected_;
         }

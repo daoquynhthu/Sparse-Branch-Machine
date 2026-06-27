@@ -358,6 +358,11 @@ int main() {
     assert(token_result.eval_examples == token_dataset.example_count() - 2500);
     assert(token_result.oracle_cross_entropy > 0.0);
     assert(token_result.eval_channel_attribution.empty());
+    for (const auto& event : token_result.topology_events) {
+        if (event.decision != sbm::TopologyDecision::Proposed) {
+            assert(std::isfinite(event.credit));
+        }
+    }
 
     const auto balanced_dataset = sbm::make_token_dataset(
         std::vector<std::uint32_t>{0, 1, 0, 1, 0, 1, 0, 1},

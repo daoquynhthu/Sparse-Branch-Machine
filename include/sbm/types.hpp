@@ -155,6 +155,7 @@ struct Config {
         AcceptedChannelRetirement::Preserve};
     float structural_description_cost_weight{1.0F};
     float structural_execution_cost_weight{0.0F};
+    bool topology_accept_uses_structural_value{false};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};
     float residual_mature_learning_rate{0.030F};
