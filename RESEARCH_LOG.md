@@ -913,3 +913,24 @@ explicit address execution, persistent committed structures, dependency-aware
 structural attribution and codelength/cost accounting before R3 scale-up or
 large hyperparameter sweeps. Medium corpus runs remain validation gates for the
 completed framework, not a substitute for implementing it.
+
+## 2026-06-27 — address semantics smoke gate
+
+Tasks 2 through 7 of the neuronal address semantics plan are implemented. The
+machine now exposes address execution diagnostics, executes address programs as
+frames, preserves accepted channels by default, supports quarantine rather than
+physical deletion, reports program/dependency attribution and records
+cost-penalized structural value for topology events.
+
+A limited FineWeb-Edu smoke used 1,000,000 training examples and 100,000
+validation examples from the 10M/1M manifest. It completed at 11,094.9
+examples/s with eval NLL 6.9104, current-token control 7.8332 and interpolated
+multiscale control 8.1617. The run emitted 6,528,320 address execution frames,
+4,371,408 binding hits, 2,156,912 binding misses and 10 program-attribution
+entries. Five topology programs were accepted and none were physically pruned
+under the default preserve policy. The result is recorded in
+`research_results/address_semantics_smoke_seed7.md`.
+
+This smoke validates the completed semantic instrumentation and lifecycle path.
+It is not the full 10M/1M gate and does not replace the required comparison
+against the repaired fixed `[1,2,4]` control.
