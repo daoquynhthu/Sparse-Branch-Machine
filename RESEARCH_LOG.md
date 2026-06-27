@@ -806,3 +806,32 @@ NLL from 7.40035 to 7.12646, and accepted content-channel credit increased:
 larger 10M R1 short-context gate, but it resolves the diagnosed multi-channel
 residual dilution and restores content-addressing experiments to a meaningful
 state.
+
+## 2026-06-27 — repaired 10M/1M R1 pass
+
+After the channel-local token residual repair, the medium FineWeb-Edu R1 run was
+rerun with fixed `address_lags=1,2,4`, `max_sparse_decisions_per_node=512`,
+`classification_learning_rate=0.8` and
+`classification_mature_learning_rate=0.2`. The run used the document-level
+10M train / 1M validation manifest and strict frozen evaluation.
+
+The repaired model reached validation NLL 6.47603 and train NLL 6.57198. It now
+passes the R1 short-context gate: unigram was 7.50852, interpolated multiscale
+was 6.76884 and the previous strongest current-token control was 6.49976. The
+result is also substantially better than the old pre-repair fixed runs:
+default cap64 reached 7.11537 and cap128 reached 7.05836 on the same split.
+
+Resource metrics were: 4.35k examples/s, 2,528.9 model seconds, 1.20 GB
+estimated state, 112,500 live nodes, 39.44M sparse output entries, 7.80M sparse
+output evictions, 150.15M admission rejections and 11.10M address-capacity
+blocked splits. These are acceptable for an R1 pass but remain the next obvious
+scaling pressure before 100M-token R3 runs.
+
+The first attempt at avoiding per-step decoder vector allocations was rejected:
+the fixed-buffer variant preserved NLL but reduced 1M throughput from about
+15.15k to 8.26k examples/s, likely because fixed arrays introduced larger
+per-step copy/sort/cache costs. It was fully reverted. The useful operational
+change was native progress logging: large corpus runs now emit compact stderr
+lines with phase, processed examples, examples/s, ETA, running NLL, live nodes
+and estimated state MB. The successful R1 run wrote regular progress lines and
+ended at running eval NLL 6.48 with state about 1.14 GiB.

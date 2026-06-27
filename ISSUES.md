@@ -15,32 +15,8 @@
 
 ## P0: predictive-learning blockers
 
-### P0-6: Real-data R1 short-context control failure
-
-On the admissible document-level FineWeb-Edu R1 corpus, the fixed-topology
-machine passes the unigram gate but fails the stronger short-context gate at
-10M train / 1M validation scale. Seed 7 with the default sparse-output capacity
-reached validation NLL 7.1154 versus unigram 7.5085, but the current-token
-control reached 6.4998 and the interpolated multiscale control reached 6.7688.
-
-Increasing `max_sparse_decisions_per_node` from 64 to 128 improved NLL to
-7.0584 but still did not approach the short-context controls. The 1M smoke
-capacity curve 64/128/512 produced NLL 7.2709/7.2397/7.1952 while increasing
-estimated state 48.0/71.2/132.2 MB and reducing throughput. This identifies
-sparse-output capacity/churn as a contributor, but not a sufficient explanation
-for the R1 failure.
-
-The first bounded content-conditioned address primitives have also not repaired
-the blocker. A 1M adaptive-topology smoke accepted `ContentMatch(lag=2)` with
-positive local validation credit, but overall validation NLL remained 7.4130.
-After adding bounded `ContentFollow(pattern_lag, max_lag)`, a content-focused
-smoke accepted both `ContentMatch([2])` and `ContentFollow([1,2])`, but NLL
-remained 7.4110. Current evidence therefore points to a broader structural
-credit/fusion/output-use problem, not merely the absence of content-conditioned
-address ops.
-
-Until this is repaired, larger real-data runs should be treated as diagnostics
-only and should not be interpreted as passing the R1 predictive-learning gate.
+No active P0 issue remains after the 2026-06-27 channel-local token residual
+repair and the repaired 10M/1M R1 run.
 
 ## P1: diagnostic and recovery blockers
 
@@ -115,6 +91,16 @@ fixed `1,2,4` improved from 7.1667 to 6.9122, beating the lag-1 high-rate
 control at 6.9911. The content-focused adaptive smoke improved from 7.4110 to
 7.1621, while accepting the same `ContentMatch([2])` and `ContentFollow([1,2])`
 channels with larger positive credit.
+
+### P0-6: Real-data R1 short-context control failure
+
+Resolved by the channel-local token residual repair plus the repaired
+fixed-multichannel run. On the admissible FineWeb-Edu 10M train / 1M validation
+corpus, seed 7 with fixed `address_lags=1,2,4`, cap512 and high token learning
+rates reached validation NLL 6.4760. This beats unigram 7.5085, interpolated
+multiscale 6.7688 and the previous strongest current-token control 6.4998.
+The run processed 10,988,400 examples at 4.35k examples/s with 1.20 GB
+estimated state, 112,500 live nodes and strict frozen evaluation.
 
 ### P0-1: Shared global output prior
 
