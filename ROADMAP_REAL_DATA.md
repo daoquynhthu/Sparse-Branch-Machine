@@ -479,7 +479,8 @@ the proposal must specify:
 
 1. its exact state and execution semantics;
 2. how it is generated from a parent program by a local edit;
-3. how dependencies and callers are tracked;
+3. how dependencies and callers are tracked, at least preserving the current
+   channel-level lineage and caller/prerequisite attribution contract;
 4. how it is ablated without attributing all downstream failure to one shared
    prerequisite;
 5. how it is erased or rolled back;

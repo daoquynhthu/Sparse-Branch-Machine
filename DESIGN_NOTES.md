@@ -196,7 +196,9 @@ operation over token identity and sequence order. It does not use target tokens,
 linguistic labels, document metadata or an unbounded program search, and it
 remains subject to the same probe/validation/rollback lifecycle as other
 address programs. These operations are prototypes rather than a full binding,
-caller or dependency-tracking system.
+call or multi-fragment dependency system. The current implementation does track
+channel-level parent/dependency lineage and separates caller-removed credit from
+joint caller-plus-dependency removal during frozen attribution.
 
 Evaluation is strictly read-only. `freeze_topology()` rejects incomplete probes
 at the training boundary, and counterfactual credit is not accumulated on
@@ -221,12 +223,12 @@ generic modular-difference, bounded content-match and bounded content-follow
 variants. `ContentMatch` and `ContentFollow` may be described as
 content-conditioned address primitives, but not as complete binding, call or
 attention mechanisms. Stronger relation primitives still require explicit
-state, local lineage, dependency-aware ablation and complete rollback. They may
+typed state, multi-caller dependency accounting and complete rollback. They may
 not encode linguistic labels or rely on an unbounded search over arbitrary
 programs.
 
-The next architecture milestone is not another address-operator sweep. The
-machine must first promote address programs from signature recipes to explicit
-execution objects with frames, bindings, lineage, dependency-aware ablation and
-recoverable lifecycle state. Until that exists, experiments may diagnose but
-may not claim that the neuron-like address mechanism is complete.
+Address programs have now been promoted from signature recipes to explicit
+execution objects with frames, bindings, channel lineage, dependency-aware
+ablation and recoverable lifecycle state. This closes the framework gap for the
+current bounded operators, but it does not by itself make the mechanism a full
+Bind/Match/Follow architecture.

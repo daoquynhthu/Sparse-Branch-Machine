@@ -117,8 +117,11 @@ adding arithmetic transforms does not resolve this limitation.
 
 The next program-language redesign therefore requires a content-conditioned
 selection and binding model. Candidate minimal concepts include `Bind`, `Match`
-and `Follow`, but these are not yet approved instructions. They must be derived
-with explicit state, lineage, dependency and rollback semantics.
+and `Follow`, but these are not yet approved instructions. The current bounded
+`ContentMatch` and `ContentFollow` operators now provide explicit execution
+frames, channel lineage and caller/prerequisite attribution; future operators
+must extend that contract with typed state, reusable bindings and rollback
+semantics rather than bypass it.
 
 ## 4. Lifecycle challenge under compositional programs
 
@@ -135,8 +138,10 @@ To preserve traceability, future programs should be created by local typed graph
 edits, not arbitrary program search. Each fragment will need:
 
 - explicit input and output state;
-- parent/lineage information;
-- caller and dependency tracking;
+- parent/lineage information, at least as strong as the current channel-level
+  lineage;
+- caller and dependency tracking, at least as strong as the current
+  caller/prerequisite ablations;
 - a versioned execution meaning;
 - rollback semantics;
 - validation that separates direct contribution from dependent contribution.
@@ -219,7 +224,8 @@ Theory work should resume in this order after real data is available:
 2. express structural value in prequential codelength and explicit complexity;
 3. identify failures not explained by bounded positional programs;
 4. propose one minimal content-conditioned primitive;
-5. define lineage, dependency-aware ablation and rollback;
+5. extend the implemented lineage and dependency-aware ablation contract to
+   typed state and rollback;
 6. test transfer across documents, shards and seeds;
 7. only then consider composition, calls or deeper program graphs.
 
