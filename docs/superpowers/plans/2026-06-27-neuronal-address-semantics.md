@@ -875,6 +875,18 @@ git add include/sbm/types.hpp include/sbm/machine.hpp src/modules/token_sparse_o
 git commit -m "feat: attribute address programs with dependencies"
 ```
 
+**2026-06-28 corrective completion:** A follow-up audit found that the original
+Task 6 implementation still treated `AddressExecutionFrame::dependency` as a
+binding-distance value rather than a channel-level caller/prerequisite graph.
+The implementation has now been extended so channel state, topology events,
+execution frames, C/Python step stats, experiment JSON and C API summary JSON
+carry `parent_channel` and `dependency_channel`. Frozen attribution now emits
+`caller_removed_credit`, `dependency_retained_credit` and
+`dependency_removed_credit`, with regression coverage proving that
+`ContentFollow([1,2])` depends on the accepted `ContentMatch([2])` channel when
+that prerequisite exists. This is an ABI-visible change and increments the C
+API to v5.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

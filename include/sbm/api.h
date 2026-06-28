@@ -48,6 +48,11 @@ typedef struct sbm_step_stats {
     float channel_credit[8];
     float channel_responsibility_mass[8];
     uint32_t channel_dependency[8];
+    uint8_t channel_parent_channel[8];
+    uint8_t channel_dependency_channel[8];
+    float channel_caller_removed_credit[8];
+    float channel_dependency_retained_credit[8];
+    float channel_dependency_removed_credit[8];
     float channel_description_cost[8];
     float channel_execution_cost[8];
     int channel_subset_available;

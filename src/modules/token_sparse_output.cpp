@@ -290,8 +290,15 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     std::uint32_t tuple_channel_mask = 0U;
     std::array<float, kMaxAddressChannels> attribution_channel_mass{};
     std::array<std::uint32_t, kMaxAddressChannels> attribution_dependency{};
+    std::array<std::uint8_t, kMaxAddressChannels> attribution_parent_channel{};
+    std::array<std::uint8_t, kMaxAddressChannels> attribution_dependency_channel{};
+    std::array<float, kMaxAddressChannels> attribution_caller_removed_credit{};
+    std::array<float, kMaxAddressChannels> attribution_dependency_retained_credit{};
+    std::array<float, kMaxAddressChannels> attribution_dependency_removed_credit{};
     std::array<float, kMaxAddressChannels> attribution_description_cost{};
     std::array<float, kMaxAddressChannels> attribution_execution_cost{};
+    attribution_parent_channel.fill(kInvalidChannel);
+    attribution_dependency_channel.fill(kInvalidChannel);
     const bool measure_channel_subsets = config_.record_channel_attribution && !learn;
     if (measure_channel_subsets) {
         const auto frames = last_execution_frames();
@@ -307,6 +314,8 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 const auto& frame = frames[frame_index];
                 ++frame_index;
                 attribution_dependency[channel] = frame.dependency;
+                attribution_parent_channel[channel] = frame.parent_channel;
+                attribution_dependency_channel[channel] = frame.dependency_channel;
                 attribution_description_cost[channel] = frame.description_cost;
                 attribution_execution_cost[channel] = frame.execution_cost;
             }
@@ -338,6 +347,27 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             const float logit = global_output_logit(step.id) +
                 aggregate_sparse_logit_masked(active, step.id, channel_mask, mass_scale);
             loss += branch_loss(logit / temperature, step.right);
+        }
+        return loss;
+    };
+
+    const auto removed_loss = [&](std::uint32_t removed_channel_mask) {
+        float loss = 0.0F;
+        std::size_t path_position = 0U;
+        for (const auto& step : token_path_scratch_) {
+            float removed = 0.0F;
+            for (const auto& node : active) {
+                if (node.channel >= kMaxAddressChannels ||
+                    (removed_channel_mask & (1U << node.channel)) == 0U) {
+                    continue;
+                }
+                const auto slot = slot_of(node.id);
+                if (slot == SIZE_MAX) continue;
+                removed += node.responsibility * sparse_logit(slot, step.id);
+            }
+            loss += branch_loss(
+                (path_logits[path_position] - removed) / temperature, step.right);
+            ++path_position;
         }
         return loss;
     };
@@ -429,6 +459,25 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 ++path_position;
             }
             channel_credit_buffer_[channel] = without_loss - cross_entropy;
+        }
+        if (measure_channel_subsets) {
+            for (std::size_t channel = 0U; channel < topology_.size() &&
+                 channel < kMaxAddressChannels; ++channel) {
+                if (!channel_enabled(channel)) continue;
+                const auto caller_mask = 1U << channel;
+                const float caller_removed =
+                    removed_loss(caller_mask) - cross_entropy;
+                attribution_caller_removed_credit[channel] = caller_removed;
+                attribution_dependency_retained_credit[channel] = caller_removed;
+                const auto dependency_channel = attribution_dependency_channel[channel];
+                if (dependency_channel != kInvalidChannel &&
+                    dependency_channel < kMaxAddressChannels &&
+                    dependency_channel != channel) {
+                    const auto joint_mask = caller_mask | (1U << dependency_channel);
+                    attribution_dependency_removed_credit[channel] =
+                        removed_loss(joint_mask) - cross_entropy;
+                }
+            }
         }
 
         for (auto& node : active) {
@@ -586,6 +635,15 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             stats.channel_responsibility_mass[channel] =
                 attribution_channel_mass[channel];
             stats.channel_dependency[channel] = attribution_dependency[channel];
+            stats.channel_parent_channel[channel] = attribution_parent_channel[channel];
+            stats.channel_dependency_channel[channel] =
+                attribution_dependency_channel[channel];
+            stats.channel_caller_removed_credit[channel] =
+                attribution_caller_removed_credit[channel];
+            stats.channel_dependency_retained_credit[channel] =
+                attribution_dependency_retained_credit[channel];
+            stats.channel_dependency_removed_credit[channel] =
+                attribution_dependency_removed_credit[channel];
             stats.channel_description_cost[channel] =
                 attribution_description_cost[channel];
             stats.channel_execution_cost[channel] = attribution_execution_cost[channel];

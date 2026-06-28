@@ -271,6 +271,8 @@ ExperimentResult run_experiment(const VectorDataset& dataset,
     result.learned_address_programs = model.learned_address_programs();
     result.learned_channel_credit = model.learned_channel_credit();
     result.learned_channel_phase = model.learned_channel_phase();
+    result.learned_channel_parent = model.learned_channel_parent();
+    result.learned_channel_dependency = model.learned_channel_dependency();
     result.topology_events = model.topology_events();
     result.exact_region_mass = config.exact_region_mass;
     result.residual_channel_gain = config.residual_channel_gain;
@@ -341,6 +343,16 @@ std::string to_json(const ExperimentResult& result) {
         if (i != 0U) out << ", ";
         out << static_cast<unsigned>(result.learned_channel_phase[i]);
     }
+    out << "],\n  \"learned_channel_parent\": [";
+    for (std::size_t i = 0; i < result.learned_channel_parent.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_channel_parent[i]);
+    }
+    out << "],\n  \"learned_channel_dependency\": [";
+    for (std::size_t i = 0; i < result.learned_channel_dependency.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_channel_dependency[i]);
+    }
     out << "],\n  \"topology_events\": [";
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -352,7 +364,12 @@ std::string to_json(const ExperimentResult& result) {
         }
         out << "],\"op\":" << static_cast<unsigned>(event.program.op)
             << ",\"decision\":" << static_cast<unsigned>(event.decision)
-            << ",\"credit\":" << event.credit << "}";
+            << ",\"credit\":" << event.credit
+            << ",\"channel\":" << static_cast<unsigned>(event.channel)
+            << ",\"parent_channel\":"
+            << static_cast<unsigned>(event.parent_channel)
+            << ",\"dependency_channel\":"
+            << static_cast<unsigned>(event.dependency_channel) << "}";
     }
     out << "],\n"
         << "  \"exact_region_mass\": " << result.exact_region_mass << ",\n"

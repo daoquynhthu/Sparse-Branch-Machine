@@ -8,7 +8,7 @@
 #include <string_view>
 
 int main() {
-    assert(sbm_api_version() == 4U);
+    assert(sbm_api_version() == 5U);
     assert(std::strlen(sbm_api_version_string()) > 0U);
 
     const std::string_view schema(sbm_parameter_schema_json());
@@ -98,6 +98,7 @@ int main() {
     assert(sbm_config_set(machine_config, "vector_dim", "16") == 0);
     assert(sbm_config_set(machine_config, "bucket_bits", "8") == 0);
     assert(sbm_config_set(machine_config, "seed", "13") == 0);
+    assert(sbm_config_set(machine_config, "topology_probe_interval", "8") == 0);
     sbm_machine_handle* left = sbm_machine_create(machine_config);
     sbm_machine_handle* source = sbm_machine_create(machine_config);
     assert(left != nullptr);
@@ -148,6 +149,14 @@ int main() {
     assert(std::string_view(machine_summary).find("\"learned_channel_phase\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"topology_events\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"learned_channel_parent\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"learned_channel_dependency\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"parent_channel\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"dependency_channel\"") !=
            std::string_view::npos);
     sbm_string_free(machine_summary);
     sbm_machine_destroy(left);

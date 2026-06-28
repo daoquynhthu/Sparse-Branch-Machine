@@ -9,6 +9,7 @@ namespace sbm {
 
 using NodeId = std::uint32_t;
 inline constexpr NodeId kInvalidNode = UINT32_MAX;
+inline constexpr std::uint8_t kInvalidChannel = UINT8_MAX;
 inline constexpr std::size_t kMaxAddressChannels = 8U;
 inline constexpr std::size_t kMaxAddressProgramArity = 2U;
 
@@ -58,6 +59,9 @@ struct AddressProgram {
 struct AddressExecutionFrame {
     AddressProgram program{};
     AddressBindingKind binding{AddressBindingKind::None};
+    std::uint8_t channel{kInvalidChannel};
+    std::uint8_t parent_channel{kInvalidChannel};
+    std::uint8_t dependency_channel{kInvalidChannel};
     std::uint32_t source_index{};
     std::uint32_t matched_index{};
     std::uint32_t successor{};
@@ -91,6 +95,9 @@ struct TopologyEvent {
     AddressProgram program{};
     TopologyDecision decision{TopologyDecision::Proposed};
     float credit{};
+    std::uint8_t channel{kInvalidChannel};
+    std::uint8_t parent_channel{kInvalidChannel};
+    std::uint8_t dependency_channel{kInvalidChannel};
 };
 
 enum class ObjectiveKind : std::uint8_t {
@@ -216,6 +223,11 @@ struct StepStats {
     float content_only_cross_entropy{};
     float tuple_only_cross_entropy{};
     std::array<std::uint32_t, kMaxAddressChannels> channel_dependency{};
+    std::array<std::uint8_t, kMaxAddressChannels> channel_parent_channel{};
+    std::array<std::uint8_t, kMaxAddressChannels> channel_dependency_channel{};
+    std::array<float, kMaxAddressChannels> channel_caller_removed_credit{};
+    std::array<float, kMaxAddressChannels> channel_dependency_retained_credit{};
+    std::array<float, kMaxAddressChannels> channel_dependency_removed_credit{};
     std::array<float, kMaxAddressChannels> channel_description_cost{};
     std::array<float, kMaxAddressChannels> channel_execution_cost{};
 };
@@ -279,9 +291,14 @@ struct Diagnostics {
 
 struct ProgramAttribution {
     std::uint8_t channel{};
+    std::uint8_t parent_channel{kInvalidChannel};
+    std::uint8_t dependency_channel{kInvalidChannel};
     AddressProgram program{};
     std::uint32_t dependency{};
     double credit_sum{};
+    double caller_removed_credit_sum{};
+    double dependency_retained_credit_sum{};
+    double dependency_removed_credit_sum{};
     double description_cost{};
     double execution_cost{};
     std::uint64_t observations{};

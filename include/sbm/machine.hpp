@@ -47,6 +47,8 @@ public:
     [[nodiscard]] std::vector<AddressProgram> learned_address_programs() const;
     [[nodiscard]] std::vector<float> learned_channel_credit() const;
     [[nodiscard]] std::vector<std::uint8_t> learned_channel_phase() const;
+    [[nodiscard]] std::vector<std::uint8_t> learned_channel_parent() const;
+    [[nodiscard]] std::vector<std::uint8_t> learned_channel_dependency() const;
     [[nodiscard]] std::span<const AddressExecutionFrame> last_execution_frames()
         const noexcept {
         return execution_frames_;
@@ -80,6 +82,8 @@ private:
         double credit_sum{};
         std::uint64_t observations{};
         std::uint64_t born_step{};
+        std::uint8_t parent_channel{kInvalidChannel};
+        std::uint8_t dependency_channel{kInvalidChannel};
     };
     using SparseOutputEntry = detail::SparseOutputEntry;
     struct SparseAdmissionCandidate {
@@ -130,6 +134,14 @@ private:
     void maybe_begin_topology_probe(bool learn);
     void maybe_finalize_topology_probe();
     void observe_topology_credit(std::span<const float> channel_credit);
+    [[nodiscard]] std::uint8_t find_channel_for_program(
+        const AddressProgram& program) const noexcept;
+    [[nodiscard]] std::uint8_t find_positional_channel_for_lag(
+        std::uint32_t lag) const noexcept;
+    [[nodiscard]] std::uint8_t find_prefix_channel(
+        const AddressProgram& program) const noexcept;
+    [[nodiscard]] std::pair<std::uint8_t, std::uint8_t> resolve_channel_lineage(
+        const AddressProgram& program) const noexcept;
     void quarantine_channel(std::size_t channel);
     void recoverably_retire_channel(std::size_t channel);
     void physically_erase_channel(std::size_t channel);

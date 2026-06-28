@@ -18,7 +18,7 @@ parser.add_argument("--library", required=True)
 args = parser.parse_args()
 
 runtime = Runtime(args.library)
-assert runtime.version.startswith("4.")
+assert runtime.version.startswith("5.")
 schema = runtime.parameter_schema()
 assert any(item["name"] == "edge_score_weight" for item in schema["parameters"])
 assert any(item["name"] == "classification_learning_rate" for item in schema["parameters"])

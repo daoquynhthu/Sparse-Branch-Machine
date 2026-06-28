@@ -42,6 +42,11 @@ class _StepStats(ctypes.Structure):
         ("channel_credit", ctypes.c_float * 8),
         ("channel_responsibility_mass", ctypes.c_float * 8),
         ("channel_dependency", ctypes.c_uint32 * 8),
+        ("channel_parent_channel", ctypes.c_uint8 * 8),
+        ("channel_dependency_channel", ctypes.c_uint8 * 8),
+        ("channel_caller_removed_credit", ctypes.c_float * 8),
+        ("channel_dependency_retained_credit", ctypes.c_float * 8),
+        ("channel_dependency_removed_credit", ctypes.c_float * 8),
         ("channel_description_cost", ctypes.c_float * 8),
         ("channel_execution_cost", ctypes.c_float * 8),
         ("channel_subset_available", ctypes.c_int),
@@ -653,6 +658,26 @@ class Machine:
             ],
             "channel_dependency": [
                 int(stats.channel_dependency[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_parent_channel": [
+                int(stats.channel_parent_channel[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_dependency_channel": [
+                int(stats.channel_dependency_channel[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_caller_removed_credit": [
+                float(stats.channel_caller_removed_credit[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_dependency_retained_credit": [
+                float(stats.channel_dependency_retained_credit[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_dependency_removed_credit": [
+                float(stats.channel_dependency_removed_credit[i])
                 for i in range(int(stats.channel_credit_count))
             ],
             "channel_description_cost": [

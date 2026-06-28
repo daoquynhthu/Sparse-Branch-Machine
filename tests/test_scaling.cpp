@@ -351,6 +351,11 @@ void verify_dependency_attribution_json() {
     const auto json = sbm::to_json(result);
     assert(json.find("\"eval_program_attribution\"") != std::string::npos);
     assert(json.find("\"dependency\"") != std::string::npos);
+    assert(json.find("\"parent_channel\"") != std::string::npos);
+    assert(json.find("\"dependency_channel\"") != std::string::npos);
+    assert(json.find("\"caller_removed_credit\"") != std::string::npos);
+    assert(json.find("\"dependency_retained_credit\"") != std::string::npos);
+    assert(json.find("\"dependency_removed_credit\"") != std::string::npos);
     assert(json.find("\"structural_value\"") != std::string::npos);
     assert(result.diagnostics.structural_description_cost >= 0.0);
     assert(result.diagnostics.structural_execution_cost >= 0.0);

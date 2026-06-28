@@ -101,6 +101,9 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
                                               0x9E3779B97F4A7C15ULL);
         const bool matched = execute_address_program(
             window, config_.token_alphabet, program, seed, frame);
+        frame.channel = static_cast<std::uint8_t>(channel);
+        frame.parent_channel = topology_[channel].parent_channel;
+        frame.dependency_channel = topology_[channel].dependency_channel;
         signature_buffer_[channel] = frame.signature;
         execution_frames_.push_back(frame);
         ++address_execution_frames_;
@@ -168,6 +171,84 @@ void SparseBranchMachine::physically_erase_channel(std::size_t channel) {
     rebuild_indexes();
 }
 
+std::uint8_t SparseBranchMachine::find_channel_for_program(
+    const AddressProgram& program) const noexcept {
+    for (std::size_t channel = 0U; channel < topology_.size(); ++channel) {
+        if (!channel_enabled(channel)) continue;
+        if (topology_[channel].program == program) {
+            return static_cast<std::uint8_t>(channel);
+        }
+    }
+    return kInvalidChannel;
+}
+
+std::uint8_t SparseBranchMachine::find_positional_channel_for_lag(
+    std::uint32_t lag) const noexcept {
+    for (std::size_t channel = 0U; channel < topology_.size(); ++channel) {
+        if (!channel_enabled(channel)) continue;
+        const auto& program = topology_[channel].program;
+        if (program.op == AddressOp::Tuple && program.arity == 1U &&
+            program.lags[0] == lag) {
+            return static_cast<std::uint8_t>(channel);
+        }
+    }
+    for (std::size_t channel = 0U; channel < topology_.size(); ++channel) {
+        if (!channel_enabled(channel)) continue;
+        const auto& program = topology_[channel].program;
+        if ((program.op == AddressOp::Tuple || program.op == AddressOp::DeltaMod) &&
+            program.arity != 0U && program.lags[program.arity - 1U] == lag) {
+            return static_cast<std::uint8_t>(channel);
+        }
+    }
+    return kInvalidChannel;
+}
+
+std::uint8_t SparseBranchMachine::find_prefix_channel(
+    const AddressProgram& program) const noexcept {
+    if (program.arity == 0U) return kInvalidChannel;
+    if (program.arity > 1U) {
+        AddressProgram prefix;
+        prefix.op = program.op;
+        prefix.arity = static_cast<std::uint8_t>(program.arity - 1U);
+        for (std::size_t index = 0U; index < prefix.arity; ++index) {
+            prefix.lags[index] = program.lags[index];
+        }
+        if (const auto exact = find_channel_for_program(prefix);
+            exact != kInvalidChannel) {
+            return exact;
+        }
+    }
+    const auto max_lag = program.lags[program.arity - 1U];
+    if (const auto positional = find_positional_channel_for_lag(max_lag);
+        positional != kInvalidChannel) {
+        return positional;
+    }
+    return topology_.empty() || !channel_enabled(0U)
+        ? kInvalidChannel
+        : static_cast<std::uint8_t>(0U);
+}
+
+std::pair<std::uint8_t, std::uint8_t> SparseBranchMachine::resolve_channel_lineage(
+    const AddressProgram& program) const noexcept {
+    if (program.arity == 0U) return {kInvalidChannel, kInvalidChannel};
+    const auto max_lag = program.lags[program.arity - 1U];
+    if (program.op == AddressOp::ContentMatch) {
+        const auto dependency = find_positional_channel_for_lag(max_lag);
+        return {dependency, dependency};
+    }
+    if (program.op == AddressOp::ContentFollow) {
+        AddressProgram match = singleton_address_program(max_lag);
+        match.op = AddressOp::ContentMatch;
+        auto dependency = find_channel_for_program(match);
+        if (dependency == kInvalidChannel) {
+            dependency = find_positional_channel_for_lag(max_lag);
+        }
+        return {dependency, dependency};
+    }
+    const auto parent = find_prefix_channel(program);
+    return {parent, parent};
+}
+
 void SparseBranchMachine::maybe_finalize_topology_probe() {
     if (!config_.adaptive_topology) return;
     for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
@@ -194,7 +275,10 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         if (decision_value >= static_cast<double>(config_.topology_accept_credit)) {
             topology_events_.push_back({total_steps_, state.program,
                                         TopologyDecision::Accepted,
-                                        static_cast<float>(structural_value)});
+                                        static_cast<float>(structural_value),
+                                        static_cast<std::uint8_t>(channel),
+                                        state.parent_channel,
+                                        state.dependency_channel});
             state.phase = ChannelPhase::Active;
             state.born_step = total_steps_;
             state.observations = 0U;
@@ -203,7 +287,10 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         } else {
             topology_events_.push_back({total_steps_, state.program,
                                         TopologyDecision::Rejected,
-                                        static_cast<float>(structural_value)});
+                                        static_cast<float>(structural_value),
+                                        static_cast<std::uint8_t>(channel),
+                                        state.parent_channel,
+                                        state.dependency_channel});
             physically_erase_channel(channel);
             ++topology_rejected_;
         }
@@ -225,7 +312,10 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         }
         topology_events_.push_back({total_steps_, state.program,
                                     TopologyDecision::Pruned,
-                                    state.credit_ema});
+                                    state.credit_ema,
+                                    static_cast<std::uint8_t>(channel),
+                                    state.parent_channel,
+                                    state.dependency_channel});
         if (config_.accepted_channel_retirement ==
             AcceptedChannelRetirement::Quarantine) {
             quarantine_channel(channel);
@@ -248,7 +338,10 @@ void SparseBranchMachine::freeze_topology() {
             : state.credit_sum / static_cast<double>(state.observations);
         topology_events_.push_back({total_steps_, state.program,
                                     TopologyDecision::Rejected,
-                                    static_cast<float>(mean_credit)});
+                                    static_cast<float>(mean_credit),
+                                    static_cast<std::uint8_t>(channel),
+                                    state.parent_channel,
+                                    state.dependency_channel});
         physically_erase_channel(channel);
         ++topology_rejected_;
     }
@@ -301,9 +394,14 @@ void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
         topology_.push_back({});
     }
 
-    topology_[slot] = {*proposal, ChannelPhase::Probe, 0.0F, 0.0, 0U, total_steps_};
+    const auto [parent_channel, dependency_channel] =
+        resolve_channel_lineage(*proposal);
+    topology_[slot] = {*proposal, ChannelPhase::Probe, 0.0F, 0.0, 0U,
+                       total_steps_, parent_channel, dependency_channel};
     topology_events_.push_back({total_steps_, *proposal,
-                                TopologyDecision::Proposed, 0.0F});
+                                TopologyDecision::Proposed, 0.0F,
+                                static_cast<std::uint8_t>(slot),
+                                parent_channel, dependency_channel});
     ++topology_proposals_;
     next_probe_step_ = total_steps_ + config_.topology_probe_steps;
 }
@@ -365,6 +463,24 @@ std::vector<std::uint8_t> SparseBranchMachine::learned_channel_phase() const {
     result.reserve(topology_.size());
     for (const auto& state : topology_) {
         result.push_back(static_cast<std::uint8_t>(state.phase));
+    }
+    return result;
+}
+
+std::vector<std::uint8_t> SparseBranchMachine::learned_channel_parent() const {
+    std::vector<std::uint8_t> result;
+    result.reserve(topology_.size());
+    for (const auto& state : topology_) {
+        result.push_back(state.parent_channel);
+    }
+    return result;
+}
+
+std::vector<std::uint8_t> SparseBranchMachine::learned_channel_dependency() const {
+    std::vector<std::uint8_t> result;
+    result.reserve(topology_.size());
+    for (const auto& state : topology_) {
+        result.push_back(state.dependency_channel);
     }
     return result;
 }

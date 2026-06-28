@@ -38,8 +38,13 @@ struct ChannelAttributionAccumulator {
 
 struct ProgramAttributionAccumulator {
     std::uint8_t channel{};
+    std::uint8_t parent_channel{kInvalidChannel};
+    std::uint8_t dependency_channel{kInvalidChannel};
     std::uint32_t dependency{};
     double credit_sum{};
+    double caller_removed_credit_sum{};
+    double dependency_retained_credit_sum{};
+    double dependency_removed_credit_sum{};
     double description_cost{};
     double execution_cost{};
     std::uint64_t observations{};
@@ -138,9 +143,17 @@ std::vector<ProgramAttribution> finish_program_attribution(
         if (accumulator.channel >= programs.size()) continue;
         ProgramAttribution attribution;
         attribution.channel = accumulator.channel;
+        attribution.parent_channel = accumulator.parent_channel;
+        attribution.dependency_channel = accumulator.dependency_channel;
         attribution.program = programs[accumulator.channel];
         attribution.dependency = accumulator.dependency;
         attribution.credit_sum = accumulator.credit_sum;
+        attribution.caller_removed_credit_sum =
+            accumulator.caller_removed_credit_sum;
+        attribution.dependency_retained_credit_sum =
+            accumulator.dependency_retained_credit_sum;
+        attribution.dependency_removed_credit_sum =
+            accumulator.dependency_removed_credit_sum;
         attribution.description_cost = accumulator.description_cost;
         attribution.execution_cost = accumulator.execution_cost;
         attribution.observations = accumulator.observations;
@@ -415,9 +428,22 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                         if (inserted) {
                             program_accumulator.channel =
                                 static_cast<std::uint8_t>(channel);
+                            program_accumulator.parent_channel =
+                                stats.channel_parent_channel[channel];
+                            program_accumulator.dependency_channel =
+                                stats.channel_dependency_channel[channel];
                             program_accumulator.dependency = dependency;
                         }
                         program_accumulator.credit_sum += credit;
+                        program_accumulator.caller_removed_credit_sum +=
+                            static_cast<double>(
+                                stats.channel_caller_removed_credit[channel]);
+                        program_accumulator.dependency_retained_credit_sum +=
+                            static_cast<double>(
+                                stats.channel_dependency_retained_credit[channel]);
+                        program_accumulator.dependency_removed_credit_sum +=
+                            static_cast<double>(
+                                stats.channel_dependency_removed_credit[channel]);
                         program_accumulator.description_cost +=
                             static_cast<double>(stats.channel_description_cost[channel]);
                         program_accumulator.execution_cost +=
@@ -540,6 +566,8 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.learned_address_programs = model.learned_address_programs();
     result.learned_channel_credit = model.learned_channel_credit();
     result.learned_channel_phase = model.learned_channel_phase();
+    result.learned_channel_parent = model.learned_channel_parent();
+    result.learned_channel_dependency = model.learned_channel_dependency();
     if (config.record_channel_attribution) {
         result.eval_channel_attribution = finish_channel_attribution(
             eval_channel_attribution, result.learned_address_programs,
@@ -765,6 +793,16 @@ std::string to_json(const TokenExperimentResult& result) {
         if (i != 0U) out << ", ";
         out << static_cast<unsigned>(result.learned_channel_phase[i]);
     }
+    out << "],\n  \"learned_channel_parent\": [";
+    for (std::size_t i = 0; i < result.learned_channel_parent.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_channel_parent[i]);
+    }
+    out << "],\n  \"learned_channel_dependency\": [";
+    for (std::size_t i = 0; i < result.learned_channel_dependency.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_channel_dependency[i]);
+    }
     out << "],\n  \"eval_channel_attribution\": [";
     for (std::size_t i = 0; i < result.eval_channel_attribution.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -800,6 +838,15 @@ std::string to_json(const TokenExperimentResult& result) {
         const auto& attribution = result.eval_program_attribution[i];
         const double mean_credit = attribution.observations == 0U ? 0.0 :
             attribution.credit_sum / static_cast<double>(attribution.observations);
+        const double caller_removed_mean = attribution.observations == 0U ? 0.0 :
+            attribution.caller_removed_credit_sum /
+                static_cast<double>(attribution.observations);
+        const double dependency_retained_mean = attribution.observations == 0U ? 0.0 :
+            attribution.dependency_retained_credit_sum /
+                static_cast<double>(attribution.observations);
+        const double dependency_removed_mean = attribution.observations == 0U ? 0.0 :
+            attribution.dependency_removed_credit_sum /
+                static_cast<double>(attribution.observations);
         const double positive_fraction = attribution.observations == 0U ? 0.0 :
             static_cast<double>(attribution.positive) /
                 static_cast<double>(attribution.observations);
@@ -815,11 +862,26 @@ std::string to_json(const TokenExperimentResult& result) {
             out << attribution.program.lags[j];
         }
         out << "],\"op\":" << static_cast<unsigned>(attribution.program.op)
+            << ",\"parent_channel\":"
+            << static_cast<unsigned>(attribution.parent_channel)
+            << ",\"dependency_channel\":"
+            << static_cast<unsigned>(attribution.dependency_channel)
             << ",\"dependency\":" << attribution.dependency
             << ",\"observations\":" << attribution.observations
             << ",\"positive\":" << attribution.positive
             << ",\"credit_sum\":" << attribution.credit_sum
+            << ",\"caller_removed_credit\":"
+            << attribution.caller_removed_credit_sum
+            << ",\"dependency_retained_credit\":"
+            << attribution.dependency_retained_credit_sum
+            << ",\"dependency_removed_credit\":"
+            << attribution.dependency_removed_credit_sum
             << ",\"mean_credit\":" << mean_credit
+            << ",\"caller_removed_mean_credit\":" << caller_removed_mean
+            << ",\"dependency_retained_mean_credit\":"
+            << dependency_retained_mean
+            << ",\"dependency_removed_mean_credit\":"
+            << dependency_removed_mean
             << ",\"positive_fraction\":" << positive_fraction
             << ",\"description_cost\":" << attribution.description_cost
             << ",\"execution_cost\":" << attribution.execution_cost
@@ -836,7 +898,12 @@ std::string to_json(const TokenExperimentResult& result) {
         }
         out << "],\"op\":" << static_cast<unsigned>(event.program.op)
             << ",\"decision\":" << static_cast<unsigned>(event.decision)
-            << ",\"credit\":" << event.credit << "}";
+            << ",\"credit\":" << event.credit
+            << ",\"channel\":" << static_cast<unsigned>(event.channel)
+            << ",\"parent_channel\":"
+            << static_cast<unsigned>(event.parent_channel)
+            << ",\"dependency_channel\":"
+            << static_cast<unsigned>(event.dependency_channel) << "}";
     }
     out << "],\n"
         << "  \"exact_region_mass\": " << result.exact_region_mass << ",\n"

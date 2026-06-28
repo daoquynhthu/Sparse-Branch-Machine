@@ -339,6 +339,10 @@ int main() {
                resumed.learned_address_programs());
         assert(uninterrupted.learned_channel_phase() ==
                resumed.learned_channel_phase());
+        assert(uninterrupted.learned_channel_parent() ==
+               resumed.learned_channel_parent());
+        assert(uninterrupted.learned_channel_dependency() ==
+               resumed.learned_channel_dependency());
     }
 
     {
@@ -468,6 +472,55 @@ int main() {
         assert(static_cast<unsigned>(program.op) <=
                static_cast<unsigned>(sbm::AddressOp::ContentFollow));
     }
+
+    sbm::Config lineage_config = token_config;
+    lineage_config.adaptive_topology = true;
+    lineage_config.address_lags = {1U};
+    lineage_config.max_address_channels = 6U;
+    lineage_config.beam_width = 6U;
+    lineage_config.topology_enable_delta = false;
+    lineage_config.topology_probe_interval = 4U;
+    lineage_config.topology_probe_steps = 24U;
+    lineage_config.topology_probe_warmup = 4U;
+    lineage_config.topology_validation_steps = 8U;
+    lineage_config.topology_min_observations = 4U;
+    lineage_config.topology_accept_credit = -100.0F;
+    sbm::SparseBranchMachine lineage_machine(lineage_config);
+    for (std::size_t i = 0; i < 512; ++i) {
+        const auto token = static_cast<std::uint32_t>(i % lineage_config.token_alphabet);
+        (void)lineage_machine.step_token(
+            token,
+            static_cast<std::uint32_t>((token + 1U) % lineage_config.vector_dim),
+            true);
+    }
+    std::uint8_t content_match_channel = sbm::kInvalidChannel;
+    std::uint8_t content_follow_channel = sbm::kInvalidChannel;
+    std::uint8_t content_follow_dependency = sbm::kInvalidChannel;
+    for (const auto& event : lineage_machine.topology_events()) {
+        if (event.decision != sbm::TopologyDecision::Accepted) continue;
+        if (event.program.op == sbm::AddressOp::ContentMatch &&
+            event.program.arity == 1U && event.program.lags[0] == 2U) {
+            content_match_channel = event.channel;
+        }
+        if (event.program.op == sbm::AddressOp::ContentFollow &&
+            event.program.arity == 2U && event.program.lags[0] == 1U &&
+            event.program.lags[1] == 2U) {
+            content_follow_channel = event.channel;
+            content_follow_dependency = event.dependency_channel;
+        }
+    }
+    assert(content_match_channel != sbm::kInvalidChannel);
+    assert(content_follow_channel != sbm::kInvalidChannel);
+    assert(content_follow_dependency == content_match_channel);
+    bool saw_follow_frame = false;
+    for (const auto& frame : lineage_machine.last_execution_frames()) {
+        if (frame.channel == content_follow_channel) {
+            assert(frame.dependency_channel == content_match_channel);
+            assert(frame.parent_channel == content_match_channel);
+            saw_follow_frame = true;
+        }
+    }
+    assert(saw_follow_frame);
 
     sbm::Config fixed_topology_config = token_config;
     fixed_topology_config.adaptive_topology = false;

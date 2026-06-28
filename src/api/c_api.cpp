@@ -496,7 +496,7 @@ std::string_view parameter_tasks(std::string_view name) {
 
 std::string schema_json() {
     std::ostringstream out;
-    out << "{\n  \"api_version\": 4,\n  \"parameters\": [\n";
+    out << "{\n  \"api_version\": 5,\n  \"parameters\": [\n";
     for (std::size_t i = 0; i < std::size(kParameters); ++i) {
         const auto& p = kParameters[i];
         out << "    {\"name\": \"" << json_escape(p.name)
@@ -529,8 +529,8 @@ const std::string& static_schema() {
 
 extern "C" {
 
-uint32_t sbm_api_version(void) { return 4U; }
-const char* sbm_api_version_string(void) { return "4.0.0"; }
+uint32_t sbm_api_version(void) { return 5U; }
+const char* sbm_api_version_string(void) { return "5.0.0"; }
 const char* sbm_last_error(void) { return g_last_error.c_str(); }
 const char* sbm_parameter_schema_json(void) { return static_schema().c_str(); }
 
@@ -637,6 +637,16 @@ int sbm_machine_step_token(sbm_machine_handle* machine,
             stats->channel_responsibility_mass[i] =
                 result.channel_responsibility_mass[i];
             stats->channel_dependency[i] = result.channel_dependency[i];
+            stats->channel_parent_channel[i] =
+                result.channel_parent_channel[i];
+            stats->channel_dependency_channel[i] =
+                result.channel_dependency_channel[i];
+            stats->channel_caller_removed_credit[i] =
+                result.channel_caller_removed_credit[i];
+            stats->channel_dependency_retained_credit[i] =
+                result.channel_dependency_retained_credit[i];
+            stats->channel_dependency_removed_credit[i] =
+                result.channel_dependency_removed_credit[i];
             stats->channel_description_cost[i] = result.channel_description_cost[i];
             stats->channel_execution_cost[i] = result.channel_execution_cost[i];
         }
@@ -696,6 +706,8 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
         const auto lags = machine->value.learned_address_lags();
         const auto credit = machine->value.learned_channel_credit();
         const auto phase = machine->value.learned_channel_phase();
+        const auto parent = machine->value.learned_channel_parent();
+        const auto dependency = machine->value.learned_channel_dependency();
         std::ostringstream out;
         out << "{";
         out << "\"learned_address_lags\": [";
@@ -728,6 +740,16 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
             if (i != 0U) out << ", ";
             out << static_cast<unsigned>(phase[i]);
         }
+        out << "], \"learned_channel_parent\": [";
+        for (std::size_t i = 0; i < parent.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << static_cast<unsigned>(parent[i]);
+        }
+        out << "], \"learned_channel_dependency\": [";
+        for (std::size_t i = 0; i < dependency.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << static_cast<unsigned>(dependency[i]);
+        }
         out << "], \"topology_events\": [";
         const auto& events = machine->value.topology_events();
         for (std::size_t i = 0; i < events.size(); ++i) {
@@ -740,7 +762,12 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
             }
             out << "],\"op\":" << static_cast<unsigned>(event.program.op)
                 << ",\"decision\":" << static_cast<unsigned>(event.decision)
-                << ",\"credit\":" << event.credit << "}";
+                << ",\"credit\":" << event.credit
+                << ",\"channel\":" << static_cast<unsigned>(event.channel)
+                << ",\"parent_channel\":"
+                << static_cast<unsigned>(event.parent_channel)
+                << ",\"dependency_channel\":"
+                << static_cast<unsigned>(event.dependency_channel) << "}";
         }
         out << "]}";
         return duplicate_string(out.str());

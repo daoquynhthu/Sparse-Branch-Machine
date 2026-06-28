@@ -65,6 +65,8 @@ struct ExperimentResult {
     std::vector<AddressProgram> learned_address_programs;
     std::vector<float> learned_channel_credit;
     std::vector<std::uint8_t> learned_channel_phase;
+    std::vector<std::uint8_t> learned_channel_parent;
+    std::vector<std::uint8_t> learned_channel_dependency;
     std::vector<ChannelAttribution> eval_channel_attribution;
     std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
@@ -103,6 +105,8 @@ struct TokenExperimentResult {
     std::vector<AddressProgram> learned_address_programs;
     std::vector<float> learned_channel_credit;
     std::vector<std::uint8_t> learned_channel_phase;
+    std::vector<std::uint8_t> learned_channel_parent;
+    std::vector<std::uint8_t> learned_channel_dependency;
     std::vector<ChannelAttribution> eval_channel_attribution;
     std::vector<double> eval_channel_mean_responsibility;
     std::vector<ProgramAttribution> eval_program_attribution;
