@@ -342,60 +342,65 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         return loss;
     };
 
-    struct SearchItem {
-        float log_probability{};
-        std::uint32_t lo{};
-        std::uint32_t hi{};
-    };
-    std::vector<SearchItem> frontier{{0.0F, 0U, config_.vector_dim}};
-    const auto decoder_beam = std::max(config_.sparse_output_topk,
-                                       config_.sparse_output_beam_width);
-    const auto maximum_depth = static_cast<std::uint32_t>(
-        std::bit_width(config_.vector_dim - 1U) + 2U);
-    for (std::uint32_t depth = 0U; depth < maximum_depth; ++depth) {
-        bool all_leaves = true;
-        std::vector<SearchItem> expanded;
-        expanded.reserve(frontier.size() * 2U);
-        for (const auto& item : frontier) {
-            if (item.hi - item.lo == 1U) {
-                expanded.push_back(item);
-                continue;
+    std::uint32_t predicted = 0U;
+    bool top5 = false;
+    const bool ranking_available = !learn || config_.decode_token_ranking_during_training;
+    if (ranking_available) {
+        struct SearchItem {
+            float log_probability{};
+            std::uint32_t lo{};
+            std::uint32_t hi{};
+        };
+        std::vector<SearchItem> frontier{{0.0F, 0U, config_.vector_dim}};
+        const auto decoder_beam = std::max(config_.sparse_output_topk,
+                                           config_.sparse_output_beam_width);
+        const auto maximum_depth = static_cast<std::uint32_t>(
+            std::bit_width(config_.vector_dim - 1U) + 2U);
+        for (std::uint32_t depth = 0U; depth < maximum_depth; ++depth) {
+            bool all_leaves = true;
+            std::vector<SearchItem> expanded;
+            expanded.reserve(frontier.size() * 2U);
+            for (const auto& item : frontier) {
+                if (item.hi - item.lo == 1U) {
+                    expanded.push_back(item);
+                    continue;
+                }
+                all_leaves = false;
+                const auto decision = output_tree.split(item.lo, item.hi);
+                const float logit = (global_output_logit(decision.decision_id) +
+                    aggregate_sparse_logit(active, decision.decision_id)) / temperature;
+                expanded.push_back({item.log_probability +
+                                        log_branch_probability(logit, false),
+                                    item.lo, decision.middle});
+                expanded.push_back({item.log_probability +
+                                        log_branch_probability(logit, true),
+                                    decision.middle, item.hi});
             }
-            all_leaves = false;
-            const auto decision = output_tree.split(item.lo, item.hi);
-            const float logit = (global_output_logit(decision.decision_id) +
-                aggregate_sparse_logit(active, decision.decision_id)) / temperature;
-            expanded.push_back({item.log_probability +
-                                    log_branch_probability(logit, false),
-                                item.lo, decision.middle});
-            expanded.push_back({item.log_probability +
-                                    log_branch_probability(logit, true),
-                                decision.middle, item.hi});
+            if (all_leaves) break;
+            const auto keep = std::min<std::size_t>(decoder_beam, expanded.size());
+            std::partial_sort(expanded.begin(), expanded.begin() + keep, expanded.end(),
+                              [](const SearchItem& left, const SearchItem& right) {
+                                  return left.log_probability > right.log_probability;
+                              });
+            expanded.resize(keep);
+            frontier = std::move(expanded);
         }
-        if (all_leaves) break;
-        const auto keep = std::min<std::size_t>(decoder_beam, expanded.size());
-        std::partial_sort(expanded.begin(), expanded.begin() + keep, expanded.end(),
-                          [](const SearchItem& left, const SearchItem& right) {
-                              return left.log_probability > right.log_probability;
-                          });
-        expanded.resize(keep);
-        frontier = std::move(expanded);
-    }
-    std::sort(frontier.begin(), frontier.end(),
-              [](const SearchItem& left, const SearchItem& right) {
-                  return left.log_probability > right.log_probability;
-              });
-    std::vector<std::uint32_t> top_tokens;
-    top_tokens.reserve(config_.sparse_output_topk);
-    for (const auto& item : frontier) {
-        if (item.hi - item.lo != 1U) continue;
-        top_tokens.push_back(output_tree.token_from_rank(item.lo));
-        if (top_tokens.size() >= config_.sparse_output_topk) break;
-    }
+        std::sort(frontier.begin(), frontier.end(),
+                  [](const SearchItem& left, const SearchItem& right) {
+                      return left.log_probability > right.log_probability;
+                  });
+        std::vector<std::uint32_t> top_tokens;
+        top_tokens.reserve(config_.sparse_output_topk);
+        for (const auto& item : frontier) {
+            if (item.hi - item.lo != 1U) continue;
+            top_tokens.push_back(output_tree.token_from_rank(item.lo));
+            if (top_tokens.size() >= config_.sparse_output_topk) break;
+        }
 
-    const auto predicted = top_tokens.empty() ? 0U : top_tokens.front();
-    const bool top5 = std::find(top_tokens.begin(), top_tokens.end(), target_token) !=
-                      top_tokens.end();
+        predicted = top_tokens.empty() ? 0U : top_tokens.front();
+        top5 = std::find(top_tokens.begin(), top_tokens.end(), target_token) !=
+               top_tokens.end();
+    }
 
     if (measure_channel_credit) {
         std::fill(channel_credit_buffer_.begin(), channel_credit_buffer_.end(), 0.0F);
@@ -569,8 +574,9 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     stats.route = std::move(route);
     stats.cross_entropy = cross_entropy;
     stats.target_probability = target_probability;
-    stats.top1_correct = predicted == target_token;
-    stats.top5_correct = top5;
+    stats.top1_correct = ranking_available && predicted == target_token;
+    stats.top5_correct = ranking_available && top5;
+    stats.ranking_available = ranking_available;
     stats.predicted_token = predicted;
     if (measure_channel_subsets) {
         stats.channel_credit_count = static_cast<std::uint8_t>(

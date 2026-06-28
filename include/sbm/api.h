@@ -43,6 +43,7 @@ typedef struct sbm_step_stats {
     uint32_t predicted_token;
     int top1_correct;
     int top5_correct;
+    int ranking_available;
     uint8_t channel_credit_count;
     float channel_credit[8];
     float channel_responsibility_mass[8];

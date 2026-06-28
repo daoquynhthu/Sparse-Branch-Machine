@@ -37,6 +37,7 @@ class _StepStats(ctypes.Structure):
         ("predicted_token", ctypes.c_uint32),
         ("top1_correct", ctypes.c_int),
         ("top5_correct", ctypes.c_int),
+        ("ranking_available", ctypes.c_int),
         ("channel_credit_count", ctypes.c_uint8),
         ("channel_credit", ctypes.c_float * 8),
         ("channel_responsibility_mass", ctypes.c_float * 8),
@@ -641,6 +642,7 @@ class Machine:
             "predicted_token": int(stats.predicted_token),
             "top1_correct": bool(stats.top1_correct),
             "top5_correct": bool(stats.top5_correct),
+            "ranking_available": bool(stats.ranking_available),
             "channel_credit_count": int(stats.channel_credit_count),
             "channel_credit": [
                 float(stats.channel_credit[i]) for i in range(int(stats.channel_credit_count))

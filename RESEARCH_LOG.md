@@ -1040,3 +1040,11 @@ configured 200k ceiling because the last three windows did not stabilize within
 8%. Window speeds were 6.72k, 10.20k, 9.78k and 6.41k examples/s. This records
 a real nonblocking performance concern and confirms that a fixed 1M probe is
 not an appropriate default throughput test.
+
+The first throughput repair removed a pure measurement cost from training:
+sparse-token top-k ranking is now skipped during learning by default and
+training top1/top5 are reported as unavailable. Evaluation ranking is unchanged,
+as are cross-entropy, topology credit, parameter updates and attribution. On
+the same 100k/10k window, throughput improved from about 6.43k to 15.42k
+examples/s with identical eval NLL 7.34320677. On the 50k/100k/150k/200k
+short-window probe, speeds were 26.04k, 16.28k, 15.00k and 19.25k examples/s.

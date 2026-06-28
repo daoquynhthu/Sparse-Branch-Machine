@@ -143,6 +143,7 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.sparse_output_topk);
     write_scalar(out, config.sparse_output_beam_width);
     write_scalar(out, config.max_sparse_decisions_per_node);
+    write_scalar(out, config.decode_token_ranking_during_training);
     write_scalar(out, config.record_channel_attribution);
     write_scalar(out, config.output_tree_seed);
     write_scalar(out, config.seed);
@@ -216,6 +217,7 @@ Config read_config(std::istream& in) {
     config.sparse_output_topk = read_scalar<std::uint32_t>(in);
     config.sparse_output_beam_width = read_scalar<std::uint32_t>(in);
     config.max_sparse_decisions_per_node = read_scalar<std::uint32_t>(in);
+    config.decode_token_ranking_during_training = read_scalar<bool>(in);
     config.record_channel_attribution = read_scalar<bool>(in);
     config.output_tree_seed = read_scalar<std::uint64_t>(in);
     config.seed = read_scalar<std::uint64_t>(in);

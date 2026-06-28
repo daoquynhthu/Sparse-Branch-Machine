@@ -183,6 +183,7 @@ struct Config {
     std::uint32_t sparse_output_topk{5};
     std::uint32_t sparse_output_beam_width{16};
     std::uint32_t max_sparse_decisions_per_node{64};
+    bool decode_token_ranking_during_training{false};
     // Optional R2 diagnostic. When enabled, frozen token evaluation records
     // per-address-channel counterfactual codelength contribution. Normal runs
     // leave it disabled to avoid attribution overhead.
@@ -204,6 +205,7 @@ struct StepStats {
     float target_probability{};
     bool top1_correct{};
     bool top5_correct{};
+    bool ranking_available{true};
     std::uint32_t predicted_token{};
     std::uint8_t channel_credit_count{};
     std::array<float, kMaxAddressChannels> channel_credit{};

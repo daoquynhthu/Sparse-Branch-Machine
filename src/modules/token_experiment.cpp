@@ -49,8 +49,12 @@ struct ProgramAttributionAccumulator {
 void add_step(TokenAccumulator& accumulator, const StepStats& stats) {
     accumulator.cross_entropy += static_cast<double>(stats.cross_entropy);
     accumulator.target_probability += static_cast<double>(stats.target_probability);
-    accumulator.top1 += stats.top1_correct ? 1U : 0U;
-    accumulator.top5 += stats.top5_correct ? 1U : 0U;
+    if (stats.ranking_available) {
+        accumulator.top1 += stats.top1_correct ? 1U : 0U;
+        accumulator.top5 += stats.top5_correct ? 1U : 0U;
+    } else {
+        accumulator.ranking_available = false;
+    }
     ++accumulator.examples;
 }
 
