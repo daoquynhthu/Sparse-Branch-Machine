@@ -122,6 +122,9 @@ and `Follow`, but these are not yet approved instructions. The current bounded
 frames, channel lineage and caller/prerequisite attribution; future operators
 must extend that contract with typed state, reusable bindings and rollback
 semantics rather than bypass it.
+The implementation also emits an address dependency graph, so shared
+prerequisites and multi-caller reuse can be audited at the channel level before
+stronger call semantics are added.
 
 ## 4. Lifecycle challenge under compositional programs
 
@@ -225,7 +228,7 @@ Theory work should resume in this order after real data is available:
 3. identify failures not explained by bounded positional programs;
 4. propose one minimal content-conditioned primitive;
 5. extend the implemented lineage and dependency-aware ablation contract to
-   typed state and rollback;
+   typed state, reusable caller graphs and rollback;
 6. test transfer across documents, shards and seeds;
 7. only then consider composition, calls or deeper program graphs.
 

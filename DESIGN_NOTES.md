@@ -249,3 +249,11 @@ Routing signatures and execution frames use the same binding resolver. The
 signature path may still pack values differently for address locality, but it
 must not reimplement ContentMatch or ContentFollow matching semantics outside
 the interpreter contract.
+
+Experiment output now includes an explicit address dependency graph. For every
+learned channel it records the program, lifecycle phase, parent channel,
+dependency channel and direct caller count. In frozen attribution mode the token
+result also accumulates own program credit, binding-match evidence and
+downstream caller/dependency removal credit. This graph is the audit surface for
+shared prerequisites and multi-caller reuse; it is not yet a general subprogram
+call mechanism.

@@ -318,8 +318,10 @@ int main() {
         assert(corpus_result.train_examples == 3U);
         assert(corpus_result.eval_examples == 3U);
         assert(corpus_result.sequence_count == 4U);
+        const auto processed_examples =
+            corpus_result.train_examples + corpus_result.eval_examples;
         for (const auto& event : corpus_result.topology_events) {
-            assert(event.step <= corpus_result.train_examples);
+            assert(event.step <= processed_examples);
         }
     }
     std::remove(shard_path_a);

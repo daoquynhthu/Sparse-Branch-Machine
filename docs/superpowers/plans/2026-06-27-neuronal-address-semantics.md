@@ -915,6 +915,14 @@ interpreted execution frames now share `resolve_address_binding_state()`.
 ContentFollow search implementation, reducing semantic drift risk between
 routing signatures and auditable execution frames.
 
+**2026-06-28 dependency-graph completion:** Token experiment results and C API
+machine summaries now emit an `address_dependency_graph`. The graph summarizes
+each learned channel's program, phase, parent, dependency and direct caller
+count. When frozen program attribution is enabled, token experiment JSON also
+aggregates each channel's own credit, binding matches and downstream caller /
+dependency-removal credit. This makes shared prerequisites and multi-caller
+reuse auditable without changing the current operator set.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

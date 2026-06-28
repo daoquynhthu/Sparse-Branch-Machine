@@ -791,6 +791,37 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
             if (i != 0U) out << ", ";
             out << static_cast<unsigned>(dependency[i]);
         }
+        std::vector<std::uint64_t> caller_counts(programs.size(), 0U);
+        for (std::size_t caller = 0U; caller < dependency.size(); ++caller) {
+            const auto dependency_channel = dependency[caller];
+            if (dependency_channel < caller_counts.size() &&
+                dependency_channel != caller) {
+                ++caller_counts[dependency_channel];
+            }
+        }
+        out << "], \"address_dependency_graph\": [";
+        for (std::size_t i = 0; i < programs.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << "{\"channel\":" << i << ",\"lags\":[";
+            for (std::size_t j = 0; j < programs[i].arity; ++j) {
+                if (j != 0U) out << ',';
+                out << programs[i].lags[j];
+            }
+            out << "],\"op\":" << static_cast<unsigned>(programs[i].op)
+                << ",\"phase\":"
+                << (i < phase.size() ? static_cast<unsigned>(phase[i])
+                                      : static_cast<unsigned>(
+                                            sbm::ChannelPhase::Retired))
+                << ",\"parent_channel\":"
+                << (i < parent.size() ? static_cast<unsigned>(parent[i])
+                                      : static_cast<unsigned>(
+                                            sbm::kInvalidChannel))
+                << ",\"dependency_channel\":"
+                << (i < dependency.size()
+                        ? static_cast<unsigned>(dependency[i])
+                        : static_cast<unsigned>(sbm::kInvalidChannel))
+                << ",\"direct_caller_count\":" << caller_counts[i] << "}";
+        }
         out << "], \"topology_events\": [";
         const auto& events = machine->value.topology_events();
         for (std::size_t i = 0; i < events.size(); ++i) {

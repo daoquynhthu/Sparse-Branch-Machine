@@ -161,6 +161,10 @@ int main() {
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"learned_channel_dependency\"") !=
            std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"address_dependency_graph\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"direct_caller_count\"") !=
+           std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"parent_channel\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"dependency_channel\"") !=

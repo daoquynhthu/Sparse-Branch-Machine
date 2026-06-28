@@ -178,6 +178,49 @@ std::vector<ProgramAttribution> finish_program_attribution(
     return result;
 }
 
+std::vector<ChannelDependencySummary> finish_dependency_graph(
+    std::span<const AddressProgram> programs,
+    std::span<const std::uint8_t> phases,
+    std::span<const std::uint8_t> parents,
+    std::span<const std::uint8_t> dependencies,
+    std::span<const ProgramAttribution> attributions) {
+    const auto count = std::min({programs.size(), phases.size(), parents.size(),
+                                 dependencies.size()});
+    std::vector<ChannelDependencySummary> result;
+    result.reserve(count);
+    for (std::size_t channel = 0U; channel < count; ++channel) {
+        ChannelDependencySummary summary;
+        summary.channel = static_cast<std::uint8_t>(channel);
+        summary.program = programs[channel];
+        summary.phase = phases[channel];
+        summary.parent_channel = parents[channel];
+        summary.dependency_channel = dependencies[channel];
+        for (std::size_t caller = 0U; caller < count; ++caller) {
+            if (caller != channel && dependencies[caller] == channel) {
+                ++summary.direct_caller_count;
+            }
+        }
+        for (const auto& attribution : attributions) {
+            if (attribution.channel == channel) {
+                summary.own_observations += attribution.observations;
+                summary.own_binding_matches += attribution.binding_matches;
+                summary.own_credit_sum += attribution.credit_sum;
+                summary.own_caller_removed_credit_sum +=
+                    attribution.caller_removed_credit_sum;
+            }
+            if (attribution.dependency_channel == channel &&
+                attribution.channel != channel) {
+                summary.downstream_caller_removed_credit_sum +=
+                    attribution.caller_removed_credit_sum;
+                summary.downstream_dependency_removed_credit_sum +=
+                    attribution.dependency_removed_credit_sum;
+            }
+        }
+        result.push_back(summary);
+    }
+    return result;
+}
+
 struct CountRow {
     std::uint64_t total{};
     std::unordered_map<std::uint32_t, std::uint32_t> counts;
@@ -602,6 +645,10 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                     static_cast<double>(observations));
         }
     }
+    result.address_dependency_graph = finish_dependency_graph(
+        result.learned_address_programs, result.learned_channel_phase,
+        result.learned_channel_parent, result.learned_channel_dependency,
+        result.eval_program_attribution);
     result.topology_events = model.topology_events();
     result.exact_region_mass = config.exact_region_mass;
     result.edge_score_weight = config.edge_score_weight;
@@ -818,6 +865,45 @@ std::string to_json(const TokenExperimentResult& result) {
     for (std::size_t i = 0; i < result.learned_channel_dependency.size(); ++i) {
         if (i != 0U) out << ", ";
         out << static_cast<unsigned>(result.learned_channel_dependency[i]);
+    }
+    out << "],\n  \"address_dependency_graph\": [";
+    for (std::size_t i = 0; i < result.address_dependency_graph.size(); ++i) {
+        if (i != 0U) out << ", ";
+        const auto& summary = result.address_dependency_graph[i];
+        out << "{\"channel\":" << static_cast<unsigned>(summary.channel)
+            << ",\"lags\":[";
+        for (std::size_t j = 0; j < summary.program.arity; ++j) {
+            if (j != 0U) out << ',';
+            out << summary.program.lags[j];
+        }
+        const double own_mean_credit = summary.own_observations == 0U ? 0.0 :
+            summary.own_credit_sum /
+                static_cast<double>(summary.own_observations);
+        const double own_binding_match_fraction =
+            summary.own_observations == 0U ? 0.0 :
+                static_cast<double>(summary.own_binding_matches) /
+                    static_cast<double>(summary.own_observations);
+        out << "],\"op\":" << static_cast<unsigned>(summary.program.op)
+            << ",\"phase\":" << static_cast<unsigned>(summary.phase)
+            << ",\"parent_channel\":"
+            << static_cast<unsigned>(summary.parent_channel)
+            << ",\"dependency_channel\":"
+            << static_cast<unsigned>(summary.dependency_channel)
+            << ",\"direct_caller_count\":"
+            << summary.direct_caller_count
+            << ",\"own_observations\":" << summary.own_observations
+            << ",\"own_binding_matches\":"
+            << summary.own_binding_matches
+            << ",\"own_binding_match_fraction\":"
+            << own_binding_match_fraction
+            << ",\"own_credit_sum\":" << summary.own_credit_sum
+            << ",\"own_mean_credit\":" << own_mean_credit
+            << ",\"own_caller_removed_credit\":"
+            << summary.own_caller_removed_credit_sum
+            << ",\"downstream_caller_removed_credit\":"
+            << summary.downstream_caller_removed_credit_sum
+            << ",\"downstream_dependency_removed_credit\":"
+            << summary.downstream_dependency_removed_credit_sum << "}";
     }
     out << "],\n  \"eval_channel_attribution\": [";
     for (std::size_t i = 0; i < result.eval_channel_attribution.size(); ++i) {

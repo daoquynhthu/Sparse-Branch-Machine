@@ -1128,3 +1128,18 @@ The content-address signature path now uses the same
 `resolve_address_binding_state()` helper as interpreted execution frames. This
 removes the previous duplicate ContentMatch/ContentFollow search implementation
 from `signature.cpp`.
+
+## 2026-06-28 — address dependency graph summary
+
+The address-semantics framework now emits an explicit channel dependency graph
+in token experiment JSON and C API machine summaries. Each learned channel
+reports its program, lifecycle phase, parent channel, dependency channel and
+direct caller count. In frozen attribution mode, token result JSON also
+aggregates own program credit, binding-match evidence and downstream caller /
+dependency-removal credit for the dependency channel.
+
+This does not add a new address operator and does not claim complete
+Bind/Call semantics. It closes the next audit gap: shared prerequisites and
+multi-caller reuse are now visible as graph structure rather than being
+recoverable only by manually correlating lineage arrays and per-program
+attribution rows.

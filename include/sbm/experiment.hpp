@@ -41,6 +41,21 @@ struct ChannelAttribution {
     double eval_positive_document_fraction{};
 };
 
+struct ChannelDependencySummary {
+    std::uint8_t channel{};
+    AddressProgram program{};
+    std::uint8_t phase{};
+    std::uint8_t parent_channel{kInvalidChannel};
+    std::uint8_t dependency_channel{kInvalidChannel};
+    std::uint64_t direct_caller_count{};
+    std::uint64_t own_observations{};
+    std::uint64_t own_binding_matches{};
+    double own_credit_sum{};
+    double own_caller_removed_credit_sum{};
+    double downstream_caller_removed_credit_sum{};
+    double downstream_dependency_removed_credit_sum{};
+};
+
 struct ExperimentResult {
     Diagnostics diagnostics;
     VectorMetrics train;
@@ -110,6 +125,7 @@ struct TokenExperimentResult {
     std::vector<ChannelAttribution> eval_channel_attribution;
     std::vector<double> eval_channel_mean_responsibility;
     std::vector<ProgramAttribution> eval_program_attribution;
+    std::vector<ChannelDependencySummary> address_dependency_graph;
     std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
     float edge_score_weight{};
