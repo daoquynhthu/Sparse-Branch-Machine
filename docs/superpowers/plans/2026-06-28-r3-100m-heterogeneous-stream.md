@@ -210,7 +210,7 @@ git commit -m "feat: inspect corpus manifests"
 - Create: `scripts/derive_sbm_manifest_view.py`
 - Modify: `tests/test_manifest_tools.py`
 
-- [ ] **Step 1: Add failing derive-view test**
+- [x] **Step 1: Add failing derive-view test**
 
 Append to `tests/test_manifest_tools.py` before `if __name__ == "__main__":`:
 
@@ -268,7 +268,7 @@ def main() -> None:
     test_derive_view_cli(temp)
 ```
 
-- [ ] **Step 2: Run failing test**
+- [x] **Step 2: Run failing test**
 
 Run:
 
@@ -278,7 +278,7 @@ python tests\test_manifest_tools.py
 
 Expected: fail because `derive_sbm_manifest_view.py` does not exist.
 
-- [ ] **Step 3: Implement view derivation**
+- [x] **Step 3: Implement view derivation**
 
 Create `scripts/derive_sbm_manifest_view.py`:
 
@@ -366,7 +366,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Verify derive-view**
+- [x] **Step 4: Verify derive-view**
 
 Run:
 
@@ -381,7 +381,7 @@ Expected: test passes. The real derive command succeeds only if the source
 split capacities are sufficient; it must fail rather than silently reassigning
 validation or test shards to train.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add scripts\derive_sbm_manifest_view.py tests\test_manifest_tools.py

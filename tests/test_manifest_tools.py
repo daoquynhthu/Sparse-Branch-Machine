@@ -69,6 +69,31 @@ def main() -> None:
     assert summary["splits"]["train"]["examples"] == 100
     assert summary["splits"]["validation"]["tokens"] == 51
     assert summary["total_examples"] == 190
+    output = temp / "view" / "manifest.json"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "derive_sbm_manifest_view.py"),
+            "--source",
+            str(manifest),
+            "--output",
+            str(output),
+            "--train-examples",
+            "100",
+            "--validation-examples",
+            "50",
+            "--test-examples",
+            "40",
+            "--name",
+            "fixture-view",
+        ],
+        check=True,
+    )
+    derived = json.loads(output.read_text(encoding="utf-8"))
+    assert derived["schema"] == "sbm-corpus-manifest"
+    assert derived["view_name"] == "fixture-view"
+    assert derived["source_manifest"].endswith("manifest.json")
+    assert derived["splits"]["train"]["shards"][0]["path"] == "../train-000.sbt"
 
 
 if __name__ == "__main__":
