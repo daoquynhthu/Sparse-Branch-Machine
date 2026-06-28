@@ -1208,10 +1208,16 @@ nats/token versus the raw gate. The result is recorded in
 Nonzero `structural_execution_cost_weight` remains uncalibrated and must not be
 enabled by default from this gate.
 
-- [ ] **Step 5: Commit each completed gate**
+- [x] **Step 5: Commit each completed gate**
 
 Each gate must end with a research result file, a concise `RESEARCH_LOG.md`
 entry and either a commit or a confirmed blocker in `ISSUES.md`.
+
+Completed. Task 9 gates were committed as:
+
+- `b85722a research: validate address semantics multiseed`
+- `476445c research: validate address semantics transfer`
+- `60b4456 research: calibrate structural value admission`
 
 ## Execution Policy
 
