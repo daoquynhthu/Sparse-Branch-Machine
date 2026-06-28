@@ -1024,3 +1024,19 @@ attribution entries.
 
 This closes Task 9 Step 2. The next evidence gate is shard transfer: the same
 framework must remain competitive on a different FineWeb-Edu shard sample.
+
+## 2026-06-28 — parallel gate harness and short throughput probe
+
+The R3 admission harness was updated before shard-transfer validation. The
+corpus batch runner now supports parallel seed execution, split selection,
+bounded train/eval windows, parameter overrides and skip-existing reuse, so
+independent seeds do not need to run serially. This is infrastructure for Task 9
+Step 3, not evidence that shard transfer has passed.
+
+The throughput probe was changed from a long fixed workload to short C++
+limited-window probes. The current local run on the 10M/1M manifest used
+50k/100k/150k/200k train windows with 10k eval examples and stopped at the
+configured 200k ceiling because the last three windows did not stabilize within
+8%. Window speeds were 6.72k, 10.20k, 9.78k and 6.41k examples/s. This records
+a real nonblocking performance concern and confirms that a fixed 1M probe is
+not an appropriate default throughput test.

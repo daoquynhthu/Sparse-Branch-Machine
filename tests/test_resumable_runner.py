@@ -169,4 +169,76 @@ with tempfile.TemporaryDirectory() as directory_text:
         abs_tol=1e-6,
     )
 
+    batch_dir = directory / "batch"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "run_corpus_batch.py"),
+            "--library",
+            args.library,
+            "--manifest",
+            str(manifest_path),
+            "--seeds",
+            "3,5",
+            "--output-dir",
+            str(batch_dir),
+            "--eval-split",
+            "validation",
+            "--max-train-examples",
+            "24",
+            "--max-eval-examples",
+            "8",
+            "--max-workers",
+            "2",
+            "--worker-memory-mib",
+            "64",
+            "--bucket-bits",
+            "6",
+            "--set",
+            "address_lags=1",
+        ],
+        check=True,
+    )
+    batch_summary = json.loads((batch_dir / "summary.json").read_text(encoding="utf-8"))
+    assert batch_summary["seeds"] == [3, 5]
+    assert batch_summary["eval_split"] == "validation"
+    assert len(batch_summary["runs"]) == 2
+    assert all("current_token_cross_entropy" in item for item in batch_summary["runs"])
+
+    probe_output = directory / "throughput.json"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "run_throughput_probe.py"),
+            "--library",
+            args.library,
+            "--manifest",
+            str(manifest_path),
+            "--train-examples",
+            "4000",
+            "--eval-examples",
+            "500",
+            "--start-examples",
+            "1000",
+            "--step-examples",
+            "1000",
+            "--stable-windows",
+            "2",
+            "--repeat",
+            "1",
+            "--output",
+            str(probe_output),
+            "--bucket-bits",
+            "6",
+            "--set",
+            "address_lags=1",
+        ],
+        check=True,
+    )
+    probe = json.loads(probe_output.read_text(encoding="utf-8"))
+    assert 1000 <= probe["final_train_examples"] <= 4000
+    assert probe["eval_examples"] == 500
+    assert probe["mean_steps_per_second"] > 0
+    assert probe["stopped_reason"] in {"stable", "max_examples"}
+
 print("resumable runner tests passed")

@@ -1163,6 +1163,14 @@ Repeat the gate on a different FineWeb-Edu shard sample. This tests whether the
 accepted address semantics survive corpus sampling rather than fitting one
 manifest.
 
+The execution harness now supports this as a parallel batch rather than a
+serial seed loop: `scripts/run_corpus_batch.py` accepts eval split selection,
+train/eval limits, runtime parameter overrides, skip-existing resume behavior
+and worker memory estimates. Throughput checks must use
+`scripts/run_throughput_probe.py`, which runs short C++ limited windows and
+stops when the recent window speeds stabilize, instead of forcing a fixed 1M
+probe before reporting.
+
 Acceptance boundary:
 
 - quality remains competitive with current-token control;
