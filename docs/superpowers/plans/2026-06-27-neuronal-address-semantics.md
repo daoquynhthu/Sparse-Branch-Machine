@@ -923,6 +923,16 @@ aggregates each channel's own credit, binding matches and downstream caller /
 dependency-removal credit. This makes shared prerequisites and multi-caller
 reuse auditable without changing the current operator set.
 
+**2026-06-28 binding-key reuse completion:** `AddressBindingState` now carries a
+stable typed `binding_key` for matched bindings. The key is derived from the
+operation, program shape, current token, matched token, matched successor and
+pattern shape, but not from absolute index or matched distance. This lets the
+same content binding be recognized across variable distances while preserving
+the existing routing signature for locality. C/Python step stats expose
+`channel_binding_key`, and frozen program attribution reports
+`unique_binding_keys` plus `binding_key_reuse_events`. This increments the C API
+to v7.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

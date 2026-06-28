@@ -245,6 +245,13 @@ aliases for report consumers, not the sole semantic representation. Runtime
 diagnostics report binding behavior both globally and by binding kind so content
 operators can be audited separately from positional channels.
 
+Matched binding states also carry a stable `binding_key`. The key intentionally
+excludes absolute matched index and matched distance, so a content binding can
+be recognized as the same reusable relation when it appears at a different
+distance. Frozen attribution reports unique binding-key count and reuse events;
+these are diagnostic evidence for reusable binding, not a new routing decision
+rule.
+
 Routing signatures and execution frames use the same binding resolver. The
 signature path may still pack values differently for address locality, but it
 must not reimplement ContentMatch or ContentFollow matching semantics outside

@@ -57,6 +57,7 @@ struct AddressBindingState {
     std::uint32_t matched_index{};
     std::uint32_t matched_distance{};
     std::uint32_t pattern_span{};
+    std::uint64_t binding_key{};
     std::uint8_t pattern_terms{};
     bool matched{};
 };
@@ -249,6 +250,7 @@ struct StepStats {
     std::array<std::uint32_t, kMaxAddressChannels> channel_binding_successor{};
     std::array<std::uint32_t, kMaxAddressChannels> channel_binding_distance{};
     std::array<std::uint32_t, kMaxAddressChannels> channel_binding_pattern_span{};
+    std::array<std::uint64_t, kMaxAddressChannels> channel_binding_key{};
     std::array<float, kMaxAddressChannels> channel_description_cost{};
     std::array<float, kMaxAddressChannels> channel_execution_cost{};
 };
@@ -327,6 +329,8 @@ struct ProgramAttribution {
     double binding_distance_sum{};
     double binding_pattern_span_sum{};
     std::uint64_t binding_matches{};
+    std::uint64_t unique_binding_keys{};
+    std::uint64_t binding_key_reuse_events{};
     double description_cost{};
     double execution_cost{};
     std::uint64_t observations{};

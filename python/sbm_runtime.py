@@ -54,6 +54,7 @@ class _StepStats(ctypes.Structure):
         ("channel_binding_successor", ctypes.c_uint32 * 8),
         ("channel_binding_distance", ctypes.c_uint32 * 8),
         ("channel_binding_pattern_span", ctypes.c_uint32 * 8),
+        ("channel_binding_key", ctypes.c_uint64 * 8),
         ("channel_description_cost", ctypes.c_float * 8),
         ("channel_execution_cost", ctypes.c_float * 8),
         ("channel_subset_available", ctypes.c_int),
@@ -713,6 +714,10 @@ class Machine:
             ],
             "channel_binding_pattern_span": [
                 int(stats.channel_binding_pattern_span[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_binding_key": [
+                int(stats.channel_binding_key[i])
                 for i in range(int(stats.channel_credit_count))
             ],
             "channel_description_cost": [

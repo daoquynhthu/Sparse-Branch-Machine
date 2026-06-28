@@ -8,7 +8,7 @@
 #include <string_view>
 
 int main() {
-    assert(sbm_api_version() == 6U);
+    assert(sbm_api_version() == 7U);
     assert(std::strlen(sbm_api_version_string()) > 0U);
 
     const std::string_view schema(sbm_parameter_schema_json());
@@ -141,6 +141,8 @@ int main() {
         assert(source_stats.channel_binding_kind[0] <= 3U);
         assert(source_stats.channel_binding_matched[0] <= 1U);
         assert(source_stats.channel_binding_current_token[0] < 16U);
+        assert(source_stats.channel_binding_matched[0] == 0U ||
+               source_stats.channel_binding_key[0] != 0U);
     }
     char* machine_diag = sbm_machine_diagnostics_json(resumed);
     assert(machine_diag != nullptr);

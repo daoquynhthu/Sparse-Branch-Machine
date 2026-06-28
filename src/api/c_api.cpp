@@ -503,7 +503,7 @@ std::string_view parameter_tasks(std::string_view name) {
 
 std::string schema_json() {
     std::ostringstream out;
-    out << "{\n  \"api_version\": 6,\n  \"parameters\": [\n";
+    out << "{\n  \"api_version\": 7,\n  \"parameters\": [\n";
     for (std::size_t i = 0; i < std::size(kParameters); ++i) {
         const auto& p = kParameters[i];
         out << "    {\"name\": \"" << json_escape(p.name)
@@ -536,8 +536,8 @@ const std::string& static_schema() {
 
 extern "C" {
 
-uint32_t sbm_api_version(void) { return 6U; }
-const char* sbm_api_version_string(void) { return "6.0.0"; }
+uint32_t sbm_api_version(void) { return 7U; }
+const char* sbm_api_version_string(void) { return "7.0.0"; }
 const char* sbm_last_error(void) { return g_last_error.c_str(); }
 const char* sbm_parameter_schema_json(void) { return static_schema().c_str(); }
 
@@ -667,6 +667,7 @@ int sbm_machine_step_token(sbm_machine_handle* machine,
                 result.channel_binding_distance[i];
             stats->channel_binding_pattern_span[i] =
                 result.channel_binding_pattern_span[i];
+            stats->channel_binding_key[i] = result.channel_binding_key[i];
             stats->channel_description_cost[i] = result.channel_description_cost[i];
             stats->channel_execution_cost[i] = result.channel_execution_cost[i];
         }

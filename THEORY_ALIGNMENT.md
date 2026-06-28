@@ -125,6 +125,10 @@ semantics rather than bypass it.
 The implementation also emits an address dependency graph, so shared
 prerequisites and multi-caller reuse can be audited at the channel level before
 stronger call semantics are added.
+Matched content bindings additionally have stable binding keys that ignore
+absolute distance. This provides direct evidence about repeated reuse of the
+same binding, but it is still an audit mechanism rather than full variable
+binding or subprogram invocation.
 
 ## 4. Lifecycle challenge under compositional programs
 

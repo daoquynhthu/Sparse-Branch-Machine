@@ -50,6 +50,8 @@ struct ChannelDependencySummary {
     std::uint64_t direct_caller_count{};
     std::uint64_t own_observations{};
     std::uint64_t own_binding_matches{};
+    std::uint64_t unique_binding_keys{};
+    std::uint64_t binding_key_reuse_events{};
     double own_credit_sum{};
     double own_caller_removed_credit_sum{};
     double downstream_caller_removed_credit_sum{};

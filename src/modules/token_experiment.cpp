@@ -14,6 +14,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace sbm {
@@ -48,6 +49,7 @@ struct ProgramAttributionAccumulator {
     double binding_distance_sum{};
     double binding_pattern_span_sum{};
     std::uint64_t binding_matches{};
+    std::unordered_set<std::uint64_t> binding_keys;
     double description_cost{};
     double execution_cost{};
     std::uint64_t observations{};
@@ -161,6 +163,11 @@ std::vector<ProgramAttribution> finish_program_attribution(
         attribution.binding_pattern_span_sum =
             accumulator.binding_pattern_span_sum;
         attribution.binding_matches = accumulator.binding_matches;
+        attribution.unique_binding_keys = accumulator.binding_keys.size();
+        attribution.binding_key_reuse_events =
+            attribution.binding_matches > attribution.unique_binding_keys
+                ? attribution.binding_matches - attribution.unique_binding_keys
+                : 0U;
         attribution.description_cost = accumulator.description_cost;
         attribution.execution_cost = accumulator.execution_cost;
         attribution.observations = accumulator.observations;
@@ -204,6 +211,9 @@ std::vector<ChannelDependencySummary> finish_dependency_graph(
             if (attribution.channel == channel) {
                 summary.own_observations += attribution.observations;
                 summary.own_binding_matches += attribution.binding_matches;
+                summary.unique_binding_keys += attribution.unique_binding_keys;
+                summary.binding_key_reuse_events +=
+                    attribution.binding_key_reuse_events;
                 summary.own_credit_sum += attribution.credit_sum;
                 summary.own_caller_removed_credit_sum +=
                     attribution.caller_removed_credit_sum;
@@ -496,6 +506,10 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                                 stats.channel_dependency_removed_credit[channel]);
                         if (stats.channel_binding_matched[channel] != 0U) {
                             ++program_accumulator.binding_matches;
+                            if (stats.channel_binding_key[channel] != 0U) {
+                                program_accumulator.binding_keys.insert(
+                                    stats.channel_binding_key[channel]);
+                            }
                             program_accumulator.binding_distance_sum +=
                                 static_cast<double>(
                                     stats.channel_binding_distance[channel]);
@@ -894,6 +908,10 @@ std::string to_json(const TokenExperimentResult& result) {
             << ",\"own_observations\":" << summary.own_observations
             << ",\"own_binding_matches\":"
             << summary.own_binding_matches
+            << ",\"unique_binding_keys\":"
+            << summary.unique_binding_keys
+            << ",\"binding_key_reuse_events\":"
+            << summary.binding_key_reuse_events
             << ",\"own_binding_match_fraction\":"
             << own_binding_match_fraction
             << ",\"own_credit_sum\":" << summary.own_credit_sum
@@ -989,6 +1007,10 @@ std::string to_json(const TokenExperimentResult& result) {
             << ",\"dependency_removed_credit\":"
             << attribution.dependency_removed_credit_sum
             << ",\"binding_matches\":" << attribution.binding_matches
+            << ",\"unique_binding_keys\":"
+            << attribution.unique_binding_keys
+            << ",\"binding_key_reuse_events\":"
+            << attribution.binding_key_reuse_events
             << ",\"binding_match_fraction\":" << binding_match_fraction
             << ",\"mean_binding_distance\":" << mean_binding_distance
             << ",\"mean_binding_pattern_span\":"

@@ -137,6 +137,7 @@ int main() {
         assert(frame.binding_state.matched_distance == 3U);
         assert(frame.binding_state.pattern_span == 6U);
         assert(frame.binding_state.pattern_terms == 1U);
+        assert(frame.binding_state.binding_key != 0U);
         assert(frame.successor == 13U);
         assert(frame.dependency != 0U);
         assert(frame.signature == sbm::address_program_signature(
@@ -144,6 +145,32 @@ int main() {
             std::span<const std::uint32_t>(program.lags.data(), program.arity),
             program.op, 11U));
         assert(frame.execution_cost > 0.0F);
+    }
+
+    {
+        const std::array<std::uint32_t, 8> near_data{
+            4U, 8U, 9U, 4U, 8U, 13U, 4U, 8U};
+        const std::array<std::uint32_t, 6> far_same_binding{
+            4U, 8U, 13U, 9U, 4U, 8U};
+        const std::array<std::uint32_t, 6> far_different_successor{
+            4U, 8U, 14U, 9U, 4U, 8U};
+        sbm::AddressProgram program;
+        program.lags[0] = 1U;
+        program.lags[1] = 6U;
+        program.arity = 2U;
+        program.op = sbm::AddressOp::ContentFollow;
+        const auto near_binding =
+            sbm::resolve_address_binding_state(near_data, program);
+        const auto far_binding =
+            sbm::resolve_address_binding_state(far_same_binding, program);
+        const auto other_binding =
+            sbm::resolve_address_binding_state(far_different_successor, program);
+        assert(near_binding.matched);
+        assert(far_binding.matched);
+        assert(other_binding.matched);
+        assert(near_binding.matched_distance != far_binding.matched_distance);
+        assert(near_binding.binding_key == far_binding.binding_key);
+        assert(near_binding.binding_key != other_binding.binding_key);
     }
 
     {

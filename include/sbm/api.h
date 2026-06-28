@@ -60,6 +60,7 @@ typedef struct sbm_step_stats {
     uint32_t channel_binding_successor[8];
     uint32_t channel_binding_distance[8];
     uint32_t channel_binding_pattern_span[8];
+    uint64_t channel_binding_key[8];
     float channel_description_cost[8];
     float channel_execution_cost[8];
     int channel_subset_available;

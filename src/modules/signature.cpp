@@ -7,6 +7,8 @@
 
 namespace sbm {
 
+std::uint64_t mix64(std::uint64_t x) noexcept;
+
 namespace {
 
 [[nodiscard]] std::uint32_t safe_history_index(
@@ -17,6 +19,22 @@ namespace {
         return static_cast<std::uint32_t>(window.size() - 1U - lag);
     }
     return 0U;
+}
+
+[[nodiscard]] std::uint64_t binding_state_key(
+    const AddressBindingState& state,
+    const AddressProgram& program) noexcept {
+    if (!state.matched) return 0U;
+    std::uint64_t key = mix64(
+        static_cast<std::uint64_t>(program.op) + 0x8CB92BA72F3D8DD7ULL);
+    key ^= std::rotl(mix64(address_program_key(program)), 7);
+    key ^= std::rotl(mix64(state.current_token), 13);
+    key ^= std::rotl(mix64(state.matched_token), 23);
+    key ^= std::rotl(mix64(state.matched_successor), 31);
+    key ^= std::rotl(mix64(state.pattern_span), 43);
+    key ^= std::rotl(mix64(state.pattern_terms), 53);
+    key = mix64(key);
+    return key == 0U ? 1U : key;
 }
 
 } // namespace
@@ -40,6 +58,7 @@ AddressBindingState resolve_address_binding_state(
         state.matched_successor = state.matched_token;
         state.matched_distance = program.lags[program.arity - 1U];
         state.pattern_span = program.lags[program.arity - 1U];
+        state.binding_key = binding_state_key(state, program);
         return state;
     }
 
@@ -68,6 +87,7 @@ AddressBindingState resolve_address_binding_state(
             window[std::min(candidate_index + 1U, current_index)];
         state.matched_distance = static_cast<std::uint32_t>(distance);
         state.pattern_span = max_lag;
+        state.binding_key = binding_state_key(state, program);
         return state;
     }
     return state;

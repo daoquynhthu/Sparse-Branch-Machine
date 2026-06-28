@@ -1115,6 +1115,14 @@ span. Runtime diagnostics also emit `address_binding_by_kind`, a compact
 per-kind summary of frames, hits, hit rate, mean distance and mean pattern span.
 The C ABI is now v6 after adding the binding-state arrays.
 
+The binding state was then extended with a stable `binding_key`. The key is
+content/operation based rather than distance/index based, so repeated bindings
+can be counted across variable distances. C/Python step stats expose
+`channel_binding_key`; frozen program attribution reports
+`unique_binding_keys` and `binding_key_reuse_events`. This increments the C API
+to v7. The model checkpoint remains `SBMCKPT3` because execution frames are not
+serialized as checkpoint state.
+
 Because topology state and topology events are raw-serialized in model
 checkpoints, the model checkpoint magic was bumped to `SBMCKPT3`. The checkpoint
 contract is exact same-format resume, not cross-version archive compatibility.
