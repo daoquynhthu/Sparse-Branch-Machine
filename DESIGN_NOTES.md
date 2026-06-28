@@ -244,3 +244,8 @@ match flag. The older `successor` and `dependency` fields remain compatibility
 aliases for report consumers, not the sole semantic representation. Runtime
 diagnostics report binding behavior both globally and by binding kind so content
 operators can be audited separately from positional channels.
+
+Routing signatures and execution frames use the same binding resolver. The
+signature path may still pack values differently for address locality, but it
+must not reimplement ContentMatch or ContentFollow matching semantics outside
+the interpreter contract.

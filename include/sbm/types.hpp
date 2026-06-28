@@ -54,6 +54,7 @@ struct AddressBindingState {
     std::uint32_t current_token{};
     std::uint32_t matched_token{};
     std::uint32_t matched_successor{};
+    std::uint32_t matched_index{};
     std::uint32_t matched_distance{};
     std::uint32_t pattern_span{};
     std::uint8_t pattern_terms{};

@@ -909,6 +909,12 @@ increments the C API to v6.
 hit rate, mean matched distance and mean pattern span. The counters are
 checkpointed in `SBMCKPT3` so exact resume preserves the diagnostic stream.
 
+**2026-06-28 shared-binding completion:** Content address signatures and
+interpreted execution frames now share `resolve_address_binding_state()`.
+`address_program_signature()` no longer carries a parallel ContentMatch /
+ContentFollow search implementation, reducing semantic drift risk between
+routing signatures and auditable execution frames.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

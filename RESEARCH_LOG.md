@@ -1123,3 +1123,8 @@ The accepted-channel lifecycle also now exposes `RecoverableRetire` as a real
 policy. It masks routing, retains channel-owned state for audit and increments
 `recoverable_retired_channels`; only `PhysicalErase` deletes channel-owned
 nodes.
+
+The content-address signature path now uses the same
+`resolve_address_binding_state()` helper as interpreted execution frames. This
+removes the previous duplicate ContentMatch/ContentFollow search implementation
+from `signature.cpp`.

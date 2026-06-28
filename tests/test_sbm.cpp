@@ -120,9 +120,16 @@ int main() {
         sbm::AddressExecutionFrame frame{};
         const bool matched = sbm::execute_address_program(
             data, interpreter_config.token_alphabet, program, 11U, frame);
+        const auto resolved = sbm::resolve_address_binding_state(data, program);
         assert(matched);
         assert(frame.binding == sbm::AddressBindingKind::ContentFollow);
         assert(frame.matched);
+        assert(resolved.matched);
+        assert(resolved.matched_index == frame.binding_state.matched_index);
+        assert(resolved.matched_successor ==
+               frame.binding_state.matched_successor);
+        assert(resolved.matched_distance ==
+               frame.binding_state.matched_distance);
         assert(frame.binding_state.matched);
         assert(frame.binding_state.current_token == 8U);
         assert(frame.binding_state.matched_token == 8U);
@@ -132,6 +139,10 @@ int main() {
         assert(frame.binding_state.pattern_terms == 1U);
         assert(frame.successor == 13U);
         assert(frame.dependency != 0U);
+        assert(frame.signature == sbm::address_program_signature(
+            data, interpreter_config.token_alphabet,
+            std::span<const std::uint32_t>(program.lags.data(), program.arity),
+            program.op, 11U));
         assert(frame.execution_cost > 0.0F);
     }
 
