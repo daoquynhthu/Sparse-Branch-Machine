@@ -376,6 +376,12 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     result.address_execution_frames = address_execution_frames_;
     result.address_binding_hits = address_binding_hits_;
     result.address_binding_misses = address_binding_misses_;
+    result.address_binding_kind_frames = address_binding_kind_frames_;
+    result.address_binding_kind_hits = address_binding_kind_hits_;
+    result.address_binding_kind_distance_sum =
+        address_binding_kind_distance_sum_;
+    result.address_binding_kind_pattern_span_sum =
+        address_binding_kind_pattern_span_sum_;
     result.structural_description_cost = structural_description_cost_;
     result.structural_execution_cost = structural_execution_cost_;
     result.simd_enabled = simd_available();

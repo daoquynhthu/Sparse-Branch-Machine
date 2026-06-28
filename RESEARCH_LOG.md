@@ -1111,10 +1111,12 @@ current token, matched token, matched successor, matched distance, pattern span,
 pattern-term count and match flag. The legacy `successor` and `dependency`
 fields remain compatibility aliases. Frozen program attribution aggregates
 binding match count, match fraction, mean binding distance and mean pattern
-span. The C ABI is now v6 after adding the binding-state arrays.
+span. Runtime diagnostics also emit `address_binding_by_kind`, a compact
+per-kind summary of frames, hits, hit rate, mean distance and mean pattern span.
+The C ABI is now v6 after adding the binding-state arrays.
 
 Because topology state and topology events are raw-serialized in model
-checkpoints, the model checkpoint magic was bumped to `SBMCKPT2`. The checkpoint
+checkpoints, the model checkpoint magic was bumped to `SBMCKPT3`. The checkpoint
 contract is exact same-format resume, not cross-version archive compatibility.
 
 The accepted-channel lifecycle also now exposes `RecoverableRetire` as a real

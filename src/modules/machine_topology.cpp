@@ -109,6 +109,17 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
         ++address_execution_frames_;
         if (matched) ++address_binding_hits_;
         else ++address_binding_misses_;
+        const auto binding_index = static_cast<std::size_t>(frame.binding);
+        if (binding_index < kAddressBindingKindCount) {
+            ++address_binding_kind_frames_[binding_index];
+            if (frame.binding_state.matched) {
+                ++address_binding_kind_hits_[binding_index];
+                address_binding_kind_distance_sum_[binding_index] +=
+                    static_cast<double>(frame.binding_state.matched_distance);
+                address_binding_kind_pattern_span_sum_[binding_index] +=
+                    static_cast<double>(frame.binding_state.pattern_span);
+            }
+        }
         structural_description_cost_ += static_cast<double>(frame.description_cost);
         structural_execution_cost_ += static_cast<double>(frame.execution_cost);
     }

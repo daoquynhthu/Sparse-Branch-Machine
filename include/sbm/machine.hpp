@@ -4,6 +4,7 @@
 #include "sbm/detail/implicit_output.hpp"
 #include "sbm/detail/sparse_output.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -251,6 +252,14 @@ private:
     std::uint64_t address_execution_frames_{};
     std::uint64_t address_binding_hits_{};
     std::uint64_t address_binding_misses_{};
+    std::array<std::uint64_t, kAddressBindingKindCount>
+        address_binding_kind_frames_{};
+    std::array<std::uint64_t, kAddressBindingKindCount>
+        address_binding_kind_hits_{};
+    std::array<double, kAddressBindingKindCount>
+        address_binding_kind_distance_sum_{};
+    std::array<double, kAddressBindingKindCount>
+        address_binding_kind_pattern_span_sum_{};
     double structural_description_cost_{};
     double structural_execution_cost_{};
     std::uint64_t sparse_output_insertions_{};

@@ -368,6 +368,14 @@ int main() {
         const auto resumed_diag = resumed.diagnostics();
         assert(uninterrupted_diag.steps == resumed_diag.steps);
         assert(uninterrupted_diag.live_nodes == resumed_diag.live_nodes);
+        assert(uninterrupted_diag.address_binding_kind_frames ==
+               resumed_diag.address_binding_kind_frames);
+        assert(uninterrupted_diag.address_binding_kind_hits ==
+               resumed_diag.address_binding_kind_hits);
+        assert(uninterrupted_diag.address_binding_kind_distance_sum ==
+               resumed_diag.address_binding_kind_distance_sum);
+        assert(uninterrupted_diag.address_binding_kind_pattern_span_sum ==
+               resumed_diag.address_binding_kind_pattern_span_sum);
         assert(uninterrupted.learned_address_programs() ==
                resumed.learned_address_programs());
         assert(uninterrupted.learned_channel_phase() ==
@@ -464,6 +472,13 @@ int main() {
     assert(token_result.eval_examples == token_dataset.example_count() - 2500);
     assert(token_result.oracle_cross_entropy > 0.0);
     assert(token_result.eval_channel_attribution.empty());
+    std::uint64_t binding_kind_frames = 0U;
+    for (const auto value :
+         token_result.diagnostics.address_binding_kind_frames) {
+        binding_kind_frames += value;
+    }
+    assert(binding_kind_frames ==
+           token_result.diagnostics.address_execution_frames);
     for (const auto& event : token_result.topology_events) {
         if (event.decision != sbm::TopologyDecision::Proposed) {
             assert(std::isfinite(event.credit));

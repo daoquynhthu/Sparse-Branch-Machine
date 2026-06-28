@@ -904,6 +904,11 @@ attribution reports binding match count, match fraction, mean binding distance
 and mean pattern span. This extends the previous ABI-visible change and
 increments the C API to v6.
 
+**2026-06-28 binding-diagnostics completion:** Runtime diagnostics now include
+`address_binding_by_kind`, a compact per-binding-kind summary of frames, hits,
+hit rate, mean matched distance and mean pattern span. The counters are
+checkpointed in `SBMCKPT3` so exact resume preserves the diagnostic stream.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**
@@ -1135,9 +1140,10 @@ Contract boundary:
   archives;
 - the binary file magic is the checkpoint format version and must be bumped
   whenever a raw-serialized state struct changes layout;
-- `SBMCKPT2` is the first lineage-aware model checkpoint format. It includes
-  channel parent/dependency lineage in topology state and topology events, plus
-  all state required to continue sparse-output learning exactly;
+- `SBMCKPT3` is the current lineage-aware model checkpoint format. It includes
+  channel parent/dependency lineage in topology state and topology events,
+  binding-kind execution counters, plus all state required to continue
+  sparse-output learning exactly;
 - runner checkpoints own the data cursor, manifest identity, phase, accumulated
   metrics and path to the model checkpoint. Exact long-run resume requires both
   runner and model checkpoint files;

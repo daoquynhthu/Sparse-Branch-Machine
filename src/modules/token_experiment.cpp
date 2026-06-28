@@ -999,6 +999,27 @@ std::string to_json(const TokenExperimentResult& result) {
         << result.diagnostics.address_binding_hits << ",\n"
         << "  \"address_binding_misses\": "
         << result.diagnostics.address_binding_misses << ",\n"
+        << "  \"address_binding_by_kind\": [";
+    for (std::size_t index = 0U; index < kAddressBindingKindCount; ++index) {
+        if (index != 0U) out << ", ";
+        const auto frames = result.diagnostics.address_binding_kind_frames[index];
+        const auto hits = result.diagnostics.address_binding_kind_hits[index];
+        const double hit_rate = frames == 0U ? 0.0 :
+            static_cast<double>(hits) / static_cast<double>(frames);
+        const double mean_distance = hits == 0U ? 0.0 :
+            result.diagnostics.address_binding_kind_distance_sum[index] /
+                static_cast<double>(hits);
+        const double mean_pattern_span = hits == 0U ? 0.0 :
+            result.diagnostics.address_binding_kind_pattern_span_sum[index] /
+                static_cast<double>(hits);
+        out << "{\"kind\":" << index
+            << ",\"frames\":" << frames
+            << ",\"hits\":" << hits
+            << ",\"hit_rate\":" << hit_rate
+            << ",\"mean_distance\":" << mean_distance
+            << ",\"mean_pattern_span\":" << mean_pattern_span << "}";
+    }
+    out << "],\n"
         << "  \"quarantined_channels\": "
         << result.diagnostics.quarantined_channels << ",\n"
         << "  \"recoverable_retired_channels\": "

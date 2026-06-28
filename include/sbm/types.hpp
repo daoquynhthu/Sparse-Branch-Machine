@@ -12,6 +12,7 @@ inline constexpr NodeId kInvalidNode = UINT32_MAX;
 inline constexpr std::uint8_t kInvalidChannel = UINT8_MAX;
 inline constexpr std::size_t kMaxAddressChannels = 8U;
 inline constexpr std::size_t kMaxAddressProgramArity = 2U;
+inline constexpr std::size_t kAddressBindingKindCount = 4U;
 
 enum class NodePhase : std::uint8_t { Cold, Warm, Mature, Dormant };
 enum class ChannelPhase : std::uint8_t {
@@ -282,6 +283,10 @@ struct Diagnostics {
     std::uint64_t address_execution_frames{};
     std::uint64_t address_binding_hits{};
     std::uint64_t address_binding_misses{};
+    std::array<std::uint64_t, kAddressBindingKindCount> address_binding_kind_frames{};
+    std::array<std::uint64_t, kAddressBindingKindCount> address_binding_kind_hits{};
+    std::array<double, kAddressBindingKindCount> address_binding_kind_distance_sum{};
+    std::array<double, kAddressBindingKindCount> address_binding_kind_pattern_span_sum{};
     std::uint64_t quarantined_channels{};
     std::uint64_t recoverable_retired_channels{};
     double structural_value_nats{};

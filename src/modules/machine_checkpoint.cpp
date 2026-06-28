@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '2'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '3'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -337,6 +337,10 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_scalar(out, machine.address_execution_frames_);
     write_scalar(out, machine.address_binding_hits_);
     write_scalar(out, machine.address_binding_misses_);
+    write_scalar(out, machine.address_binding_kind_frames_);
+    write_scalar(out, machine.address_binding_kind_hits_);
+    write_scalar(out, machine.address_binding_kind_distance_sum_);
+    write_scalar(out, machine.address_binding_kind_pattern_span_sum_);
     write_scalar(out, machine.structural_description_cost_);
     write_scalar(out, machine.structural_execution_cost_);
     write_scalar(out, machine.sparse_output_insertions_);
@@ -406,6 +410,14 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.address_execution_frames_ = read_scalar<std::uint64_t>(in);
     machine.address_binding_hits_ = read_scalar<std::uint64_t>(in);
     machine.address_binding_misses_ = read_scalar<std::uint64_t>(in);
+    machine.address_binding_kind_frames_ =
+        read_scalar<std::array<std::uint64_t, kAddressBindingKindCount>>(in);
+    machine.address_binding_kind_hits_ =
+        read_scalar<std::array<std::uint64_t, kAddressBindingKindCount>>(in);
+    machine.address_binding_kind_distance_sum_ =
+        read_scalar<std::array<double, kAddressBindingKindCount>>(in);
+    machine.address_binding_kind_pattern_span_sum_ =
+        read_scalar<std::array<double, kAddressBindingKindCount>>(in);
     machine.structural_description_cost_ = read_scalar<double>(in);
     machine.structural_execution_cost_ = read_scalar<double>(in);
     machine.sparse_output_insertions_ = read_scalar<std::uint64_t>(in);

@@ -146,6 +146,8 @@ int main() {
     assert(machine_diag != nullptr);
     assert(std::string_view(machine_diag).find("\"steps\": 193") !=
            std::string_view::npos);
+    assert(std::string_view(machine_diag).find("\"address_binding_by_kind\"") !=
+           std::string_view::npos);
     sbm_string_free(machine_diag);
     char* machine_summary = sbm_machine_summary_json(resumed);
     assert(machine_summary != nullptr);

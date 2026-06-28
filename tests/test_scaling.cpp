@@ -359,6 +359,7 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"binding_matches\"") != std::string::npos);
     assert(json.find("\"mean_binding_distance\"") != std::string::npos);
     assert(json.find("\"mean_binding_pattern_span\"") != std::string::npos);
+    assert(json.find("\"address_binding_by_kind\"") != std::string::npos);
     assert(json.find("\"structural_value\"") != std::string::npos);
     assert(result.diagnostics.structural_description_cost >= 0.0);
     assert(result.diagnostics.structural_execution_cost >= 0.0);

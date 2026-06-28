@@ -241,4 +241,6 @@ Bind/Match/Follow architecture.
 Each interpreted frame includes a typed binding state: current token, matched
 token, matched successor, matched distance, pattern span, pattern-term count and
 match flag. The older `successor` and `dependency` fields remain compatibility
-aliases for report consumers, not the sole semantic representation.
+aliases for report consumers, not the sole semantic representation. Runtime
+diagnostics report binding behavior both globally and by binding kind so content
+operators can be audited separately from positional channels.
