@@ -541,15 +541,20 @@ accepted content structure, `ContentFollow([2,3])`, had positive held-out
 counterfactual credit in every validation and test document. The R2 structural
 attribution gate is therefore satisfied.
 
-Immediate work before R3:
+Status 2026-06-28: the address-semantics framework has passed its R3 admission
+gates. The completed framework has explicit address execution, persistent
+accepted structures, dependency-aware attribution, multi-seed 10M/1M validation,
+held-out test transfer and matched structural-value admission calibration.
 
-- execute `docs/superpowers/plans/2026-06-27-neuronal-address-semantics.md`;
-- stop cap/rate/fusion sweeps unless they test a completed semantic contract;
-- keep the 10M/1M FineWeb-Edu corpus as a validation gate, not as a substitute
-  for implementing the address framework;
-- move to R3 only after explicit address execution, persistent accepted
-  structures, dependency-aware attribution and structural value accounting are
-  implemented and verified.
+Immediate work for R3:
+
+- execute `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md`;
+- build or import a true document-level 100M training manifest before running
+  the model gate;
+- do not repurpose validation or test shards as training data;
+- run a short throughput/sizing gate before full 100M multi-seed validation;
+- keep 10M/1M results as the R3 admission baseline, not as a substitute for the
+  100M heterogeneous stream gate.
 
 ### Phase R3 — 100M-token heterogeneous stream
 
