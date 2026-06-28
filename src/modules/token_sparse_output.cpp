@@ -295,6 +295,13 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     std::array<float, kMaxAddressChannels> attribution_caller_removed_credit{};
     std::array<float, kMaxAddressChannels> attribution_dependency_retained_credit{};
     std::array<float, kMaxAddressChannels> attribution_dependency_removed_credit{};
+    std::array<std::uint8_t, kMaxAddressChannels> attribution_binding_kind{};
+    std::array<std::uint8_t, kMaxAddressChannels> attribution_binding_matched{};
+    std::array<std::uint32_t, kMaxAddressChannels> attribution_binding_current_token{};
+    std::array<std::uint32_t, kMaxAddressChannels> attribution_binding_matched_token{};
+    std::array<std::uint32_t, kMaxAddressChannels> attribution_binding_successor{};
+    std::array<std::uint32_t, kMaxAddressChannels> attribution_binding_distance{};
+    std::array<std::uint32_t, kMaxAddressChannels> attribution_binding_pattern_span{};
     std::array<float, kMaxAddressChannels> attribution_description_cost{};
     std::array<float, kMaxAddressChannels> attribution_execution_cost{};
     attribution_parent_channel.fill(kInvalidChannel);
@@ -316,6 +323,20 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 attribution_dependency[channel] = frame.dependency;
                 attribution_parent_channel[channel] = frame.parent_channel;
                 attribution_dependency_channel[channel] = frame.dependency_channel;
+                attribution_binding_kind[channel] =
+                    static_cast<std::uint8_t>(frame.binding);
+                attribution_binding_matched[channel] =
+                    frame.binding_state.matched ? 1U : 0U;
+                attribution_binding_current_token[channel] =
+                    frame.binding_state.current_token;
+                attribution_binding_matched_token[channel] =
+                    frame.binding_state.matched_token;
+                attribution_binding_successor[channel] =
+                    frame.binding_state.matched_successor;
+                attribution_binding_distance[channel] =
+                    frame.binding_state.matched_distance;
+                attribution_binding_pattern_span[channel] =
+                    frame.binding_state.pattern_span;
                 attribution_description_cost[channel] = frame.description_cost;
                 attribution_execution_cost[channel] = frame.execution_cost;
             }
@@ -644,6 +665,19 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 attribution_dependency_retained_credit[channel];
             stats.channel_dependency_removed_credit[channel] =
                 attribution_dependency_removed_credit[channel];
+            stats.channel_binding_kind[channel] = attribution_binding_kind[channel];
+            stats.channel_binding_matched[channel] =
+                attribution_binding_matched[channel];
+            stats.channel_binding_current_token[channel] =
+                attribution_binding_current_token[channel];
+            stats.channel_binding_matched_token[channel] =
+                attribution_binding_matched_token[channel];
+            stats.channel_binding_successor[channel] =
+                attribution_binding_successor[channel];
+            stats.channel_binding_distance[channel] =
+                attribution_binding_distance[channel];
+            stats.channel_binding_pattern_span[channel] =
+                attribution_binding_pattern_span[channel];
             stats.channel_description_cost[channel] =
                 attribution_description_cost[channel];
             stats.channel_execution_cost[channel] = attribution_execution_cost[channel];

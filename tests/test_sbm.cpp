@@ -94,6 +94,13 @@ int main() {
         assert(matched);
         assert(frame.binding == sbm::AddressBindingKind::Positional);
         assert(frame.matched);
+        assert(frame.binding_state.matched);
+        assert(frame.binding_state.current_token == 53U);
+        assert(frame.binding_state.matched_token == 31U);
+        assert(frame.binding_state.matched_successor == 31U);
+        assert(frame.binding_state.matched_distance == 2U);
+        assert(frame.binding_state.pattern_span == 2U);
+        assert(frame.binding_state.pattern_terms == 0U);
         assert(frame.source_index == 2U);
         assert(frame.signature == sbm::address_program_signature(
             data, interpreter_config.token_alphabet,
@@ -116,9 +123,35 @@ int main() {
         assert(matched);
         assert(frame.binding == sbm::AddressBindingKind::ContentFollow);
         assert(frame.matched);
+        assert(frame.binding_state.matched);
+        assert(frame.binding_state.current_token == 8U);
+        assert(frame.binding_state.matched_token == 8U);
+        assert(frame.binding_state.matched_successor == 13U);
+        assert(frame.binding_state.matched_distance == 3U);
+        assert(frame.binding_state.pattern_span == 6U);
+        assert(frame.binding_state.pattern_terms == 1U);
         assert(frame.successor == 13U);
         assert(frame.dependency != 0U);
         assert(frame.execution_cost > 0.0F);
+    }
+
+    {
+        sbm::Config interpreter_config;
+        interpreter_config.token_alphabet = 4096U;
+        const std::array<std::uint32_t, 5> data{1U, 2U, 3U, 4U, 5U};
+        sbm::AddressProgram program = sbm::singleton_address_program(4U);
+        program.op = sbm::AddressOp::ContentMatch;
+        sbm::AddressExecutionFrame frame{};
+        const bool matched = sbm::execute_address_program(
+            data, interpreter_config.token_alphabet, program, 13U, frame);
+        assert(!matched);
+        assert(frame.binding == sbm::AddressBindingKind::ContentMatch);
+        assert(!frame.binding_state.matched);
+        assert(frame.binding_state.current_token == 5U);
+        assert(frame.binding_state.matched_token == 0U);
+        assert(frame.binding_state.matched_successor == 0U);
+        assert(frame.binding_state.matched_distance == 0U);
+        assert(frame.binding_state.pattern_span == 0U);
     }
 
     auto dataset = sbm::generate_vector_process(8000, 32, 16, 20, 9);

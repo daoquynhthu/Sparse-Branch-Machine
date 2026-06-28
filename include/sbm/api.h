@@ -53,6 +53,13 @@ typedef struct sbm_step_stats {
     float channel_caller_removed_credit[8];
     float channel_dependency_retained_credit[8];
     float channel_dependency_removed_credit[8];
+    uint8_t channel_binding_kind[8];
+    uint8_t channel_binding_matched[8];
+    uint32_t channel_binding_current_token[8];
+    uint32_t channel_binding_matched_token[8];
+    uint32_t channel_binding_successor[8];
+    uint32_t channel_binding_distance[8];
+    uint32_t channel_binding_pattern_span[8];
     float channel_description_cost[8];
     float channel_execution_cost[8];
     int channel_subset_available;

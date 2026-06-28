@@ -887,6 +887,16 @@ carry `parent_channel` and `dependency_channel`. Frozen attribution now emits
 that prerequisite exists. This is an ABI-visible change and increments the C
 API to v5.
 
+**2026-06-28 typed-binding completion:** `AddressExecutionFrame` now carries an
+`AddressBindingState` with current token, matched token, matched successor,
+matched distance, pattern span, pattern-term count and match flag. The legacy
+`source_index`, `matched_index`, `successor` and `dependency` fields remain as
+compatibility aliases, but interpreter tests now verify the typed state for
+positional, content-follow and no-match content-match cases. Frozen program
+attribution reports binding match count, match fraction, mean binding distance
+and mean pattern span. This extends the previous ABI-visible change and
+increments the C API to v6.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

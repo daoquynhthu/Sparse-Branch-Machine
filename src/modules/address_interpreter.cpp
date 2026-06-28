@@ -40,6 +40,13 @@ bool execute_address_program(std::span<const std::uint32_t> window,
     out = {};
     out.program = program;
     out.binding = binding_kind(program.op);
+    out.binding_state.pattern_terms = program.op == AddressOp::ContentFollow &&
+        program.arity > 1U
+        ? static_cast<std::uint8_t>(program.arity - 1U)
+        : 0U;
+    if (!window.empty()) {
+        out.binding_state.current_token = window.back();
+    }
     out.signature = address_program_signature(
         window, alphabet,
         std::span<const std::uint32_t>(program.lags.data(), program.arity),
@@ -50,8 +57,14 @@ bool execute_address_program(std::span<const std::uint32_t> window,
 
     if (program.op == AddressOp::Tuple || program.op == AddressOp::DeltaMod) {
         out.matched = true;
+        out.binding_state.matched = true;
         out.source_index = safe_history_index(window, program.lags[program.arity - 1U]);
         out.matched_index = out.source_index;
+        out.binding_state.matched_token = window[out.matched_index];
+        out.binding_state.matched_successor = out.binding_state.matched_token;
+        out.binding_state.matched_distance = program.lags[program.arity - 1U];
+        out.binding_state.pattern_span = program.lags[program.arity - 1U];
+        out.successor = out.binding_state.matched_successor;
         out.dependency = program.lags[program.arity - 1U];
         out.execution_cost += static_cast<float>(program.arity);
         return true;
@@ -81,10 +94,16 @@ bool execute_address_program(std::span<const std::uint32_t> window,
         }
         if (!pattern_matches) continue;
         out.matched = true;
+        out.binding_state.matched = true;
         out.source_index = static_cast<std::uint32_t>(candidate_index);
         out.matched_index = static_cast<std::uint32_t>(candidate_index);
-        out.successor = window[std::min(candidate_index + 1U, current_index)];
-        out.dependency = static_cast<std::uint32_t>(distance);
+        out.binding_state.matched_token = window[candidate_index];
+        out.binding_state.matched_successor =
+            window[std::min(candidate_index + 1U, current_index)];
+        out.binding_state.matched_distance = static_cast<std::uint32_t>(distance);
+        out.binding_state.pattern_span = max_lag;
+        out.successor = out.binding_state.matched_successor;
+        out.dependency = out.binding_state.matched_distance;
         return true;
     }
     return false;

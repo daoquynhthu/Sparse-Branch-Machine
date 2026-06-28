@@ -232,3 +232,8 @@ execution objects with frames, bindings, channel lineage, dependency-aware
 ablation and recoverable lifecycle state. This closes the framework gap for the
 current bounded operators, but it does not by itself make the mechanism a full
 Bind/Match/Follow architecture.
+
+Each interpreted frame includes a typed binding state: current token, matched
+token, matched successor, matched distance, pattern span, pattern-term count and
+match flag. The older `successor` and `dependency` fields remain compatibility
+aliases for report consumers, not the sole semantic representation.

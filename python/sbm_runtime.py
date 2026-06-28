@@ -47,6 +47,13 @@ class _StepStats(ctypes.Structure):
         ("channel_caller_removed_credit", ctypes.c_float * 8),
         ("channel_dependency_retained_credit", ctypes.c_float * 8),
         ("channel_dependency_removed_credit", ctypes.c_float * 8),
+        ("channel_binding_kind", ctypes.c_uint8 * 8),
+        ("channel_binding_matched", ctypes.c_uint8 * 8),
+        ("channel_binding_current_token", ctypes.c_uint32 * 8),
+        ("channel_binding_matched_token", ctypes.c_uint32 * 8),
+        ("channel_binding_successor", ctypes.c_uint32 * 8),
+        ("channel_binding_distance", ctypes.c_uint32 * 8),
+        ("channel_binding_pattern_span", ctypes.c_uint32 * 8),
         ("channel_description_cost", ctypes.c_float * 8),
         ("channel_execution_cost", ctypes.c_float * 8),
         ("channel_subset_available", ctypes.c_int),
@@ -678,6 +685,34 @@ class Machine:
             ],
             "channel_dependency_removed_credit": [
                 float(stats.channel_dependency_removed_credit[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_binding_kind": [
+                int(stats.channel_binding_kind[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_binding_matched": [
+                bool(stats.channel_binding_matched[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_binding_current_token": [
+                int(stats.channel_binding_current_token[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_binding_matched_token": [
+                int(stats.channel_binding_matched_token[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_binding_successor": [
+                int(stats.channel_binding_successor[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_binding_distance": [
+                int(stats.channel_binding_distance[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_binding_pattern_span": [
+                int(stats.channel_binding_pattern_span[i])
                 for i in range(int(stats.channel_credit_count))
             ],
             "channel_description_cost": [

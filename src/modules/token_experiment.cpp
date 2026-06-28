@@ -45,6 +45,9 @@ struct ProgramAttributionAccumulator {
     double caller_removed_credit_sum{};
     double dependency_retained_credit_sum{};
     double dependency_removed_credit_sum{};
+    double binding_distance_sum{};
+    double binding_pattern_span_sum{};
+    std::uint64_t binding_matches{};
     double description_cost{};
     double execution_cost{};
     std::uint64_t observations{};
@@ -154,6 +157,10 @@ std::vector<ProgramAttribution> finish_program_attribution(
             accumulator.dependency_retained_credit_sum;
         attribution.dependency_removed_credit_sum =
             accumulator.dependency_removed_credit_sum;
+        attribution.binding_distance_sum = accumulator.binding_distance_sum;
+        attribution.binding_pattern_span_sum =
+            accumulator.binding_pattern_span_sum;
+        attribution.binding_matches = accumulator.binding_matches;
         attribution.description_cost = accumulator.description_cost;
         attribution.execution_cost = accumulator.execution_cost;
         attribution.observations = accumulator.observations;
@@ -444,6 +451,15 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                         program_accumulator.dependency_removed_credit_sum +=
                             static_cast<double>(
                                 stats.channel_dependency_removed_credit[channel]);
+                        if (stats.channel_binding_matched[channel] != 0U) {
+                            ++program_accumulator.binding_matches;
+                            program_accumulator.binding_distance_sum +=
+                                static_cast<double>(
+                                    stats.channel_binding_distance[channel]);
+                            program_accumulator.binding_pattern_span_sum +=
+                                static_cast<double>(
+                                    stats.channel_binding_pattern_span[channel]);
+                        }
                         program_accumulator.description_cost +=
                             static_cast<double>(stats.channel_description_cost[channel]);
                         program_accumulator.execution_cost +=
@@ -847,6 +863,16 @@ std::string to_json(const TokenExperimentResult& result) {
         const double dependency_removed_mean = attribution.observations == 0U ? 0.0 :
             attribution.dependency_removed_credit_sum /
                 static_cast<double>(attribution.observations);
+        const double binding_match_fraction = attribution.observations == 0U ? 0.0 :
+            static_cast<double>(attribution.binding_matches) /
+                static_cast<double>(attribution.observations);
+        const double mean_binding_distance = attribution.binding_matches == 0U ? 0.0 :
+            attribution.binding_distance_sum /
+                static_cast<double>(attribution.binding_matches);
+        const double mean_binding_pattern_span =
+            attribution.binding_matches == 0U ? 0.0 :
+                attribution.binding_pattern_span_sum /
+                    static_cast<double>(attribution.binding_matches);
         const double positive_fraction = attribution.observations == 0U ? 0.0 :
             static_cast<double>(attribution.positive) /
                 static_cast<double>(attribution.observations);
@@ -876,6 +902,11 @@ std::string to_json(const TokenExperimentResult& result) {
             << attribution.dependency_retained_credit_sum
             << ",\"dependency_removed_credit\":"
             << attribution.dependency_removed_credit_sum
+            << ",\"binding_matches\":" << attribution.binding_matches
+            << ",\"binding_match_fraction\":" << binding_match_fraction
+            << ",\"mean_binding_distance\":" << mean_binding_distance
+            << ",\"mean_binding_pattern_span\":"
+            << mean_binding_pattern_span
             << ",\"mean_credit\":" << mean_credit
             << ",\"caller_removed_mean_credit\":" << caller_removed_mean
             << ",\"dependency_retained_mean_credit\":"

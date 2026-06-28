@@ -1104,7 +1104,14 @@ frame metadata.
 Frozen program attribution now reports `caller_removed_credit`,
 `dependency_retained_credit` and `dependency_removed_credit`, so caller removal
 with prerequisites retained is distinguishable from removing both caller and
-dependency. The C ABI was incremented to v5 because `sbm_step_stats` changed.
+dependency. The C ABI was incremented because `sbm_step_stats` changed.
+
+`AddressExecutionFrame` now also carries a typed `AddressBindingState` with
+current token, matched token, matched successor, matched distance, pattern span,
+pattern-term count and match flag. The legacy `successor` and `dependency`
+fields remain compatibility aliases. Frozen program attribution aggregates
+binding match count, match fraction, mean binding distance and mean pattern
+span. The C ABI is now v6 after adding the binding-state arrays.
 
 Because topology state and topology events are raw-serialized in model
 checkpoints, the model checkpoint magic was bumped to `SBMCKPT2`. The checkpoint

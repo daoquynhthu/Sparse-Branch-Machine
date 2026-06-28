@@ -48,6 +48,16 @@ enum class AddressBindingKind : std::uint8_t {
     ContentFollow = 3U,
 };
 
+struct AddressBindingState {
+    std::uint32_t current_token{};
+    std::uint32_t matched_token{};
+    std::uint32_t matched_successor{};
+    std::uint32_t matched_distance{};
+    std::uint32_t pattern_span{};
+    std::uint8_t pattern_terms{};
+    bool matched{};
+};
+
 struct AddressProgram {
     std::array<std::uint32_t, kMaxAddressProgramArity> lags{};
     std::uint8_t arity{1U};
@@ -59,6 +69,7 @@ struct AddressProgram {
 struct AddressExecutionFrame {
     AddressProgram program{};
     AddressBindingKind binding{AddressBindingKind::None};
+    AddressBindingState binding_state{};
     std::uint8_t channel{kInvalidChannel};
     std::uint8_t parent_channel{kInvalidChannel};
     std::uint8_t dependency_channel{kInvalidChannel};
@@ -228,6 +239,13 @@ struct StepStats {
     std::array<float, kMaxAddressChannels> channel_caller_removed_credit{};
     std::array<float, kMaxAddressChannels> channel_dependency_retained_credit{};
     std::array<float, kMaxAddressChannels> channel_dependency_removed_credit{};
+    std::array<std::uint8_t, kMaxAddressChannels> channel_binding_kind{};
+    std::array<std::uint8_t, kMaxAddressChannels> channel_binding_matched{};
+    std::array<std::uint32_t, kMaxAddressChannels> channel_binding_current_token{};
+    std::array<std::uint32_t, kMaxAddressChannels> channel_binding_matched_token{};
+    std::array<std::uint32_t, kMaxAddressChannels> channel_binding_successor{};
+    std::array<std::uint32_t, kMaxAddressChannels> channel_binding_distance{};
+    std::array<std::uint32_t, kMaxAddressChannels> channel_binding_pattern_span{};
     std::array<float, kMaxAddressChannels> channel_description_cost{};
     std::array<float, kMaxAddressChannels> channel_execution_cost{};
 };
@@ -299,6 +317,9 @@ struct ProgramAttribution {
     double caller_removed_credit_sum{};
     double dependency_retained_credit_sum{};
     double dependency_removed_credit_sum{};
+    double binding_distance_sum{};
+    double binding_pattern_span_sum{};
+    std::uint64_t binding_matches{};
     double description_cost{};
     double execution_cost{};
     std::uint64_t observations{};
