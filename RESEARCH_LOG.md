@@ -1048,3 +1048,24 @@ as are cross-entropy, topology credit, parameter updates and attribution. On
 the same 100k/10k window, throughput improved from about 6.43k to 15.42k
 examples/s with identical eval NLL 7.34320677. On the 50k/100k/150k/200k
 short-window probe, speeds were 26.04k, 16.28k, 15.00k and 19.25k examples/s.
+
+## 2026-06-28 — address semantics test-transfer gate
+
+Task 9 Step 3 passed on the held-out FineWeb-Edu test split. Seeds 7, 11 and
+19 reached eval NLL 6.356485, 6.356029 and 6.356655 respectively. The mean
+eval NLL is 6.356390 with population standard deviation 0.000264. All three
+beat the test current-token control at 6.487780 and the interpolated multiscale
+control at 6.748025.
+
+All three seeds again converged to operations `[0, 0, 0, 2, 3, 0]` and
+programs `[[1], [2], [1, 2], [2], [1, 2], [3]]`. Each run accepted five
+topology programs, physically pruned zero accepted structures and emitted
+10/10 positive-mean program-attribution entries. Bounded-work diagnostics
+remained stable with `avg_active` about 6 and `max_bucket_candidates_inspected`
+equal to 8. The result is recorded in
+`research_results/address_semantics_10m_test_multiseed.md`.
+
+The attempted three-worker local batch was stopped because it was memory-bound:
+the workers left about 1 GB available memory while total CPU utilization stayed
+below 30%. The completed run used two workers and reached mean throughput
+10.28k examples/s across seeds.

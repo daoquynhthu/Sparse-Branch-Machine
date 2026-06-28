@@ -1157,7 +1157,7 @@ Acceptance boundary:
 - attribution remains positive for accepted content programs;
 - accepted structures are not physically pruned under preserve policy.
 
-- [ ] **Step 3: Run shard-transfer validation**
+- [x] **Step 3: Run shard-transfer validation**
 
 Repeat the gate on a different FineWeb-Edu shard sample. This tests whether the
 accepted address semantics survive corpus sampling rather than fitting one
@@ -1170,6 +1170,17 @@ and worker memory estimates. Throughput checks must use
 `scripts/run_throughput_probe.py`, which runs short C++ limited windows and
 stops when the recent window speeds stabilize, instead of forcing a fixed 1M
 probe before reporting.
+
+Completed on the held-out test split for seeds 7, 11 and 19. All three seeds
+beat the current-token and interpolated controls, accepted five programs,
+physically pruned zero accepted structures and emitted 10/10 positive-mean
+program-attribution entries. The result is recorded in
+`research_results/address_semantics_10m_test_multiseed.md`.
+
+The first local attempt with three parallel workers was stopped because it was
+memory-bound rather than CPU-bound. Worker resident memory left only about 1 GB
+available and CPU utilization stayed below 30%. The completed gate used two
+parallel workers, which is the current local saturation point for this workload.
 
 Acceptance boundary:
 
