@@ -282,7 +282,7 @@ In `src/api/c_api.cpp`, register:
 
 ```cpp
 {"address_execution_mode", "enum", "InterpretedFrames", "", "", "categorical", false, false, false, "Address execution backend: LegacySignature or InterpretedFrames."},
-{"accepted_channel_retirement", "enum", "Preserve", "", "", "categorical", false, false, false, "Lifecycle policy for accepted channels: Preserve, Quarantine or PhysicalErase."},
+{"accepted_channel_retirement", "enum", "Preserve", "", "", "categorical", false, false, false, "Lifecycle policy for accepted channels: Preserve, Quarantine, RecoverableRetire or PhysicalErase."},
 {"structural_description_cost_weight", "float", "1.0", "0.0", "10.0", "linear", true, false, false, "Weight applied to program description cost."},
 {"structural_execution_cost_weight", "float", "0.0", "0.0", "10.0", "linear", true, false, false, "Weight applied to measured address execution cost."},
 ```
@@ -730,6 +730,13 @@ return;
 `quarantine_channel` sets phase to `Quarantined` and leaves nodes, outputs and
 indexes intact. `recoverably_retire_channel` sets phase to `RecoverableRetired`
 and disables routing while retaining state for audit.
+
+**2026-06-28 corrective completion:** `RecoverableRetire` is now an exposed
+accepted-channel retirement policy rather than dead helper code. The prune
+path can select Preserve, Quarantine, RecoverableRetire or PhysicalErase.
+Regression coverage verifies that recoverable retirement increments
+`recoverable_retired_channels`, avoids physical retirement and leaves live
+nodes intact.
 
 - [x] **Step 6: Update diagnostics**
 

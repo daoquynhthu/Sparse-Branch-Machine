@@ -39,6 +39,7 @@ enum class AcceptedChannelRetirement : std::uint8_t {
     Preserve = 0U,
     Quarantine = 1U,
     PhysicalErase = 2U,
+    RecoverableRetire = 3U,
 };
 
 enum class AddressBindingKind : std::uint8_t {

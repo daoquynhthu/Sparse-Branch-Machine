@@ -162,8 +162,13 @@ sbm::AcceptedChannelRetirement parse_accepted_channel_retirement(
     if (text == "Quarantine" || text == "quarantine" || text == "1") {
         return sbm::AcceptedChannelRetirement::Quarantine;
     }
+    if (text == "RecoverableRetire" || text == "recoverable_retire" ||
+        text == "RecoverableRetired" || text == "recoverable_retired" ||
+        text == "2") {
+        return sbm::AcceptedChannelRetirement::RecoverableRetire;
+    }
     if (text == "PhysicalErase" || text == "physical_erase" ||
-        text == "erase" || text == "2") {
+        text == "erase" || text == "3") {
         return sbm::AcceptedChannelRetirement::PhysicalErase;
     }
     throw std::invalid_argument("invalid enum for accepted_channel_retirement");
@@ -181,6 +186,8 @@ std::string_view to_string(sbm::AcceptedChannelRetirement value) noexcept {
     switch (value) {
         case sbm::AcceptedChannelRetirement::Preserve: return "Preserve";
         case sbm::AcceptedChannelRetirement::Quarantine: return "Quarantine";
+        case sbm::AcceptedChannelRetirement::RecoverableRetire:
+            return "RecoverableRetire";
         case sbm::AcceptedChannelRetirement::PhysicalErase: return "PhysicalErase";
     }
     return "Preserve";
@@ -262,7 +269,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"topology_prune_patience", "uint32", "4294967295", "512", "4294967295", "log", true, false, false, "Mature observations required before channel retirement; the default preserves accepted channels."},
     {"topology_prune_credit", "float", "-0.01", "-0.05", "0.0", "linear", true, false, false, "Credit threshold for retiring an accepted channel."},
     {"address_execution_mode", "enum", "InterpretedFrames", "", "", "categorical", false, false, false, "Address execution backend: LegacySignature or InterpretedFrames."},
-    {"accepted_channel_retirement", "enum", "Preserve", "", "", "categorical", false, false, false, "Lifecycle policy for accepted channels: Preserve, Quarantine or PhysicalErase."},
+    {"accepted_channel_retirement", "enum", "Preserve", "", "", "categorical", false, false, false, "Lifecycle policy for accepted channels: Preserve, Quarantine, RecoverableRetire or PhysicalErase."},
     {"structural_description_cost_weight", "float", "1.0", "0.0", "10.0", "linear", true, false, false, "Weight applied to program description cost."},
     {"structural_execution_cost_weight", "float", "0.0", "0.0", "10.0", "linear", true, false, false, "Weight applied to measured address execution cost."},
     {"topology_accept_uses_structural_value", "bool", "false", "", "", "categorical", false, false, false, "Use cost-penalized structural value rather than raw mean credit for topology acceptance."},

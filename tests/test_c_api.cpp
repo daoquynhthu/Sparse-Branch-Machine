@@ -30,6 +30,7 @@ int main() {
     assert(sbm_config_set(config, "output_tree_seed", "29") == 0);
     assert(sbm_config_set(config, "address_execution_mode", "LegacySignature") == 0);
     assert(sbm_config_set(config, "accepted_channel_retirement", "Quarantine") == 0);
+    assert(sbm_config_set(config, "accepted_channel_retirement", "RecoverableRetire") == 0);
     assert(sbm_config_set(config, "structural_description_cost_weight", "0.5") == 0);
     assert(sbm_config_set(config, "structural_execution_cost_weight", "0.25") == 0);
     assert(sbm_config_set(config, "topology_accept_uses_structural_value", "true") == 0);
@@ -45,7 +46,8 @@ int main() {
     assert(std::string_view(config_json).find(
         "\"address_execution_mode\": \"LegacySignature\"") != std::string_view::npos);
     assert(std::string_view(config_json).find(
-        "\"accepted_channel_retirement\": \"Quarantine\"") != std::string_view::npos);
+        "\"accepted_channel_retirement\": \"RecoverableRetire\"") !=
+        std::string_view::npos);
     assert(std::string_view(config_json).find(
         "\"topology_accept_uses_structural_value\": true") !=
         std::string_view::npos);

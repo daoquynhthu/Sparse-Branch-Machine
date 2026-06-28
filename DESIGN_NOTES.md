@@ -204,6 +204,11 @@ Evaluation is strictly read-only. `freeze_topology()` rejects incomplete probes
 at the training boundary, and counterfactual credit is not accumulated on
 evaluation examples.
 
+Accepted-channel retirement has four explicit policies: Preserve, Quarantine,
+RecoverableRetire and PhysicalErase. The default preserves accepted structures.
+Quarantine and RecoverableRetire both mask routing while retaining channel state
+for audit; PhysicalErase is the only policy that removes channel-owned nodes.
+
 ## Real-corpus invariants
 
 The next phase is governed by `ROADMAP_REAL_DATA.md`. Any real-corpus implementation must preserve these design invariants:

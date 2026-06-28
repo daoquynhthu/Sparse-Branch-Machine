@@ -1116,3 +1116,8 @@ span. The C ABI is now v6 after adding the binding-state arrays.
 Because topology state and topology events are raw-serialized in model
 checkpoints, the model checkpoint magic was bumped to `SBMCKPT2`. The checkpoint
 contract is exact same-format resume, not cross-version archive compatibility.
+
+The accepted-channel lifecycle also now exposes `RecoverableRetire` as a real
+policy. It masks routing, retains channel-owned state for audit and increments
+`recoverable_retired_channels`; only `PhysicalErase` deletes channel-owned
+nodes.

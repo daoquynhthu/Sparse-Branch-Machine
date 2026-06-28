@@ -319,6 +319,9 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         if (config_.accepted_channel_retirement ==
             AcceptedChannelRetirement::Quarantine) {
             quarantine_channel(channel);
+        } else if (config_.accepted_channel_retirement ==
+                   AcceptedChannelRetirement::RecoverableRetire) {
+            recoverably_retire_channel(channel);
         } else {
             physically_erase_channel(channel);
         }
