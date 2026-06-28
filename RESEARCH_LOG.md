@@ -1069,3 +1069,24 @@ The attempted three-worker local batch was stopped because it was memory-bound:
 the workers left about 1 GB available memory while total CPU utilization stayed
 below 30%. The completed run used two workers and reached mean throughput
 10.28k examples/s across seeds.
+
+## 2026-06-28 — structural-value admission calibration
+
+Task 9 Step 4 passed for the default description-only structural-value gate.
+Matched 10M/1M validation runs with
+`topology_accept_uses_structural_value=true` learned the same operation/program
+sequence as the raw-credit gate on seeds 7, 11 and 19:
+`[0, 0, 0, 2, 3, 0]` over
+`[[1], [2], [1, 2], [2], [1, 2], [3]]`. Each run accepted five programs,
+physically pruned zero accepted structures and retained 10/10 positive-mean
+frozen program-attribution entries.
+
+Raw-gate NLLs were 6.366367, 6.366452 and 6.366331. Structural-gate NLLs were
+6.366851, 6.366452 and 6.366292, for a mean delta of +0.000148 nats/token.
+The smallest accepted structural event credit was 0.004321, still well above
+the 0.0005 acceptance threshold. The result is recorded in
+`research_results/structural_value_admission_10m_validation.md`.
+
+This calibrates the current default description penalty. It does not justify
+enabling nonzero `structural_execution_cost_weight`; execution-cost admission
+remains a separate future experiment.

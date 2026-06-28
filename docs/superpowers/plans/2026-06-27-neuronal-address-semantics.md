@@ -1189,12 +1189,24 @@ Acceptance boundary:
 useful content-conditioned structures;
 - bounded-work diagnostics remain within configured limits.
 
-- [ ] **Step 4: Calibrate structural-value admission**
+- [x] **Step 4: Calibrate structural-value admission**
 
 Only after Steps 1-3, evaluate whether `topology_accept_uses_structural_value`
 can become an admissible gate. This is not a free hyperparameter sweep: compare
 raw-credit acceptance and structural-value acceptance under matched seeds and
 record when cost penalties reject programs with positive predictive value.
+
+Completed for the default description-only gate. Matched 10M/1M validation
+runs with `topology_accept_uses_structural_value=true` learned the same
+operation/program sequence as the raw-credit gate for seeds 7, 11 and 19:
+`[0, 0, 0, 2, 3, 0]` over `[[1], [2], [1, 2], [2], [1, 2], [3]]`. Each run
+accepted five programs, pruned zero accepted structures and retained 10/10
+positive-mean program-attribution entries. Mean NLL changed by +0.000148
+nats/token versus the raw gate. The result is recorded in
+`research_results/structural_value_admission_10m_validation.md`.
+
+Nonzero `structural_execution_cost_weight` remains uncalibrated and must not be
+enabled by default from this gate.
 
 - [ ] **Step 5: Commit each completed gate**
 
