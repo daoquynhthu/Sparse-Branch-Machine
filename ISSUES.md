@@ -83,7 +83,8 @@ Resolved by reconciling the canonical documents with the implemented mapped
 shards, manifest-owned multi-shard execution, strict data cursors and P0/P1
 learning repairs. The compatibility corpus remains explicitly non-admissible
 for R0 because document, source, tokenizer and deduplication provenance are
-missing. Model checkpoint serialization remains unimplemented.
+missing. Model checkpoint serialization was later implemented for exact
+same-format resume and is now versioned by checkpoint magic.
 
 ### P2-1: Portable little-endian shard writer
 

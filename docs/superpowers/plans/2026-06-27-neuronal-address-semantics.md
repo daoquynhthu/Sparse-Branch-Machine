@@ -1104,12 +1104,29 @@ validation, but it does not prove the research claim. The next work must test
 stability and reproducibility of the mature address-semantics framework, not
 continue local operator or rate tuning.
 
-- [ ] **Step 1: Define exact checkpoint/resume contract**
+- [x] **Step 1: Define exact checkpoint/resume contract**
 
 Add a checkpoint contract that serializes enough model state to reproduce
 continued training after interruption, including accepted programs, channel
 phase, address buckets, sparse output state, learning counters, RNG seeds and
 data cursor.
+
+Contract boundary:
+
+- model checkpoints are exact-resume artifacts for the same repository format,
+  ABI and platform family; they are not declared as long-term cross-version
+  archives;
+- the binary file magic is the checkpoint format version and must be bumped
+  whenever a raw-serialized state struct changes layout;
+- `SBMCKPT2` is the first lineage-aware model checkpoint format. It includes
+  channel parent/dependency lineage in topology state and topology events, plus
+  all state required to continue sparse-output learning exactly;
+- runner checkpoints own the data cursor, manifest identity, phase, accumulated
+  metrics and path to the model checkpoint. Exact long-run resume requires both
+  runner and model checkpoint files;
+- verification requires an uninterrupted model and a save/load/resume model to
+  match step-by-step on continuation, including predictions, live-node count,
+  learned programs, channel phases and channel lineage.
 
 - [x] **Step 1a: Implement exact model-state checkpoint**
 

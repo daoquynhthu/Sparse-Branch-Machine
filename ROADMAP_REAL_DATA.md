@@ -267,9 +267,12 @@ split verification or full model checkpointing.
    - bounded read-ahead remains optional future performance work;
    - never changes sample order silently.
 
-5. **Checkpoint cursor — data cursor implemented; model checkpoint remains**
-   - records shard ID, document ID, token offset and RNG state;
-   - allows exact resume without replaying or skipping data.
+5. **Checkpoint/resume — implemented for current checkpoint format**
+   - records shard ID, document ID, token offset and runner phase;
+   - pairs the data cursor with a versioned model checkpoint;
+   - `SBMCKPT2` preserves topology lifecycle, channel lineage, sparse output
+     state, learning counters and continuation state;
+   - allows exact same-format resume without replaying or skipping data.
 
 ### 5.2 Split discipline
 

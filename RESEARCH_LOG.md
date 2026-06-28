@@ -1090,3 +1090,22 @@ the 0.0005 acceptance threshold. The result is recorded in
 This calibrates the current default description penalty. It does not justify
 enabling nonzero `structural_execution_cost_weight`; execution-cost admission
 remains a separate future experiment.
+
+## 2026-06-28 — lineage-aware address attribution
+
+The address-semantics implementation now carries channel-level lineage rather
+than only binding-distance dependency values. Topology state, topology events,
+execution frames, C/Python step stats, experiment JSON and C API summary JSON
+include `parent_channel` and `dependency_channel`. A regression forces
+`ContentMatch([2])` and `ContentFollow([1,2])` acceptance and verifies that the
+follow channel depends on the accepted match channel, including its execution
+frame metadata.
+
+Frozen program attribution now reports `caller_removed_credit`,
+`dependency_retained_credit` and `dependency_removed_credit`, so caller removal
+with prerequisites retained is distinguishable from removing both caller and
+dependency. The C ABI was incremented to v5 because `sbm_step_stats` changed.
+
+Because topology state and topology events are raw-serialized in model
+checkpoints, the model checkpoint magic was bumped to `SBMCKPT2`. The checkpoint
+contract is exact same-format resume, not cross-version archive compatibility.

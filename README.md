@@ -138,8 +138,10 @@ with runtime.token_dataset_from_ids(
 ```
 
 The mapped corpus API streams manifest-owned shards without loading the full
-corpus and exposes exact shard cursors. Model-state serialization is not yet
-implemented, so a data cursor alone is not a complete training checkpoint.
+corpus and exposes exact shard cursors. Exact training resume requires both the
+runner checkpoint, which owns the data cursor and accumulated metrics, and the
+versioned model checkpoint, which owns topology, lineage, sparse output and
+learning state.
 
 ## Automated experiments
 
