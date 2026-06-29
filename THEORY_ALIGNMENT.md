@@ -125,6 +125,11 @@ semantics rather than bypass it.
 The implementation also emits an address dependency graph, so shared
 prerequisites and multi-caller reuse can be audited at the channel level before
 stronger call semantics are added.
+Channel graph records now carry generation identifiers and typed edge kinds.
+This matters for the lifecycle problem: a reused channel slot is no longer
+implicitly the same program instance, and rollback-oriented analysis can
+separate prefix, positional-dependency, content-match and content-follow-call
+edges.
 Matched content bindings additionally have stable binding keys that ignore
 absolute distance. This provides direct evidence about repeated reuse of the
 same binding, but it is still an audit mechanism rather than full variable

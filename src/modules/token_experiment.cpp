@@ -41,6 +41,9 @@ struct ProgramAttributionAccumulator {
     std::uint8_t channel{};
     std::uint8_t parent_channel{kInvalidChannel};
     std::uint8_t dependency_channel{kInvalidChannel};
+    std::uint64_t channel_generation{};
+    AddressGraphEdgeKind parent_edge_kind{AddressGraphEdgeKind::None};
+    AddressGraphEdgeKind dependency_edge_kind{AddressGraphEdgeKind::None};
     AddressStateKind input_state{AddressStateKind::None};
     AddressStateKind output_state{AddressStateKind::None};
     AddressBindingKind required_dependency_binding{AddressBindingKind::None};
@@ -145,7 +148,10 @@ std::vector<ChannelAttribution> finish_channel_attribution(
 
 std::vector<ProgramAttribution> finish_program_attribution(
     const std::unordered_map<std::uint64_t, ProgramAttributionAccumulator>& accumulators,
-    std::span<const AddressProgram> programs) {
+    std::span<const AddressProgram> programs,
+    std::span<const std::uint64_t> generations,
+    std::span<const std::uint8_t> parent_edge_kinds,
+    std::span<const std::uint8_t> dependency_edge_kinds) {
     std::vector<ProgramAttribution> result;
     result.reserve(accumulators.size());
     for (const auto& [key, accumulator] : accumulators) {
@@ -155,6 +161,19 @@ std::vector<ProgramAttribution> finish_program_attribution(
         attribution.channel = accumulator.channel;
         attribution.parent_channel = accumulator.parent_channel;
         attribution.dependency_channel = accumulator.dependency_channel;
+        if (accumulator.channel < generations.size()) {
+            attribution.channel_generation = generations[accumulator.channel];
+        }
+        if (accumulator.channel < parent_edge_kinds.size()) {
+            attribution.parent_edge_kind =
+                static_cast<AddressGraphEdgeKind>(
+                    parent_edge_kinds[accumulator.channel]);
+        }
+        if (accumulator.channel < dependency_edge_kinds.size()) {
+            attribution.dependency_edge_kind =
+                static_cast<AddressGraphEdgeKind>(
+                    dependency_edge_kinds[accumulator.channel]);
+        }
         attribution.input_state = accumulator.input_state;
         attribution.output_state = accumulator.output_state;
         attribution.required_dependency_binding =
@@ -205,9 +224,14 @@ std::vector<ChannelDependencySummary> finish_dependency_graph(
     std::span<const std::uint8_t> phases,
     std::span<const std::uint8_t> parents,
     std::span<const std::uint8_t> dependencies,
+    std::span<const std::uint64_t> generations,
+    std::span<const std::uint8_t> parent_edge_kinds,
+    std::span<const std::uint8_t> dependency_edge_kinds,
     std::span<const ProgramAttribution> attributions) {
     const auto count = std::min({programs.size(), phases.size(), parents.size(),
-                                 dependencies.size()});
+                                 dependencies.size(), generations.size(),
+                                 parent_edge_kinds.size(),
+                                 dependency_edge_kinds.size()});
     std::vector<ChannelDependencySummary> result;
     result.reserve(count);
     for (std::size_t channel = 0U; channel < count; ++channel) {
@@ -217,6 +241,11 @@ std::vector<ChannelDependencySummary> finish_dependency_graph(
         summary.phase = phases[channel];
         summary.parent_channel = parents[channel];
         summary.dependency_channel = dependencies[channel];
+        summary.channel_generation = generations[channel];
+        summary.parent_edge_kind =
+            static_cast<AddressGraphEdgeKind>(parent_edge_kinds[channel]);
+        summary.dependency_edge_kind =
+            static_cast<AddressGraphEdgeKind>(dependency_edge_kinds[channel]);
         summary.input_state = address_program_input_state(programs[channel]);
         summary.output_state = address_program_output_state(programs[channel]);
         summary.required_dependency_binding =
@@ -679,12 +708,20 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.learned_channel_phase = model.learned_channel_phase();
     result.learned_channel_parent = model.learned_channel_parent();
     result.learned_channel_dependency = model.learned_channel_dependency();
+    result.learned_channel_generation = model.learned_channel_generation();
+    result.learned_channel_parent_edge_kind =
+        model.learned_channel_parent_edge_kind();
+    result.learned_channel_dependency_edge_kind =
+        model.learned_channel_dependency_edge_kind();
     if (config.record_channel_attribution) {
         result.eval_channel_attribution = finish_channel_attribution(
             eval_channel_attribution, result.learned_address_programs,
             result.learned_channel_phase);
         result.eval_program_attribution = finish_program_attribution(
-            eval_program_attribution, result.learned_address_programs);
+            eval_program_attribution, result.learned_address_programs,
+            result.learned_channel_generation,
+            result.learned_channel_parent_edge_kind,
+            result.learned_channel_dependency_edge_kind);
         result.eval_channel_mean_responsibility.reserve(
             result.eval_channel_attribution.size());
         for (std::size_t channel = 0U;
@@ -700,6 +737,9 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.address_dependency_graph = finish_dependency_graph(
         result.learned_address_programs, result.learned_channel_phase,
         result.learned_channel_parent, result.learned_channel_dependency,
+        result.learned_channel_generation,
+        result.learned_channel_parent_edge_kind,
+        result.learned_channel_dependency_edge_kind,
         result.eval_program_attribution);
     result.topology_events = model.topology_events();
     result.exact_region_mass = config.exact_region_mass;
@@ -919,6 +959,21 @@ std::string to_json(const TokenExperimentResult& result) {
         if (i != 0U) out << ", ";
         out << static_cast<unsigned>(result.learned_channel_dependency[i]);
     }
+    out << "],\n  \"learned_channel_generation\": [";
+    for (std::size_t i = 0; i < result.learned_channel_generation.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << result.learned_channel_generation[i];
+    }
+    out << "],\n  \"learned_channel_parent_edge_kind\": [";
+    for (std::size_t i = 0; i < result.learned_channel_parent_edge_kind.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_channel_parent_edge_kind[i]);
+    }
+    out << "],\n  \"learned_channel_dependency_edge_kind\": [";
+    for (std::size_t i = 0; i < result.learned_channel_dependency_edge_kind.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_channel_dependency_edge_kind[i]);
+    }
     out << "],\n  \"address_dependency_graph\": [";
     for (std::size_t i = 0; i < result.address_dependency_graph.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -946,6 +1001,12 @@ std::string to_json(const TokenExperimentResult& result) {
             << static_cast<unsigned>(summary.parent_channel)
             << ",\"dependency_channel\":"
             << static_cast<unsigned>(summary.dependency_channel)
+            << ",\"channel_generation\":"
+            << summary.channel_generation
+            << ",\"parent_edge_kind\":"
+            << static_cast<unsigned>(summary.parent_edge_kind)
+            << ",\"dependency_edge_kind\":"
+            << static_cast<unsigned>(summary.dependency_edge_kind)
             << ",\"input_state\":"
             << static_cast<unsigned>(summary.input_state)
             << ",\"output_state\":"
@@ -1065,6 +1126,12 @@ std::string to_json(const TokenExperimentResult& result) {
             << static_cast<unsigned>(attribution.parent_channel)
             << ",\"dependency_channel\":"
             << static_cast<unsigned>(attribution.dependency_channel)
+            << ",\"channel_generation\":"
+            << attribution.channel_generation
+            << ",\"parent_edge_kind\":"
+            << static_cast<unsigned>(attribution.parent_edge_kind)
+            << ",\"dependency_edge_kind\":"
+            << static_cast<unsigned>(attribution.dependency_edge_kind)
             << ",\"input_state\":"
             << static_cast<unsigned>(attribution.input_state)
             << ",\"output_state\":"
@@ -1112,7 +1179,9 @@ std::string to_json(const TokenExperimentResult& result) {
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
         if (i != 0U) out << ", ";
         const auto& event = result.topology_events[i];
-        out << "{\"step\":" << event.step << ",\"lags\":[";
+        out << "{\"step\":" << event.step
+            << ",\"channel_generation\":" << event.channel_generation
+            << ",\"lags\":[";
         for (std::size_t j = 0; j < event.program.arity; ++j) {
             if (j != 0U) out << ',';
             out << event.program.lags[j];
@@ -1132,7 +1201,11 @@ std::string to_json(const TokenExperimentResult& result) {
             << ",\"parent_channel\":"
             << static_cast<unsigned>(event.parent_channel)
             << ",\"dependency_channel\":"
-            << static_cast<unsigned>(event.dependency_channel) << "}";
+            << static_cast<unsigned>(event.dependency_channel)
+            << ",\"parent_edge_kind\":"
+            << static_cast<unsigned>(event.parent_edge_kind)
+            << ",\"dependency_edge_kind\":"
+            << static_cast<unsigned>(event.dependency_edge_kind) << "}";
     }
     out << "],\n"
         << "  \"exact_region_mass\": " << result.exact_region_mass << ",\n"

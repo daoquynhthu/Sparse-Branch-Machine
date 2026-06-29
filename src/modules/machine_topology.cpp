@@ -395,8 +395,9 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         const double reuse_aware_structural_value = structural_value + reuse_bonus;
         const double decision_value = config_.topology_accept_uses_structural_value
             ? reuse_aware_structural_value : mean_credit;
-        if (decision_value >= static_cast<double>(config_.topology_accept_credit)) {
-            topology_events_.push_back({total_steps_, state.program,
+    if (decision_value >= static_cast<double>(config_.topology_accept_credit)) {
+            topology_events_.push_back({total_steps_, state.generation,
+                                        state.program,
                                         TopologyDecision::Accepted,
                                         static_cast<float>(reuse_aware_structural_value),
                                         static_cast<float>(structural_value),
@@ -406,14 +407,17 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
                                         reuse_summary.events,
                                         static_cast<std::uint8_t>(channel),
                                         state.parent_channel,
-                                        state.dependency_channel});
+                                        state.dependency_channel,
+                                        state.parent_edge_kind,
+                                        state.dependency_edge_kind});
             state.phase = ChannelPhase::Active;
             state.born_step = total_steps_;
             state.observations = 0U;
             state.credit_sum = 0.0;
             ++topology_accepted_;
         } else {
-            topology_events_.push_back({total_steps_, state.program,
+            topology_events_.push_back({total_steps_, state.generation,
+                                        state.program,
                                         TopologyDecision::Rejected,
                                         static_cast<float>(reuse_aware_structural_value),
                                         static_cast<float>(structural_value),
@@ -423,7 +427,9 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
                                         reuse_summary.events,
                                         static_cast<std::uint8_t>(channel),
                                         state.parent_channel,
-                                        state.dependency_channel});
+                                        state.dependency_channel,
+                                        state.parent_edge_kind,
+                                        state.dependency_edge_kind});
             physically_erase_channel(channel);
             ++topology_rejected_;
         }
@@ -445,7 +451,8 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         }
         const auto reuse_summary = binding_reuse_summary(channel);
         const double reuse_bonus = binding_reuse_bonus(reuse_summary);
-        topology_events_.push_back({total_steps_, state.program,
+        topology_events_.push_back({total_steps_, state.generation,
+                                    state.program,
                                     TopologyDecision::Pruned,
                                     state.credit_ema + static_cast<float>(reuse_bonus),
                                     state.credit_ema,
@@ -455,7 +462,9 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
                                     reuse_summary.events,
                                     static_cast<std::uint8_t>(channel),
                                     state.parent_channel,
-                                    state.dependency_channel});
+                                    state.dependency_channel,
+                                    state.parent_edge_kind,
+                                    state.dependency_edge_kind});
         if (config_.accepted_channel_retirement ==
             AcceptedChannelRetirement::Quarantine) {
             quarantine_channel(channel);
@@ -481,7 +490,8 @@ void SparseBranchMachine::freeze_topology() {
             : state.credit_sum / static_cast<double>(state.observations);
         const auto reuse_summary = binding_reuse_summary(channel);
         const double reuse_bonus = binding_reuse_bonus(reuse_summary);
-        topology_events_.push_back({total_steps_, state.program,
+        topology_events_.push_back({total_steps_, state.generation,
+                                    state.program,
                                     TopologyDecision::Rejected,
                                     static_cast<float>(mean_credit + reuse_bonus),
                                     static_cast<float>(mean_credit),
@@ -491,7 +501,9 @@ void SparseBranchMachine::freeze_topology() {
                                     reuse_summary.events,
                                     static_cast<std::uint8_t>(channel),
                                     state.parent_channel,
-                                    state.dependency_channel});
+                                    state.dependency_channel,
+                                    state.parent_edge_kind,
+                                    state.dependency_edge_kind});
         physically_erase_channel(channel);
         ++topology_rejected_;
     }
@@ -547,15 +559,25 @@ void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
 
     const auto [parent_channel, dependency_channel] =
         resolve_channel_lineage(*proposal);
+    const auto parent_edge_kind = parent_channel == kInvalidChannel
+        ? AddressGraphEdgeKind::None
+        : address_parent_edge_kind(*proposal);
+    const auto dependency_edge_kind = dependency_channel == kInvalidChannel
+        ? AddressGraphEdgeKind::None
+        : address_dependency_edge_kind(*proposal);
     topology_[slot] = {*proposal, ChannelPhase::Probe, 0.0F, 0.0, 0U,
-                       total_steps_, parent_channel, dependency_channel};
+                       total_steps_, ++topology_generation_counter_,
+                       parent_channel, dependency_channel,
+                       parent_edge_kind, dependency_edge_kind};
     if (binding_reuse_.size() <= slot) binding_reuse_.resize(slot + 1U);
     binding_reuse_[slot].clear();
-    topology_events_.push_back({total_steps_, *proposal,
+    topology_events_.push_back({total_steps_, topology_[slot].generation,
+                                *proposal,
                                 TopologyDecision::Proposed, 0.0F,
                                 0.0F, 0.0F, 0U, 0U, 0U,
                                 static_cast<std::uint8_t>(slot),
-                                parent_channel, dependency_channel});
+                                parent_channel, dependency_channel,
+                                parent_edge_kind, dependency_edge_kind});
     ++topology_proposals_;
     next_probe_step_ = total_steps_ + config_.topology_probe_steps;
 }
@@ -635,6 +657,33 @@ std::vector<std::uint8_t> SparseBranchMachine::learned_channel_dependency() cons
     result.reserve(topology_.size());
     for (const auto& state : topology_) {
         result.push_back(state.dependency_channel);
+    }
+    return result;
+}
+
+std::vector<std::uint64_t> SparseBranchMachine::learned_channel_generation() const {
+    std::vector<std::uint64_t> result;
+    result.reserve(topology_.size());
+    for (const auto& state : topology_) {
+        result.push_back(state.generation);
+    }
+    return result;
+}
+
+std::vector<std::uint8_t> SparseBranchMachine::learned_channel_parent_edge_kind() const {
+    std::vector<std::uint8_t> result;
+    result.reserve(topology_.size());
+    for (const auto& state : topology_) {
+        result.push_back(static_cast<std::uint8_t>(state.parent_edge_kind));
+    }
+    return result;
+}
+
+std::vector<std::uint8_t> SparseBranchMachine::learned_channel_dependency_edge_kind() const {
+    std::vector<std::uint8_t> result;
+    result.reserve(topology_.size());
+    for (const auto& state : topology_) {
+        result.push_back(static_cast<std::uint8_t>(state.dependency_edge_kind));
     }
     return result;
 }

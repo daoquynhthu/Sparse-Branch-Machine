@@ -179,6 +179,12 @@ int main() {
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"learned_channel_dependency\"") !=
            std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"learned_channel_generation\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"learned_channel_parent_edge_kind\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"learned_channel_dependency_edge_kind\"") !=
+           std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"address_dependency_graph\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"direct_caller_count\"") !=
@@ -190,6 +196,10 @@ int main() {
     assert(std::string_view(machine_summary).find("\"parent_channel\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"dependency_channel\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"channel_generation\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"dependency_edge_kind\"") !=
            std::string_view::npos);
     sbm_string_free(machine_summary);
     sbm_machine_destroy(left);

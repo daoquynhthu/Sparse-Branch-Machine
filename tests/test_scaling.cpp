@@ -353,6 +353,9 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"dependency\"") != std::string::npos);
     assert(json.find("\"parent_channel\"") != std::string::npos);
     assert(json.find("\"dependency_channel\"") != std::string::npos);
+    assert(json.find("\"channel_generation\"") != std::string::npos);
+    assert(json.find("\"parent_edge_kind\"") != std::string::npos);
+    assert(json.find("\"dependency_edge_kind\"") != std::string::npos);
     assert(json.find("\"caller_removed_credit\"") != std::string::npos);
     assert(json.find("\"dependency_retained_credit\"") != std::string::npos);
     assert(json.find("\"dependency_removed_credit\"") != std::string::npos);

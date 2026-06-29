@@ -58,6 +58,14 @@ enum class AddressStateKind : std::uint8_t {
     FollowBinding = 4U,
 };
 
+enum class AddressGraphEdgeKind : std::uint8_t {
+    None = 0U,
+    Prefix = 1U,
+    PositionalDependency = 2U,
+    ContentMatchDependency = 3U,
+    ContentFollowCall = 4U,
+};
+
 struct AddressBindingState {
     std::uint32_t current_token{};
     std::uint32_t matched_token{};
@@ -155,8 +163,31 @@ struct AddressExecutionFrame {
     return required == AddressBindingKind::None || dependency_binding == required;
 }
 
+[[nodiscard]] inline AddressGraphEdgeKind address_dependency_edge_kind(
+    const AddressProgram& program) noexcept {
+    switch (program.op) {
+    case AddressOp::ContentMatch:
+        return AddressGraphEdgeKind::ContentMatchDependency;
+    case AddressOp::ContentFollow:
+        return AddressGraphEdgeKind::ContentFollowCall;
+    case AddressOp::Tuple:
+    case AddressOp::DeltaMod:
+    default:
+        return program.arity > 1U
+            ? AddressGraphEdgeKind::Prefix
+            : AddressGraphEdgeKind::PositionalDependency;
+    }
+}
+
+[[nodiscard]] inline AddressGraphEdgeKind address_parent_edge_kind(
+    const AddressProgram& program) noexcept {
+    if (program.arity > 1U) return AddressGraphEdgeKind::Prefix;
+    return address_dependency_edge_kind(program);
+}
+
 struct TopologyEvent {
     std::uint64_t step{};
+    std::uint64_t channel_generation{};
     AddressProgram program{};
     TopologyDecision decision{TopologyDecision::Proposed};
     float credit{};
@@ -168,6 +199,8 @@ struct TopologyEvent {
     std::uint8_t channel{kInvalidChannel};
     std::uint8_t parent_channel{kInvalidChannel};
     std::uint8_t dependency_channel{kInvalidChannel};
+    AddressGraphEdgeKind parent_edge_kind{AddressGraphEdgeKind::None};
+    AddressGraphEdgeKind dependency_edge_kind{AddressGraphEdgeKind::None};
 };
 
 enum class ObjectiveKind : std::uint8_t {
@@ -385,6 +418,9 @@ struct ProgramAttribution {
     std::uint8_t channel{};
     std::uint8_t parent_channel{kInvalidChannel};
     std::uint8_t dependency_channel{kInvalidChannel};
+    std::uint64_t channel_generation{};
+    AddressGraphEdgeKind parent_edge_kind{AddressGraphEdgeKind::None};
+    AddressGraphEdgeKind dependency_edge_kind{AddressGraphEdgeKind::None};
     AddressStateKind input_state{AddressStateKind::None};
     AddressStateKind output_state{AddressStateKind::None};
     AddressBindingKind required_dependency_binding{AddressBindingKind::None};

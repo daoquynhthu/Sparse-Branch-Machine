@@ -1333,3 +1333,16 @@ or follow bindings are not treated as interchangeable dependency outputs.
 This keeps the single-hop call substrate aligned with the intended
 producer-consumer semantics without adding new operators or tuning admission
 parameters.
+
+## 2026-06-29 — rollback-ready dependency graph metadata
+
+Channel topology state, topology events, token experiment summaries and C
+machine-summary JSON now carry `channel_generation`, `parent_edge_kind` and
+`dependency_edge_kind`. Generation IDs distinguish a reused channel slot from a
+prior program instance, while edge kinds distinguish prefix, positional
+dependency, ContentMatch dependency and ContentFollow call relations.
+
+The generation counter is serialized and exact-resume tests compare generation
+and edge-kind vectors after checkpoint reload. Because `AddressChannelState` and
+`TopologyEvent` are raw-serialized, the model checkpoint magic was bumped to
+`SBMCKPT6`.

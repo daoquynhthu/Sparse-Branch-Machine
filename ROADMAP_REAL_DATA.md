@@ -270,9 +270,10 @@ split verification or full model checkpointing.
 5. **Checkpoint/resume — implemented for current checkpoint format**
    - records shard ID, document ID, token offset and runner phase;
    - pairs the data cursor with a versioned model checkpoint;
-   - `SBMCKPT5` preserves topology lifecycle, channel lineage, binding-kind
-     diagnostics, bounded binding-reuse registries, reuse-aware topology event
-     value fields, sparse output state, learning counters and continuation state;
+   - `SBMCKPT6` preserves topology lifecycle, channel lineage, channel
+     generation IDs, typed graph edge kinds, binding-kind diagnostics, bounded
+     binding-reuse registries, reuse-aware topology event value fields, sparse
+     output state, learning counters and continuation state;
    - allows exact same-format resume without replaying or skipping data.
 
 ### 5.2 Split discipline

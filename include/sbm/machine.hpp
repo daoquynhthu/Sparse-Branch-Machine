@@ -50,6 +50,9 @@ public:
     [[nodiscard]] std::vector<std::uint8_t> learned_channel_phase() const;
     [[nodiscard]] std::vector<std::uint8_t> learned_channel_parent() const;
     [[nodiscard]] std::vector<std::uint8_t> learned_channel_dependency() const;
+    [[nodiscard]] std::vector<std::uint64_t> learned_channel_generation() const;
+    [[nodiscard]] std::vector<std::uint8_t> learned_channel_parent_edge_kind() const;
+    [[nodiscard]] std::vector<std::uint8_t> learned_channel_dependency_edge_kind() const;
     [[nodiscard]] std::span<const AddressExecutionFrame> last_execution_frames()
         const noexcept {
         return execution_frames_;
@@ -83,8 +86,11 @@ private:
         double credit_sum{};
         std::uint64_t observations{};
         std::uint64_t born_step{};
+        std::uint64_t generation{};
         std::uint8_t parent_channel{kInvalidChannel};
         std::uint8_t dependency_channel{kInvalidChannel};
+        AddressGraphEdgeKind parent_edge_kind{AddressGraphEdgeKind::None};
+        AddressGraphEdgeKind dependency_edge_kind{AddressGraphEdgeKind::None};
     };
     using SparseOutputEntry = detail::SparseOutputEntry;
     struct SparseAdmissionCandidate {
@@ -201,6 +207,7 @@ private:
     std::vector<AddressChannelState> topology_;
     std::uint64_t proposal_cursor_{};
     std::vector<std::uint64_t> proposed_program_keys_;
+    std::uint64_t topology_generation_counter_{};
     std::uint64_t next_probe_step_{};
     std::uint64_t topology_proposals_{};
     std::uint64_t topology_accepted_{};

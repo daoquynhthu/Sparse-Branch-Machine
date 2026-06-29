@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '5'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '6'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -293,6 +293,7 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_vector(out, machine.topology_);
     write_scalar(out, machine.proposal_cursor_);
     write_vector(out, machine.proposed_program_keys_);
+    write_scalar(out, machine.topology_generation_counter_);
     write_scalar(out, machine.next_probe_step_);
     write_scalar(out, machine.topology_proposals_);
     write_scalar(out, machine.topology_accepted_);
@@ -368,6 +369,7 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.topology_ = read_vector<SparseBranchMachine::AddressChannelState>(in);
     machine.proposal_cursor_ = read_scalar<std::uint64_t>(in);
     machine.proposed_program_keys_ = read_vector<std::uint64_t>(in);
+    machine.topology_generation_counter_ = read_scalar<std::uint64_t>(in);
     machine.next_probe_step_ = read_scalar<std::uint64_t>(in);
     machine.topology_proposals_ = read_scalar<std::uint64_t>(in);
     machine.topology_accepted_ = read_scalar<std::uint64_t>(in);

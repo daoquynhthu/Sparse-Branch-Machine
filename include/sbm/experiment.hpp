@@ -47,6 +47,9 @@ struct ChannelDependencySummary {
     std::uint8_t phase{};
     std::uint8_t parent_channel{kInvalidChannel};
     std::uint8_t dependency_channel{kInvalidChannel};
+    std::uint64_t channel_generation{};
+    AddressGraphEdgeKind parent_edge_kind{AddressGraphEdgeKind::None};
+    AddressGraphEdgeKind dependency_edge_kind{AddressGraphEdgeKind::None};
     AddressStateKind input_state{AddressStateKind::None};
     AddressStateKind output_state{AddressStateKind::None};
     AddressBindingKind required_dependency_binding{AddressBindingKind::None};
@@ -91,6 +94,9 @@ struct ExperimentResult {
     std::vector<std::uint8_t> learned_channel_phase;
     std::vector<std::uint8_t> learned_channel_parent;
     std::vector<std::uint8_t> learned_channel_dependency;
+    std::vector<std::uint64_t> learned_channel_generation;
+    std::vector<std::uint8_t> learned_channel_parent_edge_kind;
+    std::vector<std::uint8_t> learned_channel_dependency_edge_kind;
     std::vector<ChannelAttribution> eval_channel_attribution;
     std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
@@ -131,6 +137,9 @@ struct TokenExperimentResult {
     std::vector<std::uint8_t> learned_channel_phase;
     std::vector<std::uint8_t> learned_channel_parent;
     std::vector<std::uint8_t> learned_channel_dependency;
+    std::vector<std::uint64_t> learned_channel_generation;
+    std::vector<std::uint8_t> learned_channel_parent_edge_kind;
+    std::vector<std::uint8_t> learned_channel_dependency_edge_kind;
     std::vector<ChannelAttribution> eval_channel_attribution;
     std::vector<double> eval_channel_mean_responsibility;
     std::vector<ProgramAttribution> eval_program_attribution;

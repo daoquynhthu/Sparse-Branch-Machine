@@ -283,6 +283,12 @@ result also accumulates own program credit, binding-match evidence and
 downstream caller/dependency removal credit. This graph is the audit surface for
 shared prerequisites and multi-caller reuse.
 
+The graph is now rollback-ready at the channel identity level. Learned channel
+metadata, dependency summaries and topology events include a monotonically
+assigned `channel_generation` plus parent/dependency edge kinds. A channel slot
+can therefore be reused without conflating a new program instance with a prior
+retired or rejected one.
+
 Dependent channels now also consume their prerequisite frame at execution time.
 When a dependency channel produces a matched binding key, the caller frame
 records `dependency_signature`, `dependency_binding_key` and `call_key`, and its

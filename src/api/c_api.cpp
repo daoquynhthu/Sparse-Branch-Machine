@@ -773,6 +773,11 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
         const auto phase = machine->value.learned_channel_phase();
         const auto parent = machine->value.learned_channel_parent();
         const auto dependency = machine->value.learned_channel_dependency();
+        const auto generation = machine->value.learned_channel_generation();
+        const auto parent_edge_kind =
+            machine->value.learned_channel_parent_edge_kind();
+        const auto dependency_edge_kind =
+            machine->value.learned_channel_dependency_edge_kind();
         std::ostringstream out;
         out << "{";
         out << "\"learned_address_lags\": [";
@@ -815,6 +820,21 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
             if (i != 0U) out << ", ";
             out << static_cast<unsigned>(dependency[i]);
         }
+        out << "], \"learned_channel_generation\": [";
+        for (std::size_t i = 0; i < generation.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << generation[i];
+        }
+        out << "], \"learned_channel_parent_edge_kind\": [";
+        for (std::size_t i = 0; i < parent_edge_kind.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << static_cast<unsigned>(parent_edge_kind[i]);
+        }
+        out << "], \"learned_channel_dependency_edge_kind\": [";
+        for (std::size_t i = 0; i < dependency_edge_kind.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << static_cast<unsigned>(dependency_edge_kind[i]);
+        }
         std::vector<std::uint64_t> caller_counts(programs.size(), 0U);
         for (std::size_t caller = 0U; caller < dependency.size(); ++caller) {
             const auto dependency_channel = dependency[caller];
@@ -844,6 +864,16 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
                 << (i < dependency.size()
                         ? static_cast<unsigned>(dependency[i])
                         : static_cast<unsigned>(sbm::kInvalidChannel))
+                << ",\"channel_generation\":"
+                << (i < generation.size() ? generation[i] : 0U)
+                << ",\"parent_edge_kind\":"
+                << (i < parent_edge_kind.size()
+                        ? static_cast<unsigned>(parent_edge_kind[i])
+                        : static_cast<unsigned>(sbm::AddressGraphEdgeKind::None))
+                << ",\"dependency_edge_kind\":"
+                << (i < dependency_edge_kind.size()
+                        ? static_cast<unsigned>(dependency_edge_kind[i])
+                        : static_cast<unsigned>(sbm::AddressGraphEdgeKind::None))
                 << ",\"input_state\":"
                 << static_cast<unsigned>(
                        sbm::address_program_input_state(programs[i]))
@@ -864,7 +894,9 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
         for (std::size_t i = 0; i < events.size(); ++i) {
             if (i != 0U) out << ", ";
             const auto& event = events[i];
-            out << "{\"step\":" << event.step << ",\"lags\":[";
+            out << "{\"step\":" << event.step
+                << ",\"channel_generation\":" << event.channel_generation
+                << ",\"lags\":[";
             for (std::size_t j = 0; j < event.program.arity; ++j) {
                 if (j != 0U) out << ',';
                 out << event.program.lags[j];
@@ -884,7 +916,11 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
                 << ",\"parent_channel\":"
                 << static_cast<unsigned>(event.parent_channel)
                 << ",\"dependency_channel\":"
-                << static_cast<unsigned>(event.dependency_channel) << "}";
+                << static_cast<unsigned>(event.dependency_channel)
+                << ",\"parent_edge_kind\":"
+                << static_cast<unsigned>(event.parent_edge_kind)
+                << ",\"dependency_edge_kind\":"
+                << static_cast<unsigned>(event.dependency_edge_kind) << "}";
         }
         out << "]}";
         return duplicate_string(out.str());

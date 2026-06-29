@@ -948,8 +948,9 @@ separate `structural_value_without_reuse` from an optional
 binding-reuse registry and is controlled by `binding_reuse_value_weight`, whose
 default is zero. Existing acceptance decisions therefore remain compatible
 unless a validation run explicitly enables reuse-aware structural admission.
-Because topology events are raw-serialized, the model checkpoint magic is now
-`SBMCKPT5`.
+Because topology events are raw-serialized, this stage bumped the model
+checkpoint magic to `SBMCKPT5`; later graph-generation metadata bumped it again
+to `SBMCKPT6`.
 
 **2026-06-29 small reuse-aware gate:** A 300k/100k FineWeb-Edu smoke comparison
 ran raw-credit admission, cost-only structural admission and reuse-aware
@@ -1020,6 +1021,15 @@ producer-consumer contract before forming a dependency-conditioned call.
 `ContentMatch` binding; mismatched positional or follow bindings do not satisfy
 the call requirement. This keeps the current single-hop call substrate from
 silently treating all matched dependency frames as interchangeable.
+
+**2026-06-29 rollback-ready graph metadata:** Channel topology state, topology
+events, experiment summaries and C summary JSON now include
+`channel_generation`, `parent_edge_kind` and `dependency_edge_kind`. Generation
+IDs are serialized and exact-resume tested, so a reused channel slot is not
+confused with a prior program instance. Edge kinds distinguish prefix,
+positional-dependency, content-match dependency and content-follow call edges.
+This changes raw checkpointed structs and bumps the model checkpoint magic to
+`SBMCKPT6`.
 
 ### Task 7: Introduce Structural Value Gates
 
@@ -1252,9 +1262,10 @@ Contract boundary:
   archives;
 - the binary file magic is the checkpoint format version and must be bumped
   whenever a raw-serialized state struct changes layout;
-- `SBMCKPT5` is the current lineage-aware model checkpoint format. It includes
-  channel parent/dependency lineage in topology state and topology events,
-  binding-kind execution counters, bounded binding-reuse registries,
+- `SBMCKPT6` is the current lineage-aware model checkpoint format. It includes
+  channel parent/dependency lineage, channel generation IDs, typed graph edge
+  kinds in topology state and topology events, binding-kind execution counters,
+  bounded binding-reuse registries,
   reuse-aware topology event value fields, plus all state required to continue
   sparse-output learning exactly;
 - runner checkpoints own the data cursor, manifest identity, phase, accumulated

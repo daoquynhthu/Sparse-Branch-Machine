@@ -101,7 +101,11 @@ SparseBranchMachine::SparseBranchMachine(Config config)
         const auto program = singleton_address_program(config.address_lags[index]);
         topology_.push_back({program,
                              index == 0U ? ChannelPhase::Seed : ChannelPhase::Active,
-                             0.0F, 0.0, 0U, 0U});
+                             0.0F, 0.0, 0U, 0U,
+                             ++topology_generation_counter_,
+                             kInvalidChannel, kInvalidChannel,
+                             AddressGraphEdgeKind::None,
+                             AddressGraphEdgeKind::None});
         proposed_program_keys_.push_back(address_program_key(program));
     }
     binding_reuse_.resize(topology_.size());

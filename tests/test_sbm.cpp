@@ -447,6 +447,12 @@ int main() {
                resumed.learned_channel_parent());
         assert(uninterrupted.learned_channel_dependency() ==
                resumed.learned_channel_dependency());
+        assert(uninterrupted.learned_channel_generation() ==
+               resumed.learned_channel_generation());
+        assert(uninterrupted.learned_channel_parent_edge_kind() ==
+               resumed.learned_channel_parent_edge_kind());
+        assert(uninterrupted.learned_channel_dependency_edge_kind() ==
+               resumed.learned_channel_dependency_edge_kind());
     }
 
     {
