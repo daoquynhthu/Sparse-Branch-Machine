@@ -275,6 +275,10 @@ producer is masked. Diagnostics therefore report
 Experiment results expose the same `learned_channel_effective_enabled` vector
 as stateful summaries, so long-running corpus outputs retain the distinction
 between committed lifecycle phase and actual routing availability.
+Token experiment dependency-graph summaries also include per-channel
+`effective_enabled` and `dependency_available`, matching the stateful machine
+summary. Consumers no longer need to join top-level arrays manually to audit
+whether a graph node is routable.
 
 Matched binding states also carry a stable `binding_key`. The key intentionally
 excludes absolute matched index and matched distance, so a content binding can

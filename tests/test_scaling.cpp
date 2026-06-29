@@ -383,6 +383,8 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"dependency_generation\"") != std::string::npos);
     assert(json.find("\"edge_kind\"") != std::string::npos);
     assert(json.find("\"direct_caller_count\"") != std::string::npos);
+    assert(json.find("\"dependency_available\"") != std::string::npos);
+    assert(json.find("\"effective_enabled\"") != std::string::npos);
     assert(json.find("\"own_call_matches\"") != std::string::npos);
     assert(json.find("\"downstream_call_matches\"") != std::string::npos);
     assert(json.find("\"downstream_dependency_removed_credit\"") !=
@@ -401,6 +403,8 @@ void verify_dependency_attribution_json() {
     }
     for (const auto& summary : result.address_dependency_graph) {
         assert(summary.channel < result.learned_address_programs.size());
+        assert(summary.effective_enabled <= 1U);
+        assert(summary.dependency_available <= 1U);
         assert(summary.unique_binding_keys <= summary.own_binding_matches);
         assert(summary.unique_call_keys <= summary.own_call_matches);
     }

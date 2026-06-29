@@ -1409,3 +1409,11 @@ output from both experiment paths emits the same field, and scaling/C API tests
 assert its presence. This prevents long-running corpus artifacts from losing
 the dependency-blocked routing state that is visible in stateful machine
 summaries.
+
+## 2026-06-29 — effective state in token dependency graph
+
+Token experiment `address_dependency_graph` entries now include
+`effective_enabled` and `dependency_available`, matching the stateful machine
+summary surface. This makes each graph node self-describing: phase records
+committed lifecycle state, while effective fields record whether it can
+actually route under current dependency masking.

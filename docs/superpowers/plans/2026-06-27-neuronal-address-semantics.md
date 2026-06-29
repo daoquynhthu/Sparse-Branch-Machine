@@ -1068,6 +1068,11 @@ experiment result structs and JSON now emit
 `learned_channel_effective_enabled`. Long-running corpus runs therefore preserve
 the same effective routing state exposed by the stateful machine summary.
 
+**2026-06-29 dependency-graph effective-state completion:** Token experiment
+`address_dependency_graph` entries now carry `effective_enabled` and
+`dependency_available`, so each dependency node is self-describing without an
+external join against top-level channel arrays.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

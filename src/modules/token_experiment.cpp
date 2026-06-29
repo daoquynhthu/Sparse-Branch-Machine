@@ -222,13 +222,15 @@ std::vector<ProgramAttribution> finish_program_attribution(
 std::vector<ChannelDependencySummary> finish_dependency_graph(
     std::span<const AddressProgram> programs,
     std::span<const std::uint8_t> phases,
+    std::span<const std::uint8_t> effective_enabled,
     std::span<const std::uint8_t> parents,
     std::span<const std::uint8_t> dependencies,
     std::span<const std::uint64_t> generations,
     std::span<const std::uint8_t> parent_edge_kinds,
     std::span<const std::uint8_t> dependency_edge_kinds,
     std::span<const ProgramAttribution> attributions) {
-    const auto count = std::min({programs.size(), phases.size(), parents.size(),
+    const auto count = std::min({programs.size(), phases.size(),
+                                 effective_enabled.size(), parents.size(),
                                  dependencies.size(), generations.size(),
                                  parent_edge_kinds.size(),
                                  dependency_edge_kinds.size()});
@@ -250,6 +252,12 @@ std::vector<ChannelDependencySummary> finish_dependency_graph(
         summary.output_state = address_program_output_state(programs[channel]);
         summary.required_dependency_binding =
             address_program_required_dependency_binding(programs[channel]);
+        summary.effective_enabled = effective_enabled[channel] != 0U ? 1U : 0U;
+        summary.dependency_available =
+            dependencies[channel] != kInvalidChannel &&
+            dependencies[channel] < effective_enabled.size()
+                ? (effective_enabled[dependencies[channel]] != 0U ? 1U : 0U)
+                : 1U;
         for (std::size_t caller = 0U; caller < count; ++caller) {
             if (caller != channel && dependencies[caller] == channel) {
                 ++summary.direct_caller_count;
@@ -804,6 +812,7 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     }
     result.address_dependency_graph = finish_dependency_graph(
         result.learned_address_programs, result.learned_channel_phase,
+        result.learned_channel_effective_enabled,
         result.learned_channel_parent, result.learned_channel_dependency,
         result.learned_channel_generation,
         result.learned_channel_parent_edge_kind,
@@ -1093,6 +1102,10 @@ std::string to_json(const TokenExperimentResult& result) {
             << static_cast<unsigned>(summary.output_state)
             << ",\"required_dependency_binding\":"
             << static_cast<unsigned>(summary.required_dependency_binding)
+            << ",\"effective_enabled\":"
+            << static_cast<unsigned>(summary.effective_enabled)
+            << ",\"dependency_available\":"
+            << static_cast<unsigned>(summary.dependency_available)
             << ",\"direct_caller_count\":"
             << summary.direct_caller_count
             << ",\"own_observations\":" << summary.own_observations

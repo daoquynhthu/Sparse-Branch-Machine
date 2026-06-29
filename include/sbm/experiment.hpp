@@ -53,6 +53,8 @@ struct ChannelDependencySummary {
     AddressStateKind input_state{AddressStateKind::None};
     AddressStateKind output_state{AddressStateKind::None};
     AddressBindingKind required_dependency_binding{AddressBindingKind::None};
+    std::uint8_t effective_enabled{1U};
+    std::uint8_t dependency_available{1U};
     std::uint64_t direct_caller_count{};
     std::uint64_t own_observations{};
     std::uint64_t own_binding_matches{};
