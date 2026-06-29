@@ -172,6 +172,10 @@ because a required producer is masked.
 Dependency summaries now also count effective and blocked direct callers, so a
 shared producer can be audited by how many committed consumers are currently
 routable versus masked by dependency state.
+The implementation also has a controller-triggered dependency-closure restore:
+a selected producer and recoverably masked direct callers can be restored as a
+graph operation. This is still not learned automatic repair, but it moves
+rollback from isolated channels toward reusable caller sets.
 
 ## 4. Lifecycle challenge under compositional programs
 
@@ -265,6 +269,7 @@ It is justified to say that the repository contains:
 - dependency-aware routing eligibility for typed callers;
 - separate lifecycle phase and effective routing diagnostics;
 - effective and blocked direct-caller counts for dependency summaries;
+- explicit dependency-closure restore for recoverable caller sets;
 - first-class dependency edge summaries for rollback-oriented audit.
 - explicit restore of masked committed channels while preserving channel
   generation.

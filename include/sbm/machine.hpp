@@ -33,6 +33,7 @@ public:
     [[nodiscard]] bool retire_channel(std::size_t channel,
                                       AcceptedChannelRetirement policy);
     [[nodiscard]] bool restore_channel(std::size_t channel);
+    [[nodiscard]] std::size_t restore_dependency_closure(std::size_t channel);
     [[nodiscard]] std::size_t prune(std::uint32_t min_visits = 8,
                                     float utility_threshold = -0.05F);
     [[nodiscard]] std::size_t merge_redundant(std::size_t max_merges = 64);

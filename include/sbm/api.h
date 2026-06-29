@@ -110,6 +110,9 @@ SBM_API int sbm_machine_retire_channel(
     uint32_t channel,
     uint32_t retirement_policy);
 SBM_API int sbm_machine_restore_channel(sbm_machine_handle* machine, uint32_t channel);
+SBM_API int sbm_machine_restore_dependency_closure(
+    sbm_machine_handle* machine,
+    uint32_t channel);
 SBM_API char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine);
 SBM_API char* sbm_machine_summary_json(const sbm_machine_handle* machine);
 

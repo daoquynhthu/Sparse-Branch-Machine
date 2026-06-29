@@ -1085,6 +1085,12 @@ now split direct callers into `effective_direct_caller_count` and
 `blocked_direct_caller_count`. This makes shared prerequisite nodes auditable by
 active consumer availability rather than only by total declared callers.
 
+**2026-06-29 dependency-closure restore completion:** The stateful control
+surface now exposes `restore_dependency_closure` in C++, C and Python. It
+restores a selected channel and recoverably masked direct callers reachable via
+dependency edges, returning the number of restored channels. This is an
+explicit graph-level rollback operation, not an automatic repair policy.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

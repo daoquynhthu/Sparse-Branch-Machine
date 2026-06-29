@@ -340,6 +340,12 @@ Topology event JSON carries both numeric `decision` and readable
 `topology_decision_name_map`, so empty-event runs still document the enum
 mapping.
 
+The control surface now includes an explicit dependency-closure restore
+operation. `restore_dependency_closure(channel)` restores the selected channel
+and any recoverably masked direct callers reachable through dependency edges.
+It is deterministic and user/controller-triggered; it does not automatically
+choose when repair should happen.
+
 Dependent channels now also consume their prerequisite frame at execution time.
 When a dependency channel produces a matched binding key, the caller frame
 records `dependency_signature`, `dependency_binding_key` and `call_key`, and its

@@ -80,6 +80,7 @@ with tempfile.TemporaryDirectory() as directory:
                 resumed.freeze_topology()
                 assert resumed.retire_channel(0, "RecoverableRetire") is False
                 assert resumed.restore_channel(0) is False
+                assert resumed.restore_dependency_closure(0) == 0
                 eval_stats = resumed.step_token(1, 3, learn=False)
                 assert "channel_credit" in eval_stats
                 assert "channel_binding_kind" in eval_stats

@@ -735,6 +735,18 @@ int sbm_machine_restore_channel(sbm_machine_handle* machine, uint32_t channel) {
     });
 }
 
+int sbm_machine_restore_dependency_closure(sbm_machine_handle* machine,
+                                           uint32_t channel) {
+    return guarded([&] {
+        if (machine == nullptr) throw std::invalid_argument("machine is null");
+        const auto restored = machine->value.restore_dependency_closure(channel);
+        if (restored > static_cast<std::size_t>(INT32_MAX)) {
+            throw std::overflow_error("restored channel count overflows int");
+        }
+        return static_cast<int>(restored);
+    });
+}
+
 char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
     return guarded([&] {
         if (machine == nullptr) throw std::invalid_argument("machine is null");

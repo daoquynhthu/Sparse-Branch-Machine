@@ -154,6 +154,7 @@ int main() {
     sbm_machine_freeze_topology(resumed);
     assert(sbm_machine_retire_channel(resumed, 0U, 3U) == 0);
     assert(sbm_machine_restore_channel(resumed, 0U) == 0);
+    assert(sbm_machine_restore_dependency_closure(resumed, 0U) == 0);
     assert(sbm_machine_step_token(resumed, 1U, 3U, 0, &source_stats) == 0);
     assert(source_stats.channel_credit_count <= 8U);
     if (source_stats.channel_subset_available) {

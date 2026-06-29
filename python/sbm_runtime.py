@@ -189,6 +189,11 @@ class Runtime:
         lib.sbm_machine_retire_channel.restype = ctypes.c_int
         lib.sbm_machine_restore_channel.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
         lib.sbm_machine_restore_channel.restype = ctypes.c_int
+        lib.sbm_machine_restore_dependency_closure.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_uint32,
+        ]
+        lib.sbm_machine_restore_dependency_closure.restype = ctypes.c_int
         lib.sbm_machine_diagnostics_json.argtypes = [ctypes.c_void_p]
         lib.sbm_machine_diagnostics_json.restype = ctypes.c_void_p
         lib.sbm_machine_summary_json.argtypes = [ctypes.c_void_p]
@@ -804,6 +809,15 @@ class Machine:
         if status < 0:
             raise self.runtime._error("restore channel")
         return bool(status)
+
+    def restore_dependency_closure(self, channel: int) -> int:
+        status = self.runtime.lib.sbm_machine_restore_dependency_closure(
+            self.pointer,
+            channel,
+        )
+        if status < 0:
+            raise self.runtime._error("restore dependency closure")
+        return int(status)
 
     def save_checkpoint(self, path: str | os.PathLike[str]) -> None:
         status = self.runtime.lib.sbm_machine_save_checkpoint(

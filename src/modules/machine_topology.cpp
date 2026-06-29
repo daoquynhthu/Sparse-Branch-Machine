@@ -350,6 +350,35 @@ bool SparseBranchMachine::restore_channel(std::size_t channel) {
     return true;
 }
 
+std::size_t SparseBranchMachine::restore_dependency_closure(std::size_t channel) {
+    if (channel >= topology_.size() || channel == 0U) return 0U;
+    std::size_t restored = 0U;
+    std::vector<std::size_t> stack;
+    std::vector<std::uint8_t> visited(topology_.size(), 0U);
+    stack.push_back(channel);
+    while (!stack.empty()) {
+        const auto current = stack.back();
+        stack.pop_back();
+        if (current >= topology_.size() || visited[current] != 0U) continue;
+        visited[current] = 1U;
+        if (restore_channel(current)) ++restored;
+        if (!channel_enabled(current)) continue;
+        for (std::size_t candidate = 1U; candidate < topology_.size(); ++candidate) {
+            if (visited[candidate] != 0U) continue;
+            if (topology_[candidate].dependency_channel != current) continue;
+            const auto phase = topology_[candidate].phase;
+            if (phase == ChannelPhase::Quarantined ||
+                phase == ChannelPhase::RecoverableRetired ||
+                phase == ChannelPhase::Seed ||
+                phase == ChannelPhase::Probe ||
+                phase == ChannelPhase::Active) {
+                stack.push_back(candidate);
+            }
+        }
+    }
+    return restored;
+}
+
 void SparseBranchMachine::physically_erase_channel(std::size_t channel) {
     if (channel >= topology_.size() || channel == 0U) return;
     topology_[channel].phase = ChannelPhase::Retired;

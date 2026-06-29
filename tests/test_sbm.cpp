@@ -750,11 +750,19 @@ int main() {
            lineage_machine.topology_events().size());
     assert(masked_reloaded.diagnostics().dependency_blocked_channels ==
            lineage_machine.diagnostics().dependency_blocked_channels);
-    assert(lineage_machine.restore_channel(content_match_channel));
+    assert(lineage_machine.retire_channel(
+        content_follow_channel,
+        sbm::AcceptedChannelRetirement::RecoverableRetire));
+    assert(lineage_machine.restore_dependency_closure(content_match_channel) == 2U);
     const auto restored_enabled =
         lineage_machine.learned_channel_effective_enabled();
     assert(restored_enabled[content_match_channel] == 1U);
     assert(restored_enabled[content_follow_channel] == 1U);
+    const auto closure_phase = lineage_machine.learned_channel_phase();
+    assert(closure_phase[content_match_channel] ==
+           static_cast<std::uint8_t>(sbm::ChannelPhase::Active));
+    assert(closure_phase[content_follow_channel] ==
+           static_cast<std::uint8_t>(sbm::ChannelPhase::Active));
 
     sbm::Config fixed_topology_config = token_config;
     fixed_topology_config.adaptive_topology = false;

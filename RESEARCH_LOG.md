@@ -1441,3 +1441,17 @@ or merely present but masked by dependency state.
 This is still an audit surface, not an automatic repair policy, but it is the
 right aggregate for deciding whether restoring or masking a producer will affect
 one caller or a reused caller set.
+
+## 2026-06-29 — explicit dependency-closure restore
+
+The lifecycle control surface now includes `restore_dependency_closure(channel)`
+in C++, `sbm_machine_restore_dependency_closure` in the C ABI and
+`Machine.restore_dependency_closure()` in Python. The operation restores the
+selected recoverable/quarantined channel and recoverably masked direct callers
+reachable through dependency edges, returning the number of channels whose
+lifecycle phase changed back to Active.
+
+Tests cover a ContentMatch producer with a dependent ContentFollow caller:
+both are recoverably retired, then restoring the producer's dependency closure
+reactivates both and makes both effective-routable. This is a deterministic
+controller operation, not learned automatic graph repair.
