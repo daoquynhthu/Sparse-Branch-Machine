@@ -1203,3 +1203,24 @@ Interpretation: reuse-aware structural value is now operational and auditable,
 but this small gate does not prove a predictive advantage. The next useful
 comparison is a matched setting where nonzero reuse weight actually changes at
 least one topology decision.
+
+## 2026-06-29 — reuse-aware decision-changing gate
+
+A follow-up small gate intentionally raised `topology_accept_credit` to `0.05`
+so reuse-aware value could change topology admission instead of only changing
+reported event margins. The run used the same 300k train / 100k validation
+window on the 1M FineWeb-Edu smoke manifest and compared raw-credit,
+cost-only structural and reuse-aware structural admission on seeds 7 and 11.
+
+Raw-credit and cost-only admission accepted the same five high-base-value
+programs and had mean validation NLL `7.23027593`. Reuse-aware admission with
+`binding_reuse_value_weight=0.05` accepted earlier reusable tuple programs,
+reduced rejected proposals from 28 to 17 on each seed and reached mean
+validation NLL `7.21488486`, an improvement of `0.01539107` nats/token versus
+raw. Mean throughput fell from about `9722.58` steps/s to `9282.57` steps/s.
+
+The result is recorded in
+`research_results/reuse_aware_decision_gate_seed7_11.md`. This is positive
+small-scale evidence that reuse-aware structural value can improve admission
+when it actually changes decisions, but it is not yet enough to change the
+default `binding_reuse_value_weight`.

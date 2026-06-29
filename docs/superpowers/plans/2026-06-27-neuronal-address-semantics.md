@@ -959,6 +959,17 @@ attribution, but it did not change the accepted topology sequence or validation
 NLL in this small window. The result is recorded in
 `research_results/reuse_aware_structural_small_seed7.md`.
 
+**2026-06-29 reuse-aware decision-changing gate:** A second 300k/100k gate raised
+`topology_accept_credit` to `0.05` so reuse-aware value could alter topology
+admission. On seeds 7 and 11, raw-credit and cost-only gates accepted the same
+five programs and had mean validation NLL `7.23027593`. Reuse-aware admission
+accepted earlier reusable tuple programs and reached mean validation NLL
+`7.21488486`, while reducing rejected proposals from 28 to 17 per seed. Mean
+throughput dropped by about 4.5%. This is positive small-scale evidence for the
+reuse-aware route, but it is not yet sufficient to change the default
+`binding_reuse_value_weight`. The result is recorded in
+`research_results/reuse_aware_decision_gate_seed7_11.md`.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**
