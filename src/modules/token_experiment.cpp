@@ -50,6 +50,8 @@ struct ProgramAttributionAccumulator {
     double binding_pattern_span_sum{};
     std::uint64_t binding_matches{};
     std::unordered_set<std::uint64_t> binding_keys;
+    std::uint64_t call_matches{};
+    std::unordered_set<std::uint64_t> call_keys;
     double description_cost{};
     double execution_cost{};
     std::uint64_t observations{};
@@ -168,6 +170,12 @@ std::vector<ProgramAttribution> finish_program_attribution(
             attribution.binding_matches > attribution.unique_binding_keys
                 ? attribution.binding_matches - attribution.unique_binding_keys
                 : 0U;
+        attribution.call_matches = accumulator.call_matches;
+        attribution.unique_call_keys = accumulator.call_keys.size();
+        attribution.call_key_reuse_events =
+            attribution.call_matches > attribution.unique_call_keys
+                ? attribution.call_matches - attribution.unique_call_keys
+                : 0U;
         attribution.description_cost = accumulator.description_cost;
         attribution.execution_cost = accumulator.execution_cost;
         attribution.observations = accumulator.observations;
@@ -214,12 +222,17 @@ std::vector<ChannelDependencySummary> finish_dependency_graph(
                 summary.unique_binding_keys += attribution.unique_binding_keys;
                 summary.binding_key_reuse_events +=
                     attribution.binding_key_reuse_events;
+                summary.own_call_matches += attribution.call_matches;
+                summary.unique_call_keys += attribution.unique_call_keys;
+                summary.call_key_reuse_events +=
+                    attribution.call_key_reuse_events;
                 summary.own_credit_sum += attribution.credit_sum;
                 summary.own_caller_removed_credit_sum +=
                     attribution.caller_removed_credit_sum;
             }
             if (attribution.dependency_channel == channel &&
                 attribution.channel != channel) {
+                summary.downstream_call_matches += attribution.call_matches;
                 summary.downstream_caller_removed_credit_sum +=
                     attribution.caller_removed_credit_sum;
                 summary.downstream_dependency_removed_credit_sum +=
@@ -516,6 +529,11 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                             program_accumulator.binding_pattern_span_sum +=
                                 static_cast<double>(
                                     stats.channel_binding_pattern_span[channel]);
+                        }
+                        if (stats.channel_call_key[channel] != 0U) {
+                            ++program_accumulator.call_matches;
+                            program_accumulator.call_keys.insert(
+                                stats.channel_call_key[channel]);
                         }
                         program_accumulator.description_cost +=
                             static_cast<double>(stats.channel_description_cost[channel]);
@@ -898,6 +916,10 @@ std::string to_json(const TokenExperimentResult& result) {
             summary.own_observations == 0U ? 0.0 :
                 static_cast<double>(summary.own_binding_matches) /
                     static_cast<double>(summary.own_observations);
+        const double own_call_match_fraction =
+            summary.own_observations == 0U ? 0.0 :
+                static_cast<double>(summary.own_call_matches) /
+                    static_cast<double>(summary.own_observations);
         out << "],\"op\":" << static_cast<unsigned>(summary.program.op)
             << ",\"phase\":" << static_cast<unsigned>(summary.phase)
             << ",\"parent_channel\":"
@@ -915,10 +937,18 @@ std::string to_json(const TokenExperimentResult& result) {
             << summary.binding_key_reuse_events
             << ",\"own_binding_match_fraction\":"
             << own_binding_match_fraction
+            << ",\"own_call_matches\":" << summary.own_call_matches
+            << ",\"unique_call_keys\":" << summary.unique_call_keys
+            << ",\"call_key_reuse_events\":"
+            << summary.call_key_reuse_events
+            << ",\"own_call_match_fraction\":"
+            << own_call_match_fraction
             << ",\"own_credit_sum\":" << summary.own_credit_sum
             << ",\"own_mean_credit\":" << own_mean_credit
             << ",\"own_caller_removed_credit\":"
             << summary.own_caller_removed_credit_sum
+            << ",\"downstream_call_matches\":"
+            << summary.downstream_call_matches
             << ",\"downstream_caller_removed_credit\":"
             << summary.downstream_caller_removed_credit_sum
             << ",\"downstream_dependency_removed_credit\":"
@@ -971,6 +1001,9 @@ std::string to_json(const TokenExperimentResult& result) {
         const double binding_match_fraction = attribution.observations == 0U ? 0.0 :
             static_cast<double>(attribution.binding_matches) /
                 static_cast<double>(attribution.observations);
+        const double call_match_fraction = attribution.observations == 0U ? 0.0 :
+            static_cast<double>(attribution.call_matches) /
+                static_cast<double>(attribution.observations);
         const double mean_binding_distance = attribution.binding_matches == 0U ? 0.0 :
             attribution.binding_distance_sum /
                 static_cast<double>(attribution.binding_matches);
@@ -1022,6 +1055,11 @@ std::string to_json(const TokenExperimentResult& result) {
             << ",\"binding_key_reuse_events\":"
             << attribution.binding_key_reuse_events
             << ",\"binding_match_fraction\":" << binding_match_fraction
+            << ",\"call_matches\":" << attribution.call_matches
+            << ",\"unique_call_keys\":" << attribution.unique_call_keys
+            << ",\"call_key_reuse_events\":"
+            << attribution.call_key_reuse_events
+            << ",\"call_match_fraction\":" << call_match_fraction
             << ",\"mean_binding_distance\":" << mean_binding_distance
             << ",\"mean_binding_pattern_span\":"
             << mean_binding_pattern_span

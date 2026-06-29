@@ -137,6 +137,10 @@ subprogram-call substrate: caller address regions can differ by the concrete
 binding produced by their dependency. It is not yet a full compositional
 program language because calls are fixed by channel lineage and are not learned
 as arbitrary typed graph edits.
+Frozen program attribution now reports call matches, unique call keys and
+call-key reuse, and the dependency graph aggregates own and downstream call
+usage. This makes the call substrate measurable rather than only visible in
+per-step traces, but it still does not prove general learned composition.
 
 ## 4. Lifecycle challenge under compositional programs
 
@@ -224,12 +228,14 @@ It is justified to say that the repository contains:
 - a traceable lifecycle for relatively independent address programs;
 - a tokenizer-aligned training contract;
 - experimental sparse output and computable addressing.
+- a bounded single-hop content-conditioned call substrate with frozen
+  attribution counters.
 
 It is not justified to say that it has demonstrated:
 
 - emergent syntax or semantics;
 - variable binding;
-- content-dependent relation traversal;
+- open-ended content-dependent relation traversal;
 - a task-independent topology criterion;
 - general language modeling capability;
 - CPU superiority at matched quality.

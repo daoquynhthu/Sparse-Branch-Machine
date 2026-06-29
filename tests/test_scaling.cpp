@@ -359,6 +359,10 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"binding_matches\"") != std::string::npos);
     assert(json.find("\"unique_binding_keys\"") != std::string::npos);
     assert(json.find("\"binding_key_reuse_events\"") != std::string::npos);
+    assert(json.find("\"call_matches\"") != std::string::npos);
+    assert(json.find("\"unique_call_keys\"") != std::string::npos);
+    assert(json.find("\"call_key_reuse_events\"") != std::string::npos);
+    assert(json.find("\"call_match_fraction\"") != std::string::npos);
     assert(json.find("\"binding_reuse_bonus\"") != std::string::npos);
     assert(json.find("\"structural_value_without_reuse\"") != std::string::npos);
     assert(json.find("\"mean_binding_distance\"") != std::string::npos);
@@ -366,6 +370,8 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"address_binding_by_kind\"") != std::string::npos);
     assert(json.find("\"address_dependency_graph\"") != std::string::npos);
     assert(json.find("\"direct_caller_count\"") != std::string::npos);
+    assert(json.find("\"own_call_matches\"") != std::string::npos);
+    assert(json.find("\"downstream_call_matches\"") != std::string::npos);
     assert(json.find("\"downstream_dependency_removed_credit\"") !=
            std::string::npos);
     assert(json.find("\"structural_value\"") != std::string::npos);
@@ -374,6 +380,7 @@ void verify_dependency_attribution_json() {
     for (const auto& summary : result.address_dependency_graph) {
         assert(summary.channel < result.learned_address_programs.size());
         assert(summary.unique_binding_keys <= summary.own_binding_matches);
+        assert(summary.unique_call_keys <= summary.own_call_matches);
     }
     assert(result.diagnostics.structural_description_cost >= 0.0);
     assert(result.diagnostics.structural_execution_cost >= 0.0);

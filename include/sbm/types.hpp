@@ -347,6 +347,9 @@ struct ProgramAttribution {
     std::uint64_t binding_matches{};
     std::uint64_t unique_binding_keys{};
     std::uint64_t binding_key_reuse_events{};
+    std::uint64_t call_matches{};
+    std::uint64_t unique_call_keys{};
+    std::uint64_t call_key_reuse_events{};
     double description_cost{};
     double execution_cost{};
     std::uint64_t observations{};

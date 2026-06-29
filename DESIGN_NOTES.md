@@ -280,3 +280,10 @@ routing signature is conditioned on that call key. This is still not a general
 multi-step program graph, but it is no longer merely post-hoc lineage metadata:
 caller address regions can now be separated by the concrete binding produced by
 their prerequisite.
+
+Frozen attribution now also carries call evidence into the same audit surface.
+`eval_program_attribution` reports call matches, unique call keys, call-key
+reuse events and call-match fraction. The dependency graph aggregates own call
+matches and downstream call matches per channel. These counters make it
+possible to distinguish an accepted dependency that merely exists from one that
+is actually consumed by callers during evaluation.

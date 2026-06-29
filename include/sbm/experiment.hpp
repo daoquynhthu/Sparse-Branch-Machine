@@ -52,8 +52,12 @@ struct ChannelDependencySummary {
     std::uint64_t own_binding_matches{};
     std::uint64_t unique_binding_keys{};
     std::uint64_t binding_key_reuse_events{};
+    std::uint64_t own_call_matches{};
+    std::uint64_t unique_call_keys{};
+    std::uint64_t call_key_reuse_events{};
     double own_credit_sum{};
     double own_caller_removed_credit_sum{};
+    std::uint64_t downstream_call_matches{};
     double downstream_caller_removed_credit_sum{};
     double downstream_dependency_removed_credit_sum{};
 };

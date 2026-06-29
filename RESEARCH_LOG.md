@@ -1289,3 +1289,19 @@ This is not yet a full learned compositional program graph. It is deliberately a
 bounded single-hop call substrate that preserves the existing channel lifecycle,
 lineage and attribution contracts while making dependency semantics affect
 routing rather than only reports.
+
+## 2026-06-29 — call attribution in dependency graph
+
+The dependency-conditioned call substrate is now included in frozen experiment
+attribution. `eval_program_attribution` reports `call_matches`,
+`unique_call_keys`, `call_key_reuse_events` and `call_match_fraction`.
+`address_dependency_graph` aggregates own call matches, unique call keys,
+call-key reuse events and downstream call matches for each learned channel.
+
+This closes the immediate observability gap introduced by single-hop calls:
+step stats still show individual `channel_call_key` values, while experiment
+summaries now show whether accepted prerequisite channels are actually consumed
+by callers during frozen evaluation. C machine-summary JSON exposes the same
+dependency-graph field names as zero-valued runtime placeholders; full nonzero
+call usage remains an experiment-attribution result because live C summaries do
+not retain an evaluation window.

@@ -840,7 +840,11 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
                 << (i < dependency.size()
                         ? static_cast<unsigned>(dependency[i])
                         : static_cast<unsigned>(sbm::kInvalidChannel))
-                << ",\"direct_caller_count\":" << caller_counts[i] << "}";
+                << ",\"direct_caller_count\":" << caller_counts[i]
+                << ",\"own_call_matches\":0"
+                << ",\"unique_call_keys\":0"
+                << ",\"call_key_reuse_events\":0"
+                << ",\"downstream_call_matches\":0}";
         }
         out << "], \"topology_events\": [";
         const auto& events = machine->value.topology_events();

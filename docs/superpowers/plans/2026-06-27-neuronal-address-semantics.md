@@ -998,6 +998,14 @@ stats expose `channel_dependency_binding_key` and `channel_call_key`, and the C
 ABI is now v8. This is a single-hop call substrate, not a full learned
 compositional program graph.
 
+**2026-06-29 call-attribution completion:** The call substrate is now visible in
+frozen experiment summaries, not only per-step traces. `ProgramAttribution`
+records `call_matches`, `unique_call_keys`, `call_key_reuse_events` and
+`call_match_fraction`; `address_dependency_graph` records own call matches,
+unique call keys, call-key reuse events and downstream call matches. C summary
+JSON exposes the same graph field names with zero-valued runtime placeholders
+because it does not retain frozen attribution windows.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**
