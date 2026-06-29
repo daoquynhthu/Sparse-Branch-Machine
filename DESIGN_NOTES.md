@@ -272,6 +272,9 @@ producer is masked. Diagnostics therefore report
 `dependency_blocked_channels`, and machine summaries expose
 `learned_channel_effective_enabled`, per-channel `effective_enabled` and
 `dependency_available`.
+Experiment results expose the same `learned_channel_effective_enabled` vector
+as stateful summaries, so long-running corpus outputs retain the distinction
+between committed lifecycle phase and actual routing availability.
 
 Matched binding states also carry a stable `binding_key`. The key intentionally
 excludes absolute matched index and matched distance, so a content binding can

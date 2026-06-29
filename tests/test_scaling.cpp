@@ -374,6 +374,8 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"mean_binding_distance\"") != std::string::npos);
     assert(json.find("\"mean_binding_pattern_span\"") != std::string::npos);
     assert(json.find("\"address_binding_by_kind\"") != std::string::npos);
+    assert(json.find("\"learned_channel_effective_enabled\"") !=
+           std::string::npos);
     assert(json.find("\"address_dependency_graph\"") != std::string::npos);
     assert(json.find("\"address_dependency_edges\"") != std::string::npos);
     assert(json.find("\"caller_channel\"") != std::string::npos);
@@ -388,6 +390,8 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"structural_value\"") != std::string::npos);
     assert(result.address_dependency_graph.size() ==
            result.learned_address_programs.size());
+    assert(result.learned_channel_effective_enabled.size() ==
+           result.learned_channel_phase.size());
     assert(!result.address_dependency_edges.empty());
     for (const auto& edge : result.address_dependency_edges) {
         assert(edge.caller_channel < result.learned_address_programs.size());

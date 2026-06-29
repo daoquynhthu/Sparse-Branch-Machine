@@ -1063,6 +1063,11 @@ restore recoverable/quarantined channels. Diagnostics report
 `dependency_available`. Phase now means committed lifecycle state, while
 effective-enabled means actual routing availability.
 
+**2026-06-29 experiment effective-state completion:** Token and vector
+experiment result structs and JSON now emit
+`learned_channel_effective_enabled`. Long-running corpus runs therefore preserve
+the same effective routing state exposed by the stateful machine summary.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

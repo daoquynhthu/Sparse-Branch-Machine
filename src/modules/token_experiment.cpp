@@ -772,6 +772,8 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.learned_address_programs = model.learned_address_programs();
     result.learned_channel_credit = model.learned_channel_credit();
     result.learned_channel_phase = model.learned_channel_phase();
+    result.learned_channel_effective_enabled =
+        model.learned_channel_effective_enabled();
     result.learned_channel_parent = model.learned_channel_parent();
     result.learned_channel_dependency = model.learned_channel_dependency();
     result.learned_channel_generation = model.learned_channel_generation();
@@ -1021,6 +1023,11 @@ std::string to_json(const TokenExperimentResult& result) {
     for (std::size_t i = 0; i < result.learned_channel_phase.size(); ++i) {
         if (i != 0U) out << ", ";
         out << static_cast<unsigned>(result.learned_channel_phase[i]);
+    }
+    out << "],\n  \"learned_channel_effective_enabled\": [";
+    for (std::size_t i = 0; i < result.learned_channel_effective_enabled.size(); ++i) {
+        if (i != 0U) out << ", ";
+        out << static_cast<unsigned>(result.learned_channel_effective_enabled[i]);
     }
     out << "],\n  \"learned_channel_parent\": [";
     for (std::size_t i = 0; i < result.learned_channel_parent.size(); ++i) {

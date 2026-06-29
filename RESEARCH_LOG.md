@@ -1400,3 +1400,12 @@ Diagnostics now report `dependency_blocked_channels`. Machine summaries expose
 `effective_enabled` and `dependency_available`. This separates logical channel
 phase from actual routing eligibility, which is required once accepted callers
 can depend on masked producers.
+
+## 2026-06-29 — effective routing state in experiment results
+
+Vector and token experiment results now carry
+`learned_channel_effective_enabled` alongside `learned_channel_phase`. The JSON
+output from both experiment paths emits the same field, and scaling/C API tests
+assert its presence. This prevents long-running corpus artifacts from losing
+the dependency-blocked routing state that is visible in stateful machine
+summaries.

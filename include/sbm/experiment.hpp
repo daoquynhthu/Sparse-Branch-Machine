@@ -109,6 +109,7 @@ struct ExperimentResult {
     std::vector<AddressProgram> learned_address_programs;
     std::vector<float> learned_channel_credit;
     std::vector<std::uint8_t> learned_channel_phase;
+    std::vector<std::uint8_t> learned_channel_effective_enabled;
     std::vector<std::uint8_t> learned_channel_parent;
     std::vector<std::uint8_t> learned_channel_dependency;
     std::vector<std::uint64_t> learned_channel_generation;
@@ -152,6 +153,7 @@ struct TokenExperimentResult {
     std::vector<AddressProgram> learned_address_programs;
     std::vector<float> learned_channel_credit;
     std::vector<std::uint8_t> learned_channel_phase;
+    std::vector<std::uint8_t> learned_channel_effective_enabled;
     std::vector<std::uint8_t> learned_channel_parent;
     std::vector<std::uint8_t> learned_channel_dependency;
     std::vector<std::uint64_t> learned_channel_generation;

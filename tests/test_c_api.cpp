@@ -95,6 +95,8 @@ int main() {
            std::string_view::npos);
     assert(token_view.find("\"dependency_blocked_channels\"") !=
            std::string_view::npos);
+    assert(token_view.find("\"learned_channel_effective_enabled\"") !=
+           std::string_view::npos);
     assert(token_view.find("\"structural_value_nats\"") != std::string_view::npos);
     assert(token_view.find("\"structural_description_cost\"") !=
            std::string_view::npos);
