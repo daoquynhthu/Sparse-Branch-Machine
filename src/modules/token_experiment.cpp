@@ -261,6 +261,16 @@ std::vector<ChannelDependencySummary> finish_dependency_graph(
         for (std::size_t caller = 0U; caller < count; ++caller) {
             if (caller != channel && dependencies[caller] == channel) {
                 ++summary.direct_caller_count;
+                if (effective_enabled[caller] != 0U) {
+                    ++summary.effective_direct_caller_count;
+                } else if (phases[caller] ==
+                    static_cast<std::uint8_t>(ChannelPhase::Seed) ||
+                    phases[caller] ==
+                    static_cast<std::uint8_t>(ChannelPhase::Probe) ||
+                    phases[caller] ==
+                    static_cast<std::uint8_t>(ChannelPhase::Active)) {
+                    ++summary.blocked_direct_caller_count;
+                }
             }
         }
         for (const auto& attribution : attributions) {
@@ -1117,6 +1127,10 @@ std::string to_json(const TokenExperimentResult& result) {
             << static_cast<unsigned>(summary.dependency_available)
             << ",\"direct_caller_count\":"
             << summary.direct_caller_count
+            << ",\"effective_direct_caller_count\":"
+            << summary.effective_direct_caller_count
+            << ",\"blocked_direct_caller_count\":"
+            << summary.blocked_direct_caller_count
             << ",\"own_observations\":" << summary.own_observations
             << ",\"own_binding_matches\":"
             << summary.own_binding_matches

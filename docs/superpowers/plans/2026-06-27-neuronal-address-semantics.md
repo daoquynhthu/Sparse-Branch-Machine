@@ -1080,6 +1080,11 @@ diagnostics after reload. Topology event JSON emits `decision_name`, and
 machine/experiment JSON emit `topology_decision_name_map` for enum
 self-description even when a run has no events.
 
+**2026-06-29 direct-caller availability completion:** Dependency graph summaries
+now split direct callers into `effective_direct_caller_count` and
+`blocked_direct_caller_count`. This makes shared prerequisite nodes auditable by
+active consumer availability rather than only by total declared callers.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

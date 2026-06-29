@@ -220,6 +220,12 @@ int main() {
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"direct_caller_count\"") !=
            std::string_view::npos);
+    assert(std::string_view(machine_summary).find(
+               "\"effective_direct_caller_count\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find(
+               "\"blocked_direct_caller_count\"") !=
+           std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"own_call_matches\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"downstream_call_matches\"") !=

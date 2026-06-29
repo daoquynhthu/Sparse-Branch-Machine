@@ -169,6 +169,9 @@ The implementation now reports lifecycle phase separately from effective
 routing eligibility. This distinction matters for compositional programs: an
 accepted caller can remain a committed structure while temporarily unavailable
 because a required producer is masked.
+Dependency summaries now also count effective and blocked direct callers, so a
+shared producer can be audited by how many committed consumers are currently
+routable versus masked by dependency state.
 
 ## 4. Lifecycle challenge under compositional programs
 
@@ -261,6 +264,7 @@ It is justified to say that the repository contains:
 - typed address-program input/output state contracts;
 - dependency-aware routing eligibility for typed callers;
 - separate lifecycle phase and effective routing diagnostics;
+- effective and blocked direct-caller counts for dependency summaries;
 - first-class dependency edge summaries for rollback-oriented audit.
 - explicit restore of masked committed channels while preserving channel
   generation.

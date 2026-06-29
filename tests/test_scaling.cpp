@@ -385,6 +385,10 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"dependency_generation\"") != std::string::npos);
     assert(json.find("\"edge_kind\"") != std::string::npos);
     assert(json.find("\"direct_caller_count\"") != std::string::npos);
+    assert(json.find("\"effective_direct_caller_count\"") !=
+           std::string::npos);
+    assert(json.find("\"blocked_direct_caller_count\"") !=
+           std::string::npos);
     assert(json.find("\"dependency_available\"") != std::string::npos);
     assert(json.find("\"effective_enabled\"") != std::string::npos);
     assert(json.find("\"own_call_matches\"") != std::string::npos);
@@ -407,6 +411,13 @@ void verify_dependency_attribution_json() {
         assert(summary.channel < result.learned_address_programs.size());
         assert(summary.effective_enabled <= 1U);
         assert(summary.dependency_available <= 1U);
+        assert(summary.effective_direct_caller_count <=
+               summary.direct_caller_count);
+        assert(summary.blocked_direct_caller_count <=
+               summary.direct_caller_count);
+        assert(summary.effective_direct_caller_count +
+               summary.blocked_direct_caller_count <=
+               summary.direct_caller_count);
         assert(summary.unique_binding_keys <= summary.own_binding_matches);
         assert(summary.unique_call_keys <= summary.own_call_matches);
     }

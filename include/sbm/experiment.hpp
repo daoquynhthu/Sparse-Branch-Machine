@@ -56,6 +56,8 @@ struct ChannelDependencySummary {
     std::uint8_t effective_enabled{1U};
     std::uint8_t dependency_available{1U};
     std::uint64_t direct_caller_count{};
+    std::uint64_t effective_direct_caller_count{};
+    std::uint64_t blocked_direct_caller_count{};
     std::uint64_t own_observations{};
     std::uint64_t own_binding_matches{};
     std::uint64_t unique_binding_keys{};

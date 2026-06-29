@@ -869,11 +869,27 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
             out << static_cast<unsigned>(dependency_edge_kind[i]);
         }
         std::vector<std::uint64_t> caller_counts(programs.size(), 0U);
+        std::vector<std::uint64_t> effective_caller_counts(programs.size(), 0U);
+        std::vector<std::uint64_t> blocked_caller_counts(programs.size(), 0U);
         for (std::size_t caller = 0U; caller < dependency.size(); ++caller) {
             const auto dependency_channel = dependency[caller];
             if (dependency_channel < caller_counts.size() &&
                 dependency_channel != caller) {
                 ++caller_counts[dependency_channel];
+                const bool caller_effective = caller < effective_enabled.size() &&
+                    effective_enabled[caller] != 0U;
+                const bool caller_committed = caller < phase.size() &&
+                    (phase[caller] ==
+                         static_cast<std::uint8_t>(sbm::ChannelPhase::Seed) ||
+                     phase[caller] ==
+                         static_cast<std::uint8_t>(sbm::ChannelPhase::Probe) ||
+                     phase[caller] ==
+                         static_cast<std::uint8_t>(sbm::ChannelPhase::Active));
+                if (caller_effective) {
+                    ++effective_caller_counts[dependency_channel];
+                } else if (caller_committed) {
+                    ++blocked_caller_counts[dependency_channel];
+                }
             }
         }
         out << "], \"address_dependency_graph\": [";
@@ -928,6 +944,10 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
                 << static_cast<unsigned>(
                        sbm::address_program_required_dependency_binding(programs[i]))
                 << ",\"direct_caller_count\":" << caller_counts[i]
+                << ",\"effective_direct_caller_count\":"
+                << effective_caller_counts[i]
+                << ",\"blocked_direct_caller_count\":"
+                << blocked_caller_counts[i]
                 << ",\"own_call_matches\":0"
                 << ",\"unique_call_keys\":0"
                 << ",\"call_key_reuse_events\":0"

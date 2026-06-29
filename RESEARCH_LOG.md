@@ -1429,3 +1429,15 @@ Topology event JSON now includes readable `decision_name` in addition to the
 numeric enum. Token/vector experiment JSON and stateful machine summaries also
 emit `topology_decision_name_map`, so runs with no topology events still carry
 the enum meaning.
+
+## 2026-06-29 — direct caller availability in dependency graph
+
+Dependency summaries now aggregate caller availability. In addition to
+`direct_caller_count`, token experiment summaries and C machine summaries emit
+`effective_direct_caller_count` and `blocked_direct_caller_count`. This tells
+whether a shared prerequisite has committed callers that are actually routable
+or merely present but masked by dependency state.
+
+This is still an audit surface, not an automatic repair policy, but it is the
+right aggregate for deciding whether restoring or masking a producer will affect
+one caller or a reused caller set.

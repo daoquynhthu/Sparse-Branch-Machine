@@ -279,6 +279,11 @@ Token experiment dependency-graph summaries also include per-channel
 `effective_enabled` and `dependency_available`, matching the stateful machine
 summary. Consumers no longer need to join top-level arrays manually to audit
 whether a graph node is routable.
+Dependency summaries aggregate caller availability as well:
+`effective_direct_caller_count` and `blocked_direct_caller_count` split direct
+callers into currently routable callers and committed-but-masked callers. This
+is the graph-level audit surface for future automatic repair; it is not yet an
+automatic graph rewrite policy.
 
 Matched binding states also carry a stable `binding_key`. The key intentionally
 excludes absolute matched index and matched distance, so a content binding can
