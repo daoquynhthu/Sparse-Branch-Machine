@@ -188,6 +188,35 @@ void SparseBranchMachine::observe_binding_reuse(std::size_t channel,
     }
 }
 
+SparseBranchMachine::BindingReuseSummary SparseBranchMachine::binding_reuse_summary(
+    std::size_t channel) const noexcept {
+    BindingReuseSummary result;
+    if (channel >= binding_reuse_.size()) return result;
+    const auto& records = binding_reuse_[channel];
+    result.unique_keys = records.size();
+    for (const auto& record : records) {
+        result.observations += record.observations;
+        if (record.observations > 1U) {
+            result.events += record.observations - 1U;
+        }
+    }
+    return result;
+}
+
+double SparseBranchMachine::binding_reuse_bonus(
+    const BindingReuseSummary& summary) const noexcept {
+    if (config_.binding_reuse_value_weight <= 0.0F || summary.observations == 0U ||
+        summary.events == 0U) {
+        return 0.0;
+    }
+    const double repeated_fraction =
+        static_cast<double>(summary.events) /
+        static_cast<double>(summary.observations);
+    return static_cast<double>(config_.binding_reuse_value_weight) *
+           std::log1p(static_cast<double>(summary.events)) *
+           repeated_fraction;
+}
+
 void SparseBranchMachine::quarantine_channel(std::size_t channel) {
     if (channel >= topology_.size() || channel == 0U) return;
     topology_[channel].phase = ChannelPhase::Quarantined;
@@ -322,12 +351,20 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
             program_execution_cost(state.program);
         const double structural_value =
             mean_credit - description_penalty - execution_penalty;
+        const auto reuse_summary = binding_reuse_summary(channel);
+        const double reuse_bonus = binding_reuse_bonus(reuse_summary);
+        const double reuse_aware_structural_value = structural_value + reuse_bonus;
         const double decision_value = config_.topology_accept_uses_structural_value
-            ? structural_value : mean_credit;
+            ? reuse_aware_structural_value : mean_credit;
         if (decision_value >= static_cast<double>(config_.topology_accept_credit)) {
             topology_events_.push_back({total_steps_, state.program,
                                         TopologyDecision::Accepted,
+                                        static_cast<float>(reuse_aware_structural_value),
                                         static_cast<float>(structural_value),
+                                        static_cast<float>(reuse_bonus),
+                                        reuse_summary.observations,
+                                        reuse_summary.unique_keys,
+                                        reuse_summary.events,
                                         static_cast<std::uint8_t>(channel),
                                         state.parent_channel,
                                         state.dependency_channel});
@@ -339,7 +376,12 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
         } else {
             topology_events_.push_back({total_steps_, state.program,
                                         TopologyDecision::Rejected,
+                                        static_cast<float>(reuse_aware_structural_value),
                                         static_cast<float>(structural_value),
+                                        static_cast<float>(reuse_bonus),
+                                        reuse_summary.observations,
+                                        reuse_summary.unique_keys,
+                                        reuse_summary.events,
                                         static_cast<std::uint8_t>(channel),
                                         state.parent_channel,
                                         state.dependency_channel});
@@ -362,9 +404,16 @@ void SparseBranchMachine::maybe_finalize_topology_probe() {
             AcceptedChannelRetirement::Preserve) {
             continue;
         }
+        const auto reuse_summary = binding_reuse_summary(channel);
+        const double reuse_bonus = binding_reuse_bonus(reuse_summary);
         topology_events_.push_back({total_steps_, state.program,
                                     TopologyDecision::Pruned,
+                                    state.credit_ema + static_cast<float>(reuse_bonus),
                                     state.credit_ema,
+                                    static_cast<float>(reuse_bonus),
+                                    reuse_summary.observations,
+                                    reuse_summary.unique_keys,
+                                    reuse_summary.events,
                                     static_cast<std::uint8_t>(channel),
                                     state.parent_channel,
                                     state.dependency_channel});
@@ -391,9 +440,16 @@ void SparseBranchMachine::freeze_topology() {
         const double mean_credit = state.observations == 0U
             ? 0.0
             : state.credit_sum / static_cast<double>(state.observations);
+        const auto reuse_summary = binding_reuse_summary(channel);
+        const double reuse_bonus = binding_reuse_bonus(reuse_summary);
         topology_events_.push_back({total_steps_, state.program,
                                     TopologyDecision::Rejected,
+                                    static_cast<float>(mean_credit + reuse_bonus),
                                     static_cast<float>(mean_credit),
+                                    static_cast<float>(reuse_bonus),
+                                    reuse_summary.observations,
+                                    reuse_summary.unique_keys,
+                                    reuse_summary.events,
                                     static_cast<std::uint8_t>(channel),
                                     state.parent_channel,
                                     state.dependency_channel});
@@ -458,6 +514,7 @@ void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
     binding_reuse_[slot].clear();
     topology_events_.push_back({total_steps_, *proposal,
                                 TopologyDecision::Proposed, 0.0F,
+                                0.0F, 0.0F, 0U, 0U, 0U,
                                 static_cast<std::uint8_t>(slot),
                                 parent_channel, dependency_channel});
     ++topology_proposals_;

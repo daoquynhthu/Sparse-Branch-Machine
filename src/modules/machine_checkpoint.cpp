@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '4'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '5'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -122,6 +122,7 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.accepted_channel_retirement);
     write_scalar(out, config.structural_description_cost_weight);
     write_scalar(out, config.structural_execution_cost_weight);
+    write_scalar(out, config.binding_reuse_value_weight);
     write_scalar(out, config.topology_accept_uses_structural_value);
     write_scalar(out, config.residual_channel_gain);
     write_scalar(out, config.residual_learning_rate);
@@ -197,6 +198,7 @@ Config read_config(std::istream& in) {
     config.accepted_channel_retirement = read_scalar<AcceptedChannelRetirement>(in);
     config.structural_description_cost_weight = read_scalar<float>(in);
     config.structural_execution_cost_weight = read_scalar<float>(in);
+    config.binding_reuse_value_weight = read_scalar<float>(in);
     config.topology_accept_uses_structural_value = read_scalar<bool>(in);
     config.residual_channel_gain = read_scalar<float>(in);
     config.residual_learning_rate = read_scalar<float>(in);

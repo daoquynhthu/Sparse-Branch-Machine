@@ -942,6 +942,15 @@ bounded by `max_binding_reuse_records_per_channel`, is cleared when a channel is
 physically erased, and is serialized in model checkpoints. This bumps the model
 checkpoint magic to `SBMCKPT4`.
 
+**2026-06-29 reuse-aware structural value completion:** Topology events now
+separate `structural_value_without_reuse` from an optional
+`binding_reuse_bonus`. The bonus is derived from the bounded per-channel
+binding-reuse registry and is controlled by `binding_reuse_value_weight`, whose
+default is zero. Existing acceptance decisions therefore remain compatible
+unless a validation run explicitly enables reuse-aware structural admission.
+Because topology events are raw-serialized, the model checkpoint magic is now
+`SBMCKPT5`.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**
@@ -1173,10 +1182,11 @@ Contract boundary:
   archives;
 - the binary file magic is the checkpoint format version and must be bumped
   whenever a raw-serialized state struct changes layout;
-- `SBMCKPT4` is the current lineage-aware model checkpoint format. It includes
+- `SBMCKPT5` is the current lineage-aware model checkpoint format. It includes
   channel parent/dependency lineage in topology state and topology events,
-  binding-kind execution counters, bounded binding-reuse registries, plus all
-  state required to continue sparse-output learning exactly;
+  binding-kind execution counters, bounded binding-reuse registries,
+  reuse-aware topology event value fields, plus all state required to continue
+  sparse-output learning exactly;
 - runner checkpoints own the data cursor, manifest identity, phase, accumulated
   metrics and path to the model checkpoint. Exact long-run resume requires both
   runner and model checkpoint files;

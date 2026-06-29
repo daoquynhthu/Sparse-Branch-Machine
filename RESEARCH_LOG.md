@@ -1132,14 +1132,15 @@ count and last-seen step, records repeated reuse events, and exposes aggregate
 diagnostics through C++/C/token JSON. The registry is updated only while
 learning; frozen evaluation remains read-only.
 
-The registry is serialized in model checkpoints, so the checkpoint magic is now
+The registry is serialized in model checkpoints, so the checkpoint magic became
 `SBMCKPT4`. The checkpoint regression verifies that uninterrupted and
 save/load/resume training match on binding-reuse observations, unique keys and
 reuse events in addition to the previous prediction/topology checks.
 
 Because topology state and topology events are raw-serialized in model
 checkpoints, the model checkpoint magic was bumped to `SBMCKPT3` and later to
-`SBMCKPT4` when bounded binding-reuse registries became persistent state. The
+`SBMCKPT4` when bounded binding-reuse registries became persistent state, and
+then to `SBMCKPT5` when reuse-aware topology event value fields were added. The
 checkpoint contract is exact same-format resume, not cross-version archive
 compatibility.
 
@@ -1167,3 +1168,18 @@ Bind/Call semantics. It closes the next audit gap: shared prerequisites and
 multi-caller reuse are now visible as graph structure rather than being
 recoverable only by manually correlating lineage arrays and per-program
 attribution rows.
+
+## 2026-06-29 — reuse-aware structural value reporting
+
+The persistent binding-reuse registry now feeds topology event reporting.
+Accepted, rejected and pruned topology events expose
+`structural_value_without_reuse`, `binding_reuse_bonus`,
+`binding_reuse_observations`, `binding_reuse_unique_keys` and
+`binding_reuse_events`. The bonus is controlled by
+`binding_reuse_value_weight`, which defaults to zero, so the stage does not
+change default topology acceptance behavior.
+
+This is an architecture instrumentation step, not a validated claim that reuse
+should govern admission. It makes the next gate explicit: run matched
+structural-admission experiments only after setting a nonzero reuse weight and
+comparing against the existing raw and cost-only gates.

@@ -255,8 +255,11 @@ rule.
 During learning, binding keys are also written into a bounded per-channel reuse
 registry. The registry records total binding observations, unique retained keys
 and repeated reuse events, and is serialized in checkpoints. It is not updated
-during frozen evaluation and is not yet used as an acceptance rule; it is the
-first persistent substrate for later binding/call lifecycle decisions.
+during frozen evaluation. Topology events now report both
+`structural_value_without_reuse` and an optional `binding_reuse_bonus`, controlled
+by `binding_reuse_value_weight`. The default weight is zero, so existing
+acceptance behavior is unchanged; nonzero reuse-aware admission remains a
+separate validation gate.
 
 Routing signatures and execution frames use the same binding resolver. The
 signature path may still pack values differently for address locality, but it

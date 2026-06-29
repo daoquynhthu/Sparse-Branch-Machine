@@ -97,6 +97,11 @@ private:
         std::uint64_t observations{};
         std::uint64_t last_seen_step{};
     };
+    struct BindingReuseSummary {
+        std::uint64_t observations{};
+        std::uint64_t unique_keys{};
+        std::uint64_t events{};
+    };
     struct TraceFrame {
         std::vector<NodeId> route;
         std::vector<float> contribution;
@@ -138,6 +143,10 @@ private:
     [[nodiscard]] std::span<const std::uint64_t> make_signatures(
         std::span<const std::uint32_t> window, bool learn);
     void observe_binding_reuse(std::size_t channel, std::uint64_t key);
+    [[nodiscard]] BindingReuseSummary binding_reuse_summary(
+        std::size_t channel) const noexcept;
+    [[nodiscard]] double binding_reuse_bonus(
+        const BindingReuseSummary& summary) const noexcept;
     void maybe_begin_topology_probe(bool learn);
     void maybe_finalize_topology_probe();
     void observe_topology_credit(std::span<const float> channel_credit);

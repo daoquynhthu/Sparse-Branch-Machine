@@ -137,6 +137,7 @@ struct TokenExperimentResult {
     std::uint64_t output_tree_seed{};
     float structural_description_cost_weight{};
     float structural_execution_cost_weight{};
+    float binding_reuse_value_weight{};
 };
 
 [[nodiscard]] ExperimentResult run_experiment(

@@ -272,6 +272,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"accepted_channel_retirement", "enum", "Preserve", "", "", "categorical", false, false, false, "Lifecycle policy for accepted channels: Preserve, Quarantine, RecoverableRetire or PhysicalErase."},
     {"structural_description_cost_weight", "float", "1.0", "0.0", "10.0", "linear", true, false, false, "Weight applied to program description cost."},
     {"structural_execution_cost_weight", "float", "0.0", "0.0", "10.0", "linear", true, false, false, "Weight applied to measured address execution cost."},
+    {"binding_reuse_value_weight", "float", "0.0", "0.0", "10.0", "linear", true, false, false, "Optional structural-value bonus weight for repeatedly observed typed binding keys."},
     {"topology_accept_uses_structural_value", "bool", "false", "", "", "categorical", false, false, false, "Use cost-penalized structural value rather than raw mean credit for topology acceptance."},
     {"residual_channel_gain", "float", "1.0", "0.25", "2.0", "linear", true, true, false, "Gain applied to additive residual channels."},
     {"residual_learning_rate", "float", "0.10", "0.005", "0.50", "log", true, false, false, "Legacy residual update cap used by non-mean paths."},
@@ -356,6 +357,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     }
     SBM_SET_FLOAT(structural_description_cost_weight)
     SBM_SET_FLOAT(structural_execution_cost_weight)
+    SBM_SET_FLOAT(binding_reuse_value_weight)
     SBM_SET_BOOL(topology_accept_uses_structural_value)
     SBM_SET_FLOAT(residual_channel_gain)
     SBM_SET_FLOAT(residual_learning_rate)
@@ -447,6 +449,8 @@ std::string config_json(const sbm::Config& c) {
         << c.structural_description_cost_weight << ",\n"
         << "  \"structural_execution_cost_weight\": "
         << c.structural_execution_cost_weight << ",\n"
+        << "  \"binding_reuse_value_weight\": "
+        << c.binding_reuse_value_weight << ",\n"
         << "  \"topology_accept_uses_structural_value\": "
         << c.topology_accept_uses_structural_value << ",\n"
         << "  \"residual_channel_gain\": " << c.residual_channel_gain << ",\n"
@@ -493,6 +497,7 @@ std::string_view parameter_tasks(std::string_view name) {
         name == "max_sparse_decisions_per_node" ||
         name == "decode_token_ranking_during_training" ||
         name == "record_channel_attribution" ||
+        name == "binding_reuse_value_weight" ||
         name == "max_binding_reuse_records_per_channel") {
         return "token-ce";
     }
@@ -847,6 +852,14 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
             out << "],\"op\":" << static_cast<unsigned>(event.program.op)
                 << ",\"decision\":" << static_cast<unsigned>(event.decision)
                 << ",\"credit\":" << event.credit
+                << ",\"structural_value_without_reuse\":"
+                << event.structural_value_without_reuse
+                << ",\"binding_reuse_bonus\":" << event.binding_reuse_bonus
+                << ",\"binding_reuse_observations\":"
+                << event.binding_reuse_observations
+                << ",\"binding_reuse_unique_keys\":"
+                << event.binding_reuse_unique_keys
+                << ",\"binding_reuse_events\":" << event.binding_reuse_events
                 << ",\"channel\":" << static_cast<unsigned>(event.channel)
                 << ",\"parent_channel\":"
                 << static_cast<unsigned>(event.parent_channel)

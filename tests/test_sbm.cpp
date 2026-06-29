@@ -531,6 +531,11 @@ int main() {
     for (const auto& event : token_result.topology_events) {
         if (event.decision != sbm::TopologyDecision::Proposed) {
             assert(std::isfinite(event.credit));
+            assert(std::isfinite(event.binding_reuse_bonus));
+            assert(event.binding_reuse_unique_keys <=
+                   event.binding_reuse_observations);
+            assert(event.binding_reuse_events <=
+                   event.binding_reuse_observations);
         }
     }
 

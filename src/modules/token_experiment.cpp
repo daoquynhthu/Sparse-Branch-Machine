@@ -674,6 +674,7 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         config.structural_description_cost_weight;
     result.structural_execution_cost_weight =
         config.structural_execution_cost_weight;
+    result.binding_reuse_value_weight = config.binding_reuse_value_weight;
     return result;
 }
 
@@ -985,6 +986,15 @@ std::string to_json(const TokenExperimentResult& result) {
                 attribution.description_cost -
             static_cast<double>(result.structural_execution_cost_weight) *
                 attribution.execution_cost;
+        const double binding_reuse_fraction = attribution.binding_matches == 0U ? 0.0 :
+            static_cast<double>(attribution.binding_key_reuse_events) /
+                static_cast<double>(attribution.binding_matches);
+        const double binding_reuse_bonus =
+            static_cast<double>(result.binding_reuse_value_weight) *
+            std::log1p(static_cast<double>(attribution.binding_key_reuse_events)) *
+            binding_reuse_fraction;
+        const double reuse_aware_structural_value =
+            structural_value + binding_reuse_bonus;
         out << "{\"channel\":" << static_cast<unsigned>(attribution.channel)
             << ",\"lags\":[";
         for (std::size_t j = 0; j < attribution.program.arity; ++j) {
@@ -1024,7 +1034,9 @@ std::string to_json(const TokenExperimentResult& result) {
             << ",\"positive_fraction\":" << positive_fraction
             << ",\"description_cost\":" << attribution.description_cost
             << ",\"execution_cost\":" << attribution.execution_cost
-            << ",\"structural_value\":" << structural_value << "}";
+            << ",\"structural_value_without_reuse\":" << structural_value
+            << ",\"binding_reuse_bonus\":" << binding_reuse_bonus
+            << ",\"structural_value\":" << reuse_aware_structural_value << "}";
     }
     out << "],\n  \"topology_events\": [";
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
@@ -1038,6 +1050,14 @@ std::string to_json(const TokenExperimentResult& result) {
         out << "],\"op\":" << static_cast<unsigned>(event.program.op)
             << ",\"decision\":" << static_cast<unsigned>(event.decision)
             << ",\"credit\":" << event.credit
+            << ",\"structural_value_without_reuse\":"
+            << event.structural_value_without_reuse
+            << ",\"binding_reuse_bonus\":" << event.binding_reuse_bonus
+            << ",\"binding_reuse_observations\":"
+            << event.binding_reuse_observations
+            << ",\"binding_reuse_unique_keys\":"
+            << event.binding_reuse_unique_keys
+            << ",\"binding_reuse_events\":" << event.binding_reuse_events
             << ",\"channel\":" << static_cast<unsigned>(event.channel)
             << ",\"parent_channel\":"
             << static_cast<unsigned>(event.parent_channel)
@@ -1056,6 +1076,8 @@ std::string to_json(const TokenExperimentResult& result) {
         << result.structural_description_cost_weight << ",\n"
         << "  \"structural_execution_cost_weight\": "
         << result.structural_execution_cost_weight << ",\n"
+        << "  \"binding_reuse_value_weight\": "
+        << result.binding_reuse_value_weight << ",\n"
         << "  \"live_nodes\": " << result.diagnostics.live_nodes << ",\n"
         << "  \"edges\": " << result.diagnostics.edges << ",\n"
         << "  \"avg_active\": " << result.diagnostics.avg_active << ",\n"

@@ -110,6 +110,11 @@ struct TopologyEvent {
     AddressProgram program{};
     TopologyDecision decision{TopologyDecision::Proposed};
     float credit{};
+    float structural_value_without_reuse{};
+    float binding_reuse_bonus{};
+    std::uint64_t binding_reuse_observations{};
+    std::uint64_t binding_reuse_unique_keys{};
+    std::uint64_t binding_reuse_events{};
     std::uint8_t channel{kInvalidChannel};
     std::uint8_t parent_channel{kInvalidChannel};
     std::uint8_t dependency_channel{kInvalidChannel};
@@ -177,6 +182,7 @@ struct Config {
         AcceptedChannelRetirement::Preserve};
     float structural_description_cost_weight{1.0F};
     float structural_execution_cost_weight{0.0F};
+    float binding_reuse_value_weight{0.0F};
     bool topology_accept_uses_structural_value{false};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};

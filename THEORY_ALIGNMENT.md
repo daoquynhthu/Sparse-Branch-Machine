@@ -179,12 +179,15 @@ A fixed threshold on raw loss improvement cannot be assumed task-agnostic.
 The intended direction is a codelength account:
 
 \[
-S(P)=\Delta C_{heldout}(P)-C_{describe}(P)-\lambda C_{execute}(P),
+S(P)=\Delta C_{heldout}(P)-C_{describe}(P)-\lambda C_{execute}(P)+\rho R_{reuse}(P),
 \]
 
-where predictive gain and structural complexity are measured in comparable
-units. Prequential nats or bits provide a common output metric for categorical
-and probabilistic regression objectives.
+where predictive gain, structural complexity and reusable binding evidence are
+measured explicitly instead of being collapsed into raw credit. Prequential
+nats or bits provide a common output metric for categorical and probabilistic
+regression objectives. The current implementation reports the reuse term as an
+optional bonus with zero default weight; it is an audit surface, not yet a
+validated topology criterion.
 
 This does not create a universal threshold automatically. It makes assumptions
 and costs explicit and allows common, rare, fast-learning and slow-learning

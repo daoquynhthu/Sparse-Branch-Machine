@@ -20,6 +20,8 @@ int main() {
     assert(schema.find("accepted_channel_retirement") != std::string_view::npos);
     assert(schema.find("topology_accept_uses_structural_value") !=
            std::string_view::npos);
+    assert(schema.find("binding_reuse_value_weight") !=
+           std::string_view::npos);
     assert(schema.find("max_binding_reuse_records_per_channel") !=
            std::string_view::npos);
     assert(schema.find("search_default") != std::string_view::npos);
@@ -35,6 +37,7 @@ int main() {
     assert(sbm_config_set(config, "accepted_channel_retirement", "RecoverableRetire") == 0);
     assert(sbm_config_set(config, "structural_description_cost_weight", "0.5") == 0);
     assert(sbm_config_set(config, "structural_execution_cost_weight", "0.25") == 0);
+    assert(sbm_config_set(config, "binding_reuse_value_weight", "0.125") == 0);
     assert(sbm_config_set(config, "topology_accept_uses_structural_value", "true") == 0);
     assert(sbm_config_set(config, "does_not_exist", "1") != 0);
     assert(std::strlen(sbm_last_error()) > 0U);
@@ -53,6 +56,8 @@ int main() {
     assert(std::string_view(config_json).find(
         "\"topology_accept_uses_structural_value\": true") !=
         std::string_view::npos);
+    assert(std::string_view(config_json).find(
+        "\"binding_reuse_value_weight\": 0.125") != std::string_view::npos);
     sbm_string_free(config_json);
 
     sbm_dataset_handle* vector_dataset = sbm_dataset_generate(8000, 32, 16, 20, 9, 0.035F);
@@ -162,6 +167,8 @@ int main() {
     assert(std::string_view(machine_summary).find("\"learned_channel_phase\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"topology_events\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"binding_reuse_bonus\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"learned_channel_parent\"") !=
            std::string_view::npos);
