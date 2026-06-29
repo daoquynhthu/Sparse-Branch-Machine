@@ -979,6 +979,16 @@ reuse-aware route but still leaves default weight changes blocked on larger
 seed/view validation. The result is recorded in
 `research_results/reuse_aware_decision_gate_test_seed7_11.md`.
 
+**2026-06-29 1M reuse-aware reversal:** The same decision-changing gate was then
+run on the full 1M smoke train split with 200k validation examples. The topology
+split stayed the same, but the quality direction reversed: raw-credit and
+cost-only admission had mean validation NLL `6.85841032`, while reuse-aware
+admission reached `6.86204932`. Throughput fell by about 5% and live nodes rose.
+This blocks any fixed positive default `binding_reuse_value_weight`. The next
+engineering step is to add a stronger reuse-admission guard rather than sweep
+weights. The result is recorded in
+`research_results/reuse_aware_1m_validation_seed7_11.md`.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

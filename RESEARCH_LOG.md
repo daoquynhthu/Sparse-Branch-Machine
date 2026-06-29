@@ -1242,3 +1242,27 @@ cost. The result is recorded in
 Interpretation: the reuse-aware admission signal transfers from validation to
 test on this small document-level corpus slice. It remains a small-scale result;
 defaults should wait for a larger seed set or larger document view.
+
+## 2026-06-29 — reuse-aware 1M validation reversal
+
+The decision-changing reuse-aware gate was repeated on the full 1M smoke train
+split, with `1,000,000` requested training examples, 997,873 actual train
+examples available, 200,000 validation examples and seeds 7 and 11. The topology
+split remained the same as in the 300k/100k gate: raw-credit and cost-only
+admission accepted `ContentMatch([2])` plus later tuple programs, while
+reuse-aware admission accepted earlier reusable tuple programs.
+
+At this longer training scale the reuse-aware gate no longer improved quality.
+Raw-credit and cost-only admission had mean validation NLL `6.85841032`.
+Reuse-aware admission reached `6.86204932`, worse by `0.00363900` nats/token.
+Mean throughput also fell from `7842.26` to `7453.52` steps/s and mean live
+nodes rose from `117,349.5` to `121,491.5`.
+
+The result is recorded in
+`research_results/reuse_aware_1m_validation_seed7_11.md`.
+
+Interpretation: reuse-aware structural value is operational and can improve
+small gates, but a fixed positive `binding_reuse_value_weight` is not ready for
+default use. The current bonus can over-prefer early reusable tuple programs
+that displace structures with better long-run value. The next engineering step
+should add an admission guard, not sweep weights blindly.
