@@ -141,6 +141,10 @@ Frozen program attribution now reports call matches, unique call keys and
 call-key reuse, and the dependency graph aggregates own and downstream call
 usage. This makes the call substrate measurable rather than only visible in
 per-step traces, but it still does not prove general learned composition.
+Execution frames now also declare `input_state`, `output_state` and
+`required_dependency_binding`. The important change is not a new heuristic: it
+turns the current ContentMatch-to-ContentFollow relation into a typed
+producer/consumer contract that future graph edits can validate.
 
 ## 4. Lifecycle challenge under compositional programs
 
@@ -227,9 +231,10 @@ It is justified to say that the repository contains:
 - local categorical and vector learning;
 - a traceable lifecycle for relatively independent address programs;
 - a tokenizer-aligned training contract;
-- experimental sparse output and computable addressing.
+- experimental sparse output and computable addressing;
 - a bounded single-hop content-conditioned call substrate with frozen
-  attribution counters.
+  attribution counters;
+- typed address-program input/output state contracts.
 
 It is not justified to say that it has demonstrated:
 

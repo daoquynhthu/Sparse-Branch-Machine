@@ -513,7 +513,7 @@ std::string_view parameter_tasks(std::string_view name) {
 
 std::string schema_json() {
     std::ostringstream out;
-    out << "{\n  \"api_version\": 8,\n  \"parameters\": [\n";
+    out << "{\n  \"api_version\": 9,\n  \"parameters\": [\n";
     for (std::size_t i = 0; i < std::size(kParameters); ++i) {
         const auto& p = kParameters[i];
         out << "    {\"name\": \"" << json_escape(p.name)
@@ -546,8 +546,8 @@ const std::string& static_schema() {
 
 extern "C" {
 
-uint32_t sbm_api_version(void) { return 8U; }
-const char* sbm_api_version_string(void) { return "8.0.0"; }
+uint32_t sbm_api_version(void) { return 9U; }
+const char* sbm_api_version_string(void) { return "9.0.0"; }
 const char* sbm_last_error(void) { return g_last_error.c_str(); }
 const char* sbm_parameter_schema_json(void) { return static_schema().c_str(); }
 
@@ -658,6 +658,10 @@ int sbm_machine_step_token(sbm_machine_handle* machine,
                 result.channel_parent_channel[i];
             stats->channel_dependency_channel[i] =
                 result.channel_dependency_channel[i];
+            stats->channel_input_state[i] = result.channel_input_state[i];
+            stats->channel_output_state[i] = result.channel_output_state[i];
+            stats->channel_required_dependency_binding[i] =
+                result.channel_required_dependency_binding[i];
             stats->channel_caller_removed_credit[i] =
                 result.channel_caller_removed_credit[i];
             stats->channel_dependency_retained_credit[i] =
@@ -840,6 +844,15 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
                 << (i < dependency.size()
                         ? static_cast<unsigned>(dependency[i])
                         : static_cast<unsigned>(sbm::kInvalidChannel))
+                << ",\"input_state\":"
+                << static_cast<unsigned>(
+                       sbm::address_program_input_state(programs[i]))
+                << ",\"output_state\":"
+                << static_cast<unsigned>(
+                       sbm::address_program_output_state(programs[i]))
+                << ",\"required_dependency_binding\":"
+                << static_cast<unsigned>(
+                       sbm::address_program_required_dependency_binding(programs[i]))
                 << ",\"direct_caller_count\":" << caller_counts[i]
                 << ",\"own_call_matches\":0"
                 << ",\"unique_call_keys\":0"

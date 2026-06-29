@@ -1006,6 +1006,14 @@ unique call keys, call-key reuse events and downstream call matches. C summary
 JSON exposes the same graph field names with zero-valued runtime placeholders
 because it does not retain frozen attribution windows.
 
+**2026-06-29 typed IO contract completion:** Address execution frames now carry
+`input_state`, `output_state` and `required_dependency_binding`. The same fields
+are exposed through frozen program attribution, dependency-graph JSON, C step
+stats and Python step stats. The C ABI is now v9. This does not add a new
+operator; it makes the existing Tuple / DeltaMod / ContentMatch / ContentFollow
+operators declare producer-consumer types so future reusable graph edits can be
+checked against an explicit contract.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

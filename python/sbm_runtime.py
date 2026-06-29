@@ -44,6 +44,9 @@ class _StepStats(ctypes.Structure):
         ("channel_dependency", ctypes.c_uint32 * 8),
         ("channel_parent_channel", ctypes.c_uint8 * 8),
         ("channel_dependency_channel", ctypes.c_uint8 * 8),
+        ("channel_input_state", ctypes.c_uint8 * 8),
+        ("channel_output_state", ctypes.c_uint8 * 8),
+        ("channel_required_dependency_binding", ctypes.c_uint8 * 8),
         ("channel_caller_removed_credit", ctypes.c_float * 8),
         ("channel_dependency_retained_credit", ctypes.c_float * 8),
         ("channel_dependency_removed_credit", ctypes.c_float * 8),
@@ -676,6 +679,18 @@ class Machine:
             ],
             "channel_dependency_channel": [
                 int(stats.channel_dependency_channel[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_input_state": [
+                int(stats.channel_input_state[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_output_state": [
+                int(stats.channel_output_state[i])
+                for i in range(int(stats.channel_credit_count))
+            ],
+            "channel_required_dependency_binding": [
+                int(stats.channel_required_dependency_binding[i])
                 for i in range(int(stats.channel_credit_count))
             ],
             "channel_caller_removed_credit": [

@@ -111,6 +111,10 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
         frame.channel = static_cast<std::uint8_t>(channel);
         frame.parent_channel = topology_[channel].parent_channel;
         frame.dependency_channel = topology_[channel].dependency_channel;
+        frame.input_state = address_program_input_state(program);
+        frame.output_state = address_program_output_state(program);
+        frame.required_dependency_binding =
+            address_program_required_dependency_binding(program);
         if (channel < frame_index_by_channel.size()) {
             frame_index_by_channel[channel] = execution_frames_.size();
         }

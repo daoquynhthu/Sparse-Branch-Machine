@@ -652,6 +652,10 @@ int main() {
                 assert(frame.dependency_channel == content_match_channel);
                 assert(frame.parent_channel == content_match_channel);
                 saw_follow_frame = true;
+                assert(frame.input_state == sbm::AddressStateKind::ContentBinding);
+                assert(frame.output_state == sbm::AddressStateKind::FollowBinding);
+                assert(frame.required_dependency_binding ==
+                       sbm::AddressBindingKind::ContentMatch);
                 if (frame.call_matched) {
                     assert(frame.dependency_signature != 0U);
                     assert(frame.dependency_binding_key != 0U);

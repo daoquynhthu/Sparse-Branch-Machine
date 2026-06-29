@@ -1305,3 +1305,18 @@ by callers during frozen evaluation. C machine-summary JSON exposes the same
 dependency-graph field names as zero-valued runtime placeholders; full nonzero
 call usage remains an experiment-attribution result because live C summaries do
 not retain an evaluation window.
+
+## 2026-06-29 — typed address IO contract
+
+Address execution frames now declare their input and output state kinds plus any
+required dependency binding. Tuple and DeltaMod consume a token window and
+produce positional signatures. ContentMatch consumes a token window and
+produces a content binding. ContentFollow consumes a content binding, requires
+a ContentMatch dependency binding and produces a follow binding.
+
+The typed contract is exposed through C/Python step stats and frozen experiment
+JSON (`input_state`, `output_state`, `required_dependency_binding`). This bumps
+the C ABI to v9. The change does not add a new operator or a learned arbitrary
+program graph; it makes the current single-hop call path explicitly typed so
+future graph-edit semantics can be validated rather than inferred from channel
+lineage alone.

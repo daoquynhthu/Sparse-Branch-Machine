@@ -18,7 +18,7 @@ parser.add_argument("--library", required=True)
 args = parser.parse_args()
 
 runtime = Runtime(args.library)
-assert runtime.version.startswith("8.")
+assert runtime.version.startswith("9.")
 schema = runtime.parameter_schema()
 assert any(item["name"] == "edge_score_weight" for item in schema["parameters"])
 assert any(item["name"] == "classification_learning_rate" for item in schema["parameters"])
@@ -81,6 +81,9 @@ with tempfile.TemporaryDirectory() as directory:
                 eval_stats = resumed.step_token(1, 3, learn=False)
                 assert "channel_credit" in eval_stats
                 assert "channel_binding_kind" in eval_stats
+                assert "channel_input_state" in eval_stats
+                assert "channel_output_state" in eval_stats
+                assert "channel_required_dependency_binding" in eval_stats
                 assert "channel_binding_distance" in eval_stats
                 assert "channel_binding_pattern_span" in eval_stats
                 assert "channel_binding_key" in eval_stats

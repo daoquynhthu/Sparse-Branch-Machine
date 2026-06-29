@@ -292,6 +292,9 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     std::array<std::uint32_t, kMaxAddressChannels> attribution_dependency{};
     std::array<std::uint8_t, kMaxAddressChannels> attribution_parent_channel{};
     std::array<std::uint8_t, kMaxAddressChannels> attribution_dependency_channel{};
+    std::array<std::uint8_t, kMaxAddressChannels> attribution_input_state{};
+    std::array<std::uint8_t, kMaxAddressChannels> attribution_output_state{};
+    std::array<std::uint8_t, kMaxAddressChannels> attribution_required_dependency_binding{};
     std::array<float, kMaxAddressChannels> attribution_caller_removed_credit{};
     std::array<float, kMaxAddressChannels> attribution_dependency_retained_credit{};
     std::array<float, kMaxAddressChannels> attribution_dependency_removed_credit{};
@@ -326,6 +329,13 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 attribution_dependency[channel] = frame.dependency;
                 attribution_parent_channel[channel] = frame.parent_channel;
                 attribution_dependency_channel[channel] = frame.dependency_channel;
+                attribution_input_state[channel] =
+                    static_cast<std::uint8_t>(frame.input_state);
+                attribution_output_state[channel] =
+                    static_cast<std::uint8_t>(frame.output_state);
+                attribution_required_dependency_binding[channel] =
+                    static_cast<std::uint8_t>(
+                        frame.required_dependency_binding);
                 attribution_binding_kind[channel] =
                     static_cast<std::uint8_t>(frame.binding);
                 attribution_binding_matched[channel] =
@@ -667,6 +677,10 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             stats.channel_parent_channel[channel] = attribution_parent_channel[channel];
             stats.channel_dependency_channel[channel] =
                 attribution_dependency_channel[channel];
+            stats.channel_input_state[channel] = attribution_input_state[channel];
+            stats.channel_output_state[channel] = attribution_output_state[channel];
+            stats.channel_required_dependency_binding[channel] =
+                attribution_required_dependency_binding[channel];
             stats.channel_caller_removed_credit[channel] =
                 attribution_caller_removed_credit[channel];
             stats.channel_dependency_retained_credit[channel] =

@@ -47,6 +47,9 @@ struct ChannelDependencySummary {
     std::uint8_t phase{};
     std::uint8_t parent_channel{kInvalidChannel};
     std::uint8_t dependency_channel{kInvalidChannel};
+    AddressStateKind input_state{AddressStateKind::None};
+    AddressStateKind output_state{AddressStateKind::None};
+    AddressBindingKind required_dependency_binding{AddressBindingKind::None};
     std::uint64_t direct_caller_count{};
     std::uint64_t own_observations{};
     std::uint64_t own_binding_matches{};

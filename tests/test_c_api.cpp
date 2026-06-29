@@ -8,7 +8,7 @@
 #include <string_view>
 
 int main() {
-    assert(sbm_api_version() == 8U);
+    assert(sbm_api_version() == 9U);
     assert(std::strlen(sbm_api_version_string()) > 0U);
 
     const std::string_view schema(sbm_parameter_schema_json());
@@ -146,6 +146,9 @@ int main() {
         assert(std::isfinite(source_stats.seed_only_cross_entropy));
         assert(std::isfinite(source_stats.active_only_cross_entropy));
         assert(source_stats.channel_binding_kind[0] <= 3U);
+        assert(source_stats.channel_input_state[0] <= 4U);
+        assert(source_stats.channel_output_state[0] <= 4U);
+        assert(source_stats.channel_required_dependency_binding[0] <= 3U);
         assert(source_stats.channel_binding_matched[0] <= 1U);
         assert(source_stats.channel_binding_current_token[0] < 16U);
         assert(source_stats.channel_binding_matched[0] == 0U ||

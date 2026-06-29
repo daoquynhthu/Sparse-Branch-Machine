@@ -50,6 +50,14 @@ enum class AddressBindingKind : std::uint8_t {
     ContentFollow = 3U,
 };
 
+enum class AddressStateKind : std::uint8_t {
+    None = 0U,
+    TokenWindow = 1U,
+    PositionalSignature = 2U,
+    ContentBinding = 3U,
+    FollowBinding = 4U,
+};
+
 struct AddressBindingState {
     std::uint32_t current_token{};
     std::uint32_t matched_token{};
@@ -72,7 +80,10 @@ struct AddressProgram {
 
 struct AddressExecutionFrame {
     AddressProgram program{};
+    AddressStateKind input_state{AddressStateKind::None};
+    AddressStateKind output_state{AddressStateKind::None};
     AddressBindingKind binding{AddressBindingKind::None};
+    AddressBindingKind required_dependency_binding{AddressBindingKind::None};
     AddressBindingState binding_state{};
     std::uint8_t channel{kInvalidChannel};
     std::uint8_t parent_channel{kInvalidChannel};
@@ -107,6 +118,34 @@ struct AddressExecutionFrame {
                << (28U * index);
     }
     return key;
+}
+
+[[nodiscard]] inline AddressStateKind address_program_input_state(
+    const AddressProgram& program) noexcept {
+    return program.op == AddressOp::ContentFollow
+        ? AddressStateKind::ContentBinding
+        : AddressStateKind::TokenWindow;
+}
+
+[[nodiscard]] inline AddressStateKind address_program_output_state(
+    const AddressProgram& program) noexcept {
+    switch (program.op) {
+    case AddressOp::ContentMatch:
+        return AddressStateKind::ContentBinding;
+    case AddressOp::ContentFollow:
+        return AddressStateKind::FollowBinding;
+    case AddressOp::Tuple:
+    case AddressOp::DeltaMod:
+    default:
+        return AddressStateKind::PositionalSignature;
+    }
+}
+
+[[nodiscard]] inline AddressBindingKind address_program_required_dependency_binding(
+    const AddressProgram& program) noexcept {
+    return program.op == AddressOp::ContentFollow
+        ? AddressBindingKind::ContentMatch
+        : AddressBindingKind::None;
 }
 
 struct TopologyEvent {
@@ -251,6 +290,9 @@ struct StepStats {
     std::array<std::uint32_t, kMaxAddressChannels> channel_dependency{};
     std::array<std::uint8_t, kMaxAddressChannels> channel_parent_channel{};
     std::array<std::uint8_t, kMaxAddressChannels> channel_dependency_channel{};
+    std::array<std::uint8_t, kMaxAddressChannels> channel_input_state{};
+    std::array<std::uint8_t, kMaxAddressChannels> channel_output_state{};
+    std::array<std::uint8_t, kMaxAddressChannels> channel_required_dependency_binding{};
     std::array<float, kMaxAddressChannels> channel_caller_removed_credit{};
     std::array<float, kMaxAddressChannels> channel_dependency_retained_credit{};
     std::array<float, kMaxAddressChannels> channel_dependency_removed_credit{};
@@ -336,6 +378,9 @@ struct ProgramAttribution {
     std::uint8_t channel{};
     std::uint8_t parent_channel{kInvalidChannel};
     std::uint8_t dependency_channel{kInvalidChannel};
+    AddressStateKind input_state{AddressStateKind::None};
+    AddressStateKind output_state{AddressStateKind::None};
+    AddressBindingKind required_dependency_binding{AddressBindingKind::None};
     AddressProgram program{};
     std::uint32_t dependency{};
     double credit_sum{};

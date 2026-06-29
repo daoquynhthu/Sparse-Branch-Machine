@@ -245,6 +245,13 @@ aliases for report consumers, not the sole semantic representation. Runtime
 diagnostics report binding behavior both globally and by binding kind so content
 operators can be audited separately from positional channels.
 
+Frames also carry an explicit state contract: `input_state`, `output_state` and
+`required_dependency_binding`. Tuple and DeltaMod consume a token window and
+produce positional signatures; ContentMatch consumes a token window and produces
+a content binding; ContentFollow consumes a content binding and produces a
+follow binding. This makes dependency calls type-checkable at the execution
+surface instead of relying only on channel lineage conventions.
+
 Matched binding states also carry a stable `binding_key`. The key intentionally
 excludes absolute matched index and matched distance, so a content binding can
 be recognized as the same reusable relation when it appears at a different

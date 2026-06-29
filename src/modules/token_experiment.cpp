@@ -41,6 +41,9 @@ struct ProgramAttributionAccumulator {
     std::uint8_t channel{};
     std::uint8_t parent_channel{kInvalidChannel};
     std::uint8_t dependency_channel{kInvalidChannel};
+    AddressStateKind input_state{AddressStateKind::None};
+    AddressStateKind output_state{AddressStateKind::None};
+    AddressBindingKind required_dependency_binding{AddressBindingKind::None};
     std::uint32_t dependency{};
     double credit_sum{};
     double caller_removed_credit_sum{};
@@ -152,6 +155,10 @@ std::vector<ProgramAttribution> finish_program_attribution(
         attribution.channel = accumulator.channel;
         attribution.parent_channel = accumulator.parent_channel;
         attribution.dependency_channel = accumulator.dependency_channel;
+        attribution.input_state = accumulator.input_state;
+        attribution.output_state = accumulator.output_state;
+        attribution.required_dependency_binding =
+            accumulator.required_dependency_binding;
         attribution.program = programs[accumulator.channel];
         attribution.dependency = accumulator.dependency;
         attribution.credit_sum = accumulator.credit_sum;
@@ -210,6 +217,10 @@ std::vector<ChannelDependencySummary> finish_dependency_graph(
         summary.phase = phases[channel];
         summary.parent_channel = parents[channel];
         summary.dependency_channel = dependencies[channel];
+        summary.input_state = address_program_input_state(programs[channel]);
+        summary.output_state = address_program_output_state(programs[channel]);
+        summary.required_dependency_binding =
+            address_program_required_dependency_binding(programs[channel]);
         for (std::size_t caller = 0U; caller < count; ++caller) {
             if (caller != channel && dependencies[caller] == channel) {
                 ++summary.direct_caller_count;
@@ -505,6 +516,15 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                                 stats.channel_parent_channel[channel];
                             program_accumulator.dependency_channel =
                                 stats.channel_dependency_channel[channel];
+                            program_accumulator.input_state =
+                                static_cast<AddressStateKind>(
+                                    stats.channel_input_state[channel]);
+                            program_accumulator.output_state =
+                                static_cast<AddressStateKind>(
+                                    stats.channel_output_state[channel]);
+                            program_accumulator.required_dependency_binding =
+                                static_cast<AddressBindingKind>(
+                                    stats.channel_required_dependency_binding[channel]);
                             program_accumulator.dependency = dependency;
                         }
                         program_accumulator.credit_sum += credit;
@@ -926,6 +946,12 @@ std::string to_json(const TokenExperimentResult& result) {
             << static_cast<unsigned>(summary.parent_channel)
             << ",\"dependency_channel\":"
             << static_cast<unsigned>(summary.dependency_channel)
+            << ",\"input_state\":"
+            << static_cast<unsigned>(summary.input_state)
+            << ",\"output_state\":"
+            << static_cast<unsigned>(summary.output_state)
+            << ",\"required_dependency_binding\":"
+            << static_cast<unsigned>(summary.required_dependency_binding)
             << ",\"direct_caller_count\":"
             << summary.direct_caller_count
             << ",\"own_observations\":" << summary.own_observations
@@ -1039,6 +1065,12 @@ std::string to_json(const TokenExperimentResult& result) {
             << static_cast<unsigned>(attribution.parent_channel)
             << ",\"dependency_channel\":"
             << static_cast<unsigned>(attribution.dependency_channel)
+            << ",\"input_state\":"
+            << static_cast<unsigned>(attribution.input_state)
+            << ",\"output_state\":"
+            << static_cast<unsigned>(attribution.output_state)
+            << ",\"required_dependency_binding\":"
+            << static_cast<unsigned>(attribution.required_dependency_binding)
             << ",\"dependency\":" << attribution.dependency
             << ",\"observations\":" << attribution.observations
             << ",\"positive\":" << attribution.positive
