@@ -970,6 +970,15 @@ reuse-aware route, but it is not yet sufficient to change the default
 `binding_reuse_value_weight`. The result is recorded in
 `research_results/reuse_aware_decision_gate_seed7_11.md`.
 
+**2026-06-29 test-split transfer gate:** The same decision-changing gate was
+repeated on the held-out test split. Raw-credit and cost-only admission had mean
+test NLL `7.12850182`; reuse-aware admission kept the same topology split and
+reached mean test NLL `7.11157186`, with rejected proposals again falling from
+28 to 17 per seed. Throughput cost was about 5%. This strengthens the
+reuse-aware route but still leaves default weight changes blocked on larger
+seed/view validation. The result is recorded in
+`research_results/reuse_aware_decision_gate_test_seed7_11.md`.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

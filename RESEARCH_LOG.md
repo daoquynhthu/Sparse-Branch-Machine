@@ -1224,3 +1224,21 @@ The result is recorded in
 small-scale evidence that reuse-aware structural value can improve admission
 when it actually changes decisions, but it is not yet enough to change the
 default `binding_reuse_value_weight`.
+
+## 2026-06-29 — reuse-aware decision gate test transfer
+
+The same decision-changing gate was repeated on the held-out test split with
+the same 300k training window, seeds 7 and 11, `topology_accept_credit=0.05`
+and `binding_reuse_value_weight=0.05`. Raw-credit and cost-only admission again
+matched each other, with mean test NLL `7.12850182`. Reuse-aware admission
+preserved the same topology split as the validation gate, reduced rejected
+proposals from 28 to 17 per seed and reached mean test NLL `7.11157186`, an
+improvement of `0.01692997` nats/token versus raw.
+
+Mean throughput fell from `9503.38` steps/s to `9029.43` steps/s, about a 5%
+cost. The result is recorded in
+`research_results/reuse_aware_decision_gate_test_seed7_11.md`.
+
+Interpretation: the reuse-aware admission signal transfers from validation to
+test on this small document-level corpus slice. It remains a small-scale result;
+defaults should wait for a larger seed set or larger document view.
