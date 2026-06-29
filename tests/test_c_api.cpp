@@ -107,7 +107,13 @@ int main() {
     assert(sbm_config_set(machine_config, "vector_dim", "16") == 0);
     assert(sbm_config_set(machine_config, "bucket_bits", "8") == 0);
     assert(sbm_config_set(machine_config, "seed", "13") == 0);
+    assert(sbm_config_set(machine_config, "address_lags", "1,2") == 0);
     assert(sbm_config_set(machine_config, "topology_probe_interval", "8") == 0);
+    char* machine_config_json = sbm_config_get_json(machine_config);
+    assert(machine_config_json != nullptr);
+    assert(std::string_view(machine_config_json).find("\"address_lags\": [1, 2]") !=
+           std::string_view::npos);
+    sbm_string_free(machine_config_json);
     sbm_machine_handle* left = sbm_machine_create(machine_config);
     sbm_machine_handle* source = sbm_machine_create(machine_config);
     assert(left != nullptr);
@@ -186,6 +192,16 @@ int main() {
     assert(std::string_view(machine_summary).find("\"learned_channel_dependency_edge_kind\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"address_dependency_graph\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"address_dependency_edges\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"caller_channel\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"caller_generation\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"dependency_generation\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"edge_kind\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"direct_caller_count\"") !=
            std::string_view::npos);

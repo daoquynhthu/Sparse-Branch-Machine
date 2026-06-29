@@ -68,6 +68,23 @@ struct ChannelDependencySummary {
     double downstream_dependency_removed_credit_sum{};
 };
 
+struct ChannelDependencyEdge {
+    std::uint8_t caller_channel{kInvalidChannel};
+    std::uint8_t dependency_channel{kInvalidChannel};
+    std::uint64_t caller_generation{};
+    std::uint64_t dependency_generation{};
+    AddressGraphEdgeKind edge_kind{AddressGraphEdgeKind::None};
+    AddressStateKind caller_input_state{AddressStateKind::None};
+    AddressStateKind dependency_output_state{AddressStateKind::None};
+    AddressBindingKind required_dependency_binding{AddressBindingKind::None};
+    std::uint64_t observations{};
+    std::uint64_t call_matches{};
+    std::uint64_t unique_call_keys{};
+    std::uint64_t call_key_reuse_events{};
+    double caller_removed_credit_sum{};
+    double dependency_removed_credit_sum{};
+};
+
 struct ExperimentResult {
     Diagnostics diagnostics;
     VectorMetrics train;
@@ -144,6 +161,7 @@ struct TokenExperimentResult {
     std::vector<double> eval_channel_mean_responsibility;
     std::vector<ProgramAttribution> eval_program_attribution;
     std::vector<ChannelDependencySummary> address_dependency_graph;
+    std::vector<ChannelDependencyEdge> address_dependency_edges;
     std::vector<TopologyEvent> topology_events;
     float exact_region_mass{};
     float edge_score_weight{};

@@ -130,6 +130,10 @@ This matters for the lifecycle problem: a reused channel slot is no longer
 implicitly the same program instance, and rollback-oriented analysis can
 separate prefix, positional-dependency, content-match and content-follow-call
 edges.
+The implementation also exposes a first-class caller-edge list, so multi-caller
+relationships no longer have to be inferred from per-channel downstream
+summaries. This is still graph metadata, not arbitrary learned graph editing,
+but it is the right object for future rollback and reusable-caller accounting.
 Matched content bindings additionally have stable binding keys that ignore
 absolute distance. This provides direct evidence about repeated reuse of the
 same binding, but it is still an audit mechanism rather than full variable
@@ -241,7 +245,8 @@ It is justified to say that the repository contains:
 - experimental sparse output and computable addressing;
 - a bounded single-hop content-conditioned call substrate with frozen
   attribution counters;
-- typed address-program input/output state contracts.
+- typed address-program input/output state contracts;
+- first-class dependency edge summaries for rollback-oriented audit.
 
 It is not justified to say that it has demonstrated:
 

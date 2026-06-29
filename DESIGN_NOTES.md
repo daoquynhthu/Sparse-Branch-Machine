@@ -289,6 +289,14 @@ assigned `channel_generation` plus parent/dependency edge kinds. A channel slot
 can therefore be reused without conflating a new program instance with a prior
 retired or rejected one.
 
+Experiment output now also emits `address_dependency_edges`, a first-class
+caller-edge list. Each edge records caller channel, dependency channel, caller
+and dependency generations, edge kind, caller input state, dependency output
+state and required dependency binding. Frozen token experiments additionally
+attach edge-level observations, call matches, call-key reuse and caller /
+dependency removal credit. The per-channel dependency graph remains the summary;
+the edge list is the rollback and multi-caller audit surface.
+
 Dependent channels now also consume their prerequisite frame at execution time.
 When a dependency channel produces a matched binding key, the caller frame
 records `dependency_signature`, `dependency_binding_key` and `call_key`, and its

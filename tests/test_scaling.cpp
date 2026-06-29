@@ -343,7 +343,7 @@ void verify_dependency_attribution_json() {
     config.adaptive_topology = true;
     config.max_address_channels = 4U;
     config.beam_width = 4U;
-    config.address_lags = {1U};
+    config.address_lags = {1U, 2U};
     config.topology_enable_delta = false;
     config.max_sparse_decisions_per_node = 128U;
     config.record_channel_attribution = true;
@@ -375,6 +375,11 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"mean_binding_pattern_span\"") != std::string::npos);
     assert(json.find("\"address_binding_by_kind\"") != std::string::npos);
     assert(json.find("\"address_dependency_graph\"") != std::string::npos);
+    assert(json.find("\"address_dependency_edges\"") != std::string::npos);
+    assert(json.find("\"caller_channel\"") != std::string::npos);
+    assert(json.find("\"caller_generation\"") != std::string::npos);
+    assert(json.find("\"dependency_generation\"") != std::string::npos);
+    assert(json.find("\"edge_kind\"") != std::string::npos);
     assert(json.find("\"direct_caller_count\"") != std::string::npos);
     assert(json.find("\"own_call_matches\"") != std::string::npos);
     assert(json.find("\"downstream_call_matches\"") != std::string::npos);
@@ -383,6 +388,13 @@ void verify_dependency_attribution_json() {
     assert(json.find("\"structural_value\"") != std::string::npos);
     assert(result.address_dependency_graph.size() ==
            result.learned_address_programs.size());
+    assert(!result.address_dependency_edges.empty());
+    for (const auto& edge : result.address_dependency_edges) {
+        assert(edge.caller_channel < result.learned_address_programs.size());
+        assert(edge.dependency_channel < result.learned_address_programs.size());
+        assert(edge.caller_channel != edge.dependency_channel);
+        assert(edge.caller_generation != 0U);
+    }
     for (const auto& summary : result.address_dependency_graph) {
         assert(summary.channel < result.learned_address_programs.size());
         assert(summary.unique_binding_keys <= summary.own_binding_matches);

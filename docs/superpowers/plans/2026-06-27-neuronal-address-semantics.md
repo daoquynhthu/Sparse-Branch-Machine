@@ -1031,6 +1031,15 @@ positional-dependency, content-match dependency and content-follow call edges.
 This changes raw checkpointed structs and bumps the model checkpoint magic to
 `SBMCKPT6`.
 
+**2026-06-29 first-class dependency edge list:** Token experiment summaries and
+C summary JSON now emit `address_dependency_edges` in addition to the
+per-channel `address_dependency_graph`. Each edge records caller and dependency
+channels, both channel generations, edge kind, caller input state, dependency
+output state and required dependency binding. Frozen token experiments also
+attach observations, call matches, call-key reuse and caller/dependency removal
+credit at edge level. This turns reusable caller relationships into direct
+graph objects rather than information inferred from downstream channel totals.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

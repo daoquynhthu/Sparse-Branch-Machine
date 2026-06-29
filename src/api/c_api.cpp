@@ -889,6 +889,67 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
                 << ",\"call_key_reuse_events\":0"
                 << ",\"downstream_call_matches\":0}";
         }
+        out << "], \"address_dependency_edges\": [";
+        bool first_edge = true;
+        const auto emit_edge = [&](std::size_t caller,
+                                   std::uint8_t target,
+                                   sbm::AddressGraphEdgeKind kind) {
+            if (target == sbm::kInvalidChannel || target >= programs.size() ||
+                target == caller || kind == sbm::AddressGraphEdgeKind::None) {
+                return;
+            }
+            if (!first_edge) out << ", ";
+            first_edge = false;
+            out << "{\"caller_channel\":" << caller
+                << ",\"dependency_channel\":"
+                << static_cast<unsigned>(target)
+                << ",\"caller_generation\":"
+                << (caller < generation.size() ? generation[caller] : 0U)
+                << ",\"dependency_generation\":"
+                << (target < generation.size() ? generation[target] : 0U)
+                << ",\"edge_kind\":"
+                << static_cast<unsigned>(kind)
+                << ",\"caller_input_state\":"
+                << static_cast<unsigned>(
+                       sbm::address_program_input_state(programs[caller]))
+                << ",\"dependency_output_state\":"
+                << static_cast<unsigned>(
+                       sbm::address_program_output_state(
+                           programs[target]))
+                << ",\"required_dependency_binding\":"
+                << static_cast<unsigned>(
+                       sbm::address_program_required_dependency_binding(
+                           programs[caller]))
+                << ",\"observations\":0"
+                << ",\"call_matches\":0"
+                << ",\"unique_call_keys\":0"
+                << ",\"call_key_reuse_events\":0"
+                << ",\"caller_removed_credit_sum\":0"
+                << ",\"dependency_removed_credit_sum\":0}";
+        };
+        for (std::size_t caller = 0U; caller < programs.size() &&
+             caller < dependency.size() && caller < parent.size(); ++caller) {
+            const auto parent_channel = parent[caller];
+            const auto dependency_channel = dependency[caller];
+            if (parent_channel == dependency_channel) {
+                emit_edge(caller, dependency_channel,
+                          caller < dependency_edge_kind.size()
+                              ? static_cast<sbm::AddressGraphEdgeKind>(
+                                    dependency_edge_kind[caller])
+                              : sbm::AddressGraphEdgeKind::None);
+                continue;
+            }
+            emit_edge(caller, parent_channel,
+                      caller < parent_edge_kind.size()
+                          ? static_cast<sbm::AddressGraphEdgeKind>(
+                                parent_edge_kind[caller])
+                          : sbm::AddressGraphEdgeKind::None);
+            emit_edge(caller, dependency_channel,
+                      caller < dependency_edge_kind.size()
+                          ? static_cast<sbm::AddressGraphEdgeKind>(
+                                dependency_edge_kind[caller])
+                          : sbm::AddressGraphEdgeKind::None);
+        }
         out << "], \"topology_events\": [";
         const auto& events = machine->value.topology_events();
         for (std::size_t i = 0; i < events.size(); ++i) {

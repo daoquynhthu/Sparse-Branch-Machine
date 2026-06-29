@@ -99,12 +99,17 @@ SparseBranchMachine::SparseBranchMachine(Config config)
     proposed_program_keys_.reserve(config.max_address_channels * 4U);
     for (std::size_t index = 0; index < config.address_lags.size(); ++index) {
         const auto program = singleton_address_program(config.address_lags[index]);
+        const auto parent_channel = index == 0U
+            ? kInvalidChannel
+            : static_cast<std::uint8_t>(0U);
         topology_.push_back({program,
                              index == 0U ? ChannelPhase::Seed : ChannelPhase::Active,
                              0.0F, 0.0, 0U, 0U,
                              ++topology_generation_counter_,
-                             kInvalidChannel, kInvalidChannel,
-                             AddressGraphEdgeKind::None,
+                             parent_channel, kInvalidChannel,
+                             parent_channel == kInvalidChannel
+                                 ? AddressGraphEdgeKind::None
+                                 : address_parent_edge_kind(program),
                              AddressGraphEdgeKind::None});
         proposed_program_keys_.push_back(address_program_key(program));
     }

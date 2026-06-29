@@ -284,6 +284,72 @@ std::vector<ChannelDependencySummary> finish_dependency_graph(
     return result;
 }
 
+std::vector<ChannelDependencyEdge> finish_dependency_edges(
+    std::span<const AddressProgram> programs,
+    std::span<const std::uint8_t> parents,
+    std::span<const std::uint8_t> dependencies,
+    std::span<const std::uint64_t> generations,
+    std::span<const std::uint8_t> parent_edge_kinds,
+    std::span<const std::uint8_t> dependency_edge_kinds,
+    std::span<const ProgramAttribution> attributions) {
+    const auto count = std::min({programs.size(), parents.size(),
+                                 dependencies.size(), generations.size(),
+                                 parent_edge_kinds.size(),
+                                 dependency_edge_kinds.size()});
+    std::vector<ChannelDependencyEdge> result;
+    result.reserve(count * 2U);
+    const auto append_edge =
+        [&](std::size_t caller, std::uint8_t target, AddressGraphEdgeKind kind) {
+        if (target == kInvalidChannel || target >= count || target == caller ||
+            kind == AddressGraphEdgeKind::None) {
+            return;
+        }
+        ChannelDependencyEdge edge;
+        edge.caller_channel = static_cast<std::uint8_t>(caller);
+        edge.dependency_channel = target;
+        edge.caller_generation = generations[caller];
+        edge.dependency_generation = generations[target];
+        edge.edge_kind = kind;
+        edge.caller_input_state = address_program_input_state(programs[caller]);
+        edge.dependency_output_state =
+            address_program_output_state(programs[target]);
+        edge.required_dependency_binding =
+            address_program_required_dependency_binding(programs[caller]);
+        for (const auto& attribution : attributions) {
+            if (attribution.channel != caller ||
+                attribution.dependency_channel != target) {
+                continue;
+            }
+            edge.observations += attribution.observations;
+            edge.call_matches += attribution.call_matches;
+            edge.unique_call_keys += attribution.unique_call_keys;
+            edge.call_key_reuse_events += attribution.call_key_reuse_events;
+            edge.caller_removed_credit_sum +=
+                attribution.caller_removed_credit_sum;
+            edge.dependency_removed_credit_sum +=
+                attribution.dependency_removed_credit_sum;
+        }
+        result.push_back(edge);
+    };
+    for (std::size_t caller = 0U; caller < count; ++caller) {
+        const auto parent = parents[caller];
+        const auto dependency = dependencies[caller];
+        if (parent == dependency) {
+            append_edge(caller, dependency,
+                        static_cast<AddressGraphEdgeKind>(
+                            dependency_edge_kinds[caller]));
+            continue;
+        }
+        append_edge(caller, parent,
+                    static_cast<AddressGraphEdgeKind>(
+                        parent_edge_kinds[caller]));
+        append_edge(caller, dependency,
+                    static_cast<AddressGraphEdgeKind>(
+                        dependency_edge_kinds[caller]));
+    }
+    return result;
+}
+
 struct CountRow {
     std::uint64_t total{};
     std::unordered_map<std::uint32_t, std::uint32_t> counts;
@@ -741,6 +807,13 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         result.learned_channel_parent_edge_kind,
         result.learned_channel_dependency_edge_kind,
         result.eval_program_attribution);
+    result.address_dependency_edges = finish_dependency_edges(
+        result.learned_address_programs, result.learned_channel_parent,
+        result.learned_channel_dependency,
+        result.learned_channel_generation,
+        result.learned_channel_parent_edge_kind,
+        result.learned_channel_dependency_edge_kind,
+        result.eval_program_attribution);
     result.topology_events = model.topology_events();
     result.exact_region_mass = config.exact_region_mass;
     result.edge_score_weight = config.edge_score_weight;
@@ -1040,6 +1113,40 @@ std::string to_json(const TokenExperimentResult& result) {
             << summary.downstream_caller_removed_credit_sum
             << ",\"downstream_dependency_removed_credit\":"
             << summary.downstream_dependency_removed_credit_sum << "}";
+    }
+    out << "],\n  \"address_dependency_edges\": [";
+    for (std::size_t i = 0; i < result.address_dependency_edges.size(); ++i) {
+        if (i != 0U) out << ", ";
+        const auto& edge = result.address_dependency_edges[i];
+        const double call_match_fraction = edge.observations == 0U ? 0.0 :
+            static_cast<double>(edge.call_matches) /
+                static_cast<double>(edge.observations);
+        out << "{\"caller_channel\":"
+            << static_cast<unsigned>(edge.caller_channel)
+            << ",\"dependency_channel\":"
+            << static_cast<unsigned>(edge.dependency_channel)
+            << ",\"caller_generation\":" << edge.caller_generation
+            << ",\"dependency_generation\":"
+            << edge.dependency_generation
+            << ",\"edge_kind\":"
+            << static_cast<unsigned>(edge.edge_kind)
+            << ",\"caller_input_state\":"
+            << static_cast<unsigned>(edge.caller_input_state)
+            << ",\"dependency_output_state\":"
+            << static_cast<unsigned>(edge.dependency_output_state)
+            << ",\"required_dependency_binding\":"
+            << static_cast<unsigned>(edge.required_dependency_binding)
+            << ",\"observations\":" << edge.observations
+            << ",\"call_matches\":" << edge.call_matches
+            << ",\"unique_call_keys\":" << edge.unique_call_keys
+            << ",\"call_key_reuse_events\":"
+            << edge.call_key_reuse_events
+            << ",\"call_match_fraction\":"
+            << call_match_fraction
+            << ",\"caller_removed_credit_sum\":"
+            << edge.caller_removed_credit_sum
+            << ",\"dependency_removed_credit_sum\":"
+            << edge.dependency_removed_credit_sum << "}";
     }
     out << "],\n  \"eval_channel_attribution\": [";
     for (std::size_t i = 0; i < result.eval_channel_attribution.size(); ++i) {

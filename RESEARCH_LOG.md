@@ -1346,3 +1346,18 @@ The generation counter is serialized and exact-resume tests compare generation
 and edge-kind vectors after checkpoint reload. Because `AddressChannelState` and
 `TopologyEvent` are raw-serialized, the model checkpoint magic was bumped to
 `SBMCKPT6`.
+
+## 2026-06-29 — first-class dependency edge list
+
+The dependency graph now has explicit caller-edge records in addition to
+per-channel summaries. `address_dependency_edges` records caller channel,
+dependency channel, caller/dependency generations, edge kind, caller input
+state, dependency output state and required dependency binding. Frozen token
+experiments add edge-level observations, call matches, call-key reuse and
+caller/dependency removal credit.
+
+C machine-summary JSON emits the same static edge objects with zero-valued
+runtime attribution counters because it has no frozen evaluation window. Token
+experiment JSON carries the dynamic attribution. This is still not arbitrary
+learned graph editing, but it provides the direct edge object needed for
+multi-caller audit and rollback-oriented accounting.
