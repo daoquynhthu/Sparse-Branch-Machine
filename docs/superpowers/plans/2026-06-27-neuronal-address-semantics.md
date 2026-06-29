@@ -989,6 +989,15 @@ engineering step is to add a stronger reuse-admission guard rather than sweep
 weights. The result is recorded in
 `research_results/reuse_aware_1m_validation_seed7_11.md`.
 
+**2026-06-29 dependency-conditioned call completion:** Dependent address
+channels now consume their prerequisite execution frame instead of only
+recording lineage. When a dependency frame has a matched binding key, the caller
+frame records `dependency_signature`, `dependency_binding_key` and `call_key`,
+and the caller routing signature is conditioned on that call key. C/Python step
+stats expose `channel_dependency_binding_key` and `channel_call_key`, and the C
+ABI is now v8. This is a single-hop call substrate, not a full learned
+compositional program graph.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

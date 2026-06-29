@@ -1266,3 +1266,26 @@ small gates, but a fixed positive `binding_reuse_value_weight` is not ready for
 default use. The current bonus can over-prefer early reusable tuple programs
 that displace structures with better long-run value. The next engineering step
 should add an admission guard, not sweep weights blindly.
+
+## 2026-06-29 — dependency-conditioned call signatures
+
+The address execution path now performs a real single-hop call from dependent
+channels to their prerequisite channel. Previously `parent_channel` and
+`dependency_channel` affected attribution and summaries, but the caller's
+routing signature remained its own direct address signature. Now
+`execute_address_programs()` first builds all enabled frames, then caller frames
+with a matched dependency binding consume the dependency frame's signature and
+binding key to produce a `call_key`. The caller routing signature is mixed with
+that key, so address regions can differ by the concrete binding produced by the
+dependency.
+
+`AddressExecutionFrame` records `dependency_signature`,
+`dependency_binding_key`, `call_key` and `call_matched`. Stateful C/Python step
+stats expose `channel_dependency_binding_key` and `channel_call_key`, so frozen
+diagnostics can audit whether a caller actually used a prerequisite binding.
+This increments the C ABI to v8.
+
+This is not yet a full learned compositional program graph. It is deliberately a
+bounded single-hop call substrate that preserves the existing channel lifecycle,
+lineage and attribution contracts while making dependency semantics affect
+routing rather than only reports.

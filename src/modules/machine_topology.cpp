@@ -4,6 +4,7 @@
 #include "sbm/math.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <optional>
 
@@ -97,21 +98,53 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
     if (binding_reuse_.size() < topology_.size()) {
         binding_reuse_.resize(topology_.size());
     }
+    std::array<std::size_t, kMaxAddressChannels> frame_index_by_channel{};
+    frame_index_by_channel.fill(SIZE_MAX);
     for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
         if (!channel_enabled(channel)) continue;
         const auto& program = topology_[channel].program;
         AddressExecutionFrame frame{};
         const auto seed = config_.seed ^ mix64(address_program_key(program) +
                                               0x9E3779B97F4A7C15ULL);
-        const bool matched = execute_address_program(
+        (void)execute_address_program(
             window, config_.token_alphabet, program, seed, frame);
         frame.channel = static_cast<std::uint8_t>(channel);
         frame.parent_channel = topology_[channel].parent_channel;
         frame.dependency_channel = topology_[channel].dependency_channel;
-        signature_buffer_[channel] = frame.signature;
+        if (channel < frame_index_by_channel.size()) {
+            frame_index_by_channel[channel] = execution_frames_.size();
+        }
         execution_frames_.push_back(frame);
+    }
+    for (auto& frame : execution_frames_) {
+        const auto channel = static_cast<std::size_t>(frame.channel);
+        const auto dependency_channel = static_cast<std::size_t>(frame.dependency_channel);
+        if (dependency_channel < frame_index_by_channel.size()) {
+            const auto dependency_index = frame_index_by_channel[dependency_channel];
+            if (dependency_index != SIZE_MAX && dependency_index < execution_frames_.size()) {
+                const auto& dependency_frame = execution_frames_[dependency_index];
+                frame.dependency_signature = dependency_frame.signature;
+                frame.dependency_binding_key =
+                    dependency_frame.binding_state.binding_key;
+                if (dependency_frame.matched &&
+                    dependency_frame.binding_state.binding_key != 0U) {
+                    frame.call_key = mix64(
+                        frame.signature ^
+                        mix64(dependency_frame.signature + 0x517CC1B727220A95ULL) ^
+                        mix64(dependency_frame.binding_state.binding_key +
+                              address_program_key(frame.program)));
+                    frame.signature = mix64(frame.signature ^ frame.call_key ^
+                                            0xA24BAED4963EE407ULL);
+                    frame.call_matched = true;
+                    frame.execution_cost += 1.0F;
+                }
+            }
+        }
+        if (channel < signature_buffer_.size()) {
+            signature_buffer_[channel] = frame.signature;
+        }
         ++address_execution_frames_;
-        if (matched) ++address_binding_hits_;
+        if (frame.matched) ++address_binding_hits_;
         else ++address_binding_misses_;
         const auto binding_index = static_cast<std::size_t>(frame.binding);
         if (binding_index < kAddressBindingKindCount) {
@@ -125,7 +158,7 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
             }
         }
         if (learn && frame.binding_state.binding_key != 0U) {
-            observe_binding_reuse(channel, frame.binding_state.binding_key);
+            observe_binding_reuse(frame.channel, frame.binding_state.binding_key);
         }
         structural_description_cost_ += static_cast<double>(frame.description_cost);
         structural_execution_cost_ += static_cast<double>(frame.execution_cost);

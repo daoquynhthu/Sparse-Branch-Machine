@@ -271,5 +271,12 @@ learned channel it records the program, lifecycle phase, parent channel,
 dependency channel and direct caller count. In frozen attribution mode the token
 result also accumulates own program credit, binding-match evidence and
 downstream caller/dependency removal credit. This graph is the audit surface for
-shared prerequisites and multi-caller reuse; it is not yet a general subprogram
-call mechanism.
+shared prerequisites and multi-caller reuse.
+
+Dependent channels now also consume their prerequisite frame at execution time.
+When a dependency channel produces a matched binding key, the caller frame
+records `dependency_signature`, `dependency_binding_key` and `call_key`, and its
+routing signature is conditioned on that call key. This is still not a general
+multi-step program graph, but it is no longer merely post-hoc lineage metadata:
+caller address regions can now be separated by the concrete binding produced by
+their prerequisite.

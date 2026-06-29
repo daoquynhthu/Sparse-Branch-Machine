@@ -303,6 +303,8 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     std::array<std::uint32_t, kMaxAddressChannels> attribution_binding_distance{};
     std::array<std::uint32_t, kMaxAddressChannels> attribution_binding_pattern_span{};
     std::array<std::uint64_t, kMaxAddressChannels> attribution_binding_key{};
+    std::array<std::uint64_t, kMaxAddressChannels> attribution_dependency_binding_key{};
+    std::array<std::uint64_t, kMaxAddressChannels> attribution_call_key{};
     std::array<float, kMaxAddressChannels> attribution_description_cost{};
     std::array<float, kMaxAddressChannels> attribution_execution_cost{};
     attribution_parent_channel.fill(kInvalidChannel);
@@ -340,6 +342,9 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                     frame.binding_state.pattern_span;
                 attribution_binding_key[channel] =
                     frame.binding_state.binding_key;
+                attribution_dependency_binding_key[channel] =
+                    frame.dependency_binding_key;
+                attribution_call_key[channel] = frame.call_key;
                 attribution_description_cost[channel] = frame.description_cost;
                 attribution_execution_cost[channel] = frame.execution_cost;
             }
@@ -683,6 +688,9 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 attribution_binding_pattern_span[channel];
             stats.channel_binding_key[channel] =
                 attribution_binding_key[channel];
+            stats.channel_dependency_binding_key[channel] =
+                attribution_dependency_binding_key[channel];
+            stats.channel_call_key[channel] = attribution_call_key[channel];
             stats.channel_description_cost[channel] =
                 attribution_description_cost[channel];
             stats.channel_execution_cost[channel] = attribution_execution_cost[channel];

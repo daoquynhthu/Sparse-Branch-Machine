@@ -81,10 +81,14 @@ struct AddressExecutionFrame {
     std::uint32_t matched_index{};
     std::uint32_t successor{};
     std::uint32_t dependency{};
+    std::uint64_t dependency_signature{};
+    std::uint64_t dependency_binding_key{};
+    std::uint64_t call_key{};
     std::uint64_t signature{};
     float description_cost{};
     float execution_cost{};
     bool matched{};
+    bool call_matched{};
 };
 
 [[nodiscard]] inline AddressProgram singleton_address_program(std::uint32_t lag) noexcept {
@@ -258,6 +262,8 @@ struct StepStats {
     std::array<std::uint32_t, kMaxAddressChannels> channel_binding_distance{};
     std::array<std::uint32_t, kMaxAddressChannels> channel_binding_pattern_span{};
     std::array<std::uint64_t, kMaxAddressChannels> channel_binding_key{};
+    std::array<std::uint64_t, kMaxAddressChannels> channel_dependency_binding_key{};
+    std::array<std::uint64_t, kMaxAddressChannels> channel_call_key{};
     std::array<float, kMaxAddressChannels> channel_description_cost{};
     std::array<float, kMaxAddressChannels> channel_execution_cost{};
 };

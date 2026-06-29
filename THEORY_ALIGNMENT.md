@@ -131,8 +131,12 @@ same binding, but it is still an audit mechanism rather than full variable
 binding or subprogram invocation.
 Those keys are now retained in a bounded training-time reuse registry, so
 repeated bindings survive beyond one step and can later be used by lifecycle
-logic. The current implementation still does not route by that registry or call
-subprograms through it.
+logic. Dependent channels now also condition their routing signature on a
+matched prerequisite frame through a `call_key`. This is a single-hop
+subprogram-call substrate: caller address regions can differ by the concrete
+binding produced by their dependency. It is not yet a full compositional
+program language because calls are fixed by channel lineage and are not learned
+as arbitrary typed graph edits.
 
 ## 4. Lifecycle challenge under compositional programs
 

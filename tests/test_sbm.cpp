@@ -640,14 +640,29 @@ int main() {
     assert(content_follow_channel != sbm::kInvalidChannel);
     assert(content_follow_dependency == content_match_channel);
     bool saw_follow_frame = false;
-    for (const auto& frame : lineage_machine.last_execution_frames()) {
-        if (frame.channel == content_follow_channel) {
-            assert(frame.dependency_channel == content_match_channel);
-            assert(frame.parent_channel == content_match_channel);
-            saw_follow_frame = true;
+    bool saw_matched_call_frame = false;
+    for (std::size_t i = 0; i < 128; ++i) {
+        const auto token = static_cast<std::uint32_t>(i % 2U);
+        (void)lineage_machine.step_token(
+            token,
+            static_cast<std::uint32_t>((token + 1U) % lineage_config.vector_dim),
+            false);
+        for (const auto& frame : lineage_machine.last_execution_frames()) {
+            if (frame.channel == content_follow_channel) {
+                assert(frame.dependency_channel == content_match_channel);
+                assert(frame.parent_channel == content_match_channel);
+                saw_follow_frame = true;
+                if (frame.call_matched) {
+                    assert(frame.dependency_signature != 0U);
+                    assert(frame.dependency_binding_key != 0U);
+                    assert(frame.call_key != 0U);
+                    saw_matched_call_frame = true;
+                }
+            }
         }
     }
     assert(saw_follow_frame);
+    assert(saw_matched_call_frame);
 
     sbm::Config fixed_topology_config = token_config;
     fixed_topology_config.adaptive_topology = false;
