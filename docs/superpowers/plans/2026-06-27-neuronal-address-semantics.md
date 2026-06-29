@@ -951,6 +951,14 @@ unless a validation run explicitly enables reuse-aware structural admission.
 Because topology events are raw-serialized, the model checkpoint magic is now
 `SBMCKPT5`.
 
+**2026-06-29 small reuse-aware gate:** A 300k/100k FineWeb-Edu smoke comparison
+ran raw-credit admission, cost-only structural admission and reuse-aware
+structural admission with `binding_reuse_value_weight=0.05`. The gate validated
+stable execution and nonzero reuse bonuses in topology events and program
+attribution, but it did not change the accepted topology sequence or validation
+NLL in this small window. The result is recorded in
+`research_results/reuse_aware_structural_small_seed7.md`.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

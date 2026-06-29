@@ -1183,3 +1183,23 @@ This is an architecture instrumentation step, not a validated claim that reuse
 should govern admission. It makes the next gate explicit: run matched
 structural-admission experiments only after setting a nonzero reuse weight and
 comparing against the existing raw and cost-only gates.
+
+## 2026-06-29 — reuse-aware structural value small gate
+
+A small 300k train / 100k validation gate on the 1M FineWeb-Edu smoke manifest
+compared raw-credit admission, cost-only structural admission and reuse-aware
+structural admission with `binding_reuse_value_weight=0.05`. All three runs
+accepted five programs, pruned zero accepted structures and reached validation
+NLL `7.18416732` versus current-token baseline `8.62306488`.
+
+The reuse-aware run did not change the accepted topology sequence in this small
+window, but it did produce nonzero reuse value: the first accepted `Tuple([2])`
+event kept `structural_value_without_reuse=0.01795413` and added
+`binding_reuse_bonus=0.07037891`. Program attribution also reported nonzero
+reuse bonus, with max attribution bonus `0.21266388`. The result is recorded in
+`research_results/reuse_aware_structural_small_seed7.md`.
+
+Interpretation: reuse-aware structural value is now operational and auditable,
+but this small gate does not prove a predictive advantage. The next useful
+comparison is a matched setting where nonzero reuse weight actually changes at
+least one topology decision.
