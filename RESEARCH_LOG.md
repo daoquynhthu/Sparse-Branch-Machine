@@ -1374,3 +1374,15 @@ The C ABI exposes `sbm_machine_restore_channel`, and the Python wrapper exposes
 `Machine.restore_channel`. Core lifecycle tests verify that a recoverably
 retired channel returns to Active, that generation is unchanged and that the
 diagnostic retired-channel count drops to zero.
+
+## 2026-06-29 — dependency-aware routing eligibility
+
+Typed dependency requirements now affect whether a channel is routable, not only
+whether a `call_key` is formed after execution. A channel whose address program
+requires a dependency binding is enabled only while its direct dependency
+channel is Seed, Probe or Active. If the producer is quarantined or recoverably
+retired, the dependent caller is masked instead of silently falling back to its
+own direct signature.
+
+This preserves the producer/consumer contract introduced for ContentMatch and
+ContentFollow without adding new operators or tuning admission thresholds.

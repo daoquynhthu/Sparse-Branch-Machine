@@ -75,9 +75,24 @@ std::optional<AddressProgram> proposal_at(std::uint64_t ordinal,
 
 bool SparseBranchMachine::channel_enabled(std::size_t channel) const noexcept {
     if (channel >= topology_.size()) return false;
-    const auto phase = topology_[channel].phase;
-    return phase == ChannelPhase::Seed || phase == ChannelPhase::Probe ||
-           phase == ChannelPhase::Active;
+    const auto& state = topology_[channel];
+    const auto phase = state.phase;
+    const bool phase_enabled = phase == ChannelPhase::Seed ||
+        phase == ChannelPhase::Probe || phase == ChannelPhase::Active;
+    if (!phase_enabled) return false;
+    if (address_program_required_dependency_binding(state.program) ==
+        AddressBindingKind::None) {
+        return true;
+    }
+    const auto dependency_channel =
+        static_cast<std::size_t>(state.dependency_channel);
+    if (dependency_channel >= topology_.size() || dependency_channel == channel) {
+        return false;
+    }
+    const auto dependency_phase = topology_[dependency_channel].phase;
+    return dependency_phase == ChannelPhase::Seed ||
+        dependency_phase == ChannelPhase::Probe ||
+        dependency_phase == ChannelPhase::Active;
 }
 
 bool SparseBranchMachine::channel_learning_enabled(std::size_t channel) const noexcept {

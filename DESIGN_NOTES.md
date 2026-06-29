@@ -260,6 +260,12 @@ now enforces this contract: a dependent frame only forms a call when the
 prerequisite frame's binding kind satisfies the caller's
 `required_dependency_binding`.
 
+Dependency requirements are also part of routing eligibility. A channel whose
+program declares a required dependency binding is not enabled unless its direct
+dependency channel is currently Seed, Probe or Active. This prevents a dependent
+caller from silently degrading into a direct signature path after its producer
+has been quarantined or recoverably retired.
+
 Matched binding states also carry a stable `binding_key`. The key intentionally
 excludes absolute matched index and matched distance, so a content binding can
 be recognized as the same reusable relation when it appears at a different

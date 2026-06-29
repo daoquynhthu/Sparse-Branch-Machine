@@ -1048,6 +1048,12 @@ expose the same operation. This completes the first concrete rollback lifecycle
 loop for accepted address-program instances; learned automatic repair remains
 future work.
 
+**2026-06-29 dependency-aware routing eligibility:** The typed dependency
+contract now participates in channel enablement. A dependent caller is routable
+only while its direct producer channel is Seed, Probe or Active. If the producer
+is masked by quarantine or recoverable retirement, the caller is masked too
+rather than executing as an untyped fallback signature.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

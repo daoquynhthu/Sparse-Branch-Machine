@@ -161,6 +161,10 @@ turns the current ContentMatch-to-ContentFollow relation into a typed
 producer/consumer contract that future graph edits can validate. The execution
 path now uses that contract to form calls only when the prerequisite binding
 kind satisfies the caller's declared requirement.
+Routing eligibility now also respects the same contract: a dependent caller is
+not enabled when its direct producer channel is masked. This prevents typed
+calls from becoming untyped fallback signatures during quarantine or
+recoverable retirement.
 
 ## 4. Lifecycle challenge under compositional programs
 
@@ -251,6 +255,7 @@ It is justified to say that the repository contains:
 - a bounded single-hop content-conditioned call substrate with frozen
   attribution counters;
 - typed address-program input/output state contracts;
+- dependency-aware routing eligibility for typed callers;
 - first-class dependency edge summaries for rollback-oriented audit.
 - explicit restore of masked committed channels while preserving channel
   generation.
