@@ -144,7 +144,9 @@ per-step traces, but it still does not prove general learned composition.
 Execution frames now also declare `input_state`, `output_state` and
 `required_dependency_binding`. The important change is not a new heuristic: it
 turns the current ContentMatch-to-ContentFollow relation into a typed
-producer/consumer contract that future graph edits can validate.
+producer/consumer contract that future graph edits can validate. The execution
+path now uses that contract to form calls only when the prerequisite binding
+kind satisfies the caller's declared requirement.
 
 ## 4. Lifecycle challenge under compositional programs
 

@@ -1320,3 +1320,16 @@ the C ABI to v9. The change does not add a new operator or a learned arbitrary
 program graph; it makes the current single-hop call path explicitly typed so
 future graph-edit semantics can be validated rather than inferred from channel
 lineage alone.
+
+## 2026-06-29 — typed dependency enforcement
+
+The dependency-conditioned call path now enforces the typed IO contract when it
+forms a call. A dependent frame still records the prerequisite signature and
+binding key for audit, but `call_key` is produced only when the prerequisite
+binding kind satisfies the caller's `required_dependency_binding`. In practice,
+the current ContentFollow operator requires a ContentMatch binding; positional
+or follow bindings are not treated as interchangeable dependency outputs.
+
+This keeps the single-hop call substrate aligned with the intended
+producer-consumer semantics without adding new operators or tuning admission
+parameters.

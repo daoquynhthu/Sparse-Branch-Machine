@@ -131,6 +131,8 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
                 frame.dependency_binding_key =
                     dependency_frame.binding_state.binding_key;
                 if (dependency_frame.matched &&
+                    address_dependency_satisfied(frame.program,
+                                                 dependency_frame.binding) &&
                     dependency_frame.binding_state.binding_key != 0U) {
                     frame.call_key = mix64(
                         frame.signature ^

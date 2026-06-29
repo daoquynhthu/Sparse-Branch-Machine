@@ -148,6 +148,23 @@ int main() {
     }
 
     {
+        sbm::AddressProgram follow;
+        follow.lags[0] = 1U;
+        follow.lags[1] = 4U;
+        follow.arity = 2U;
+        follow.op = sbm::AddressOp::ContentFollow;
+        assert(sbm::address_dependency_satisfied(
+            follow, sbm::AddressBindingKind::ContentMatch));
+        assert(!sbm::address_dependency_satisfied(
+            follow, sbm::AddressBindingKind::ContentFollow));
+        assert(!sbm::address_dependency_satisfied(
+            follow, sbm::AddressBindingKind::Positional));
+        assert(sbm::address_dependency_satisfied(
+            sbm::singleton_address_program(1U),
+            sbm::AddressBindingKind::None));
+    }
+
+    {
         const std::array<std::uint32_t, 8> near_data{
             4U, 8U, 9U, 4U, 8U, 13U, 4U, 8U};
         const std::array<std::uint32_t, 6> far_same_binding{

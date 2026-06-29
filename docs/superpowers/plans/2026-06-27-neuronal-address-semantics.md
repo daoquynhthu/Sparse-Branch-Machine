@@ -1014,6 +1014,13 @@ operator; it makes the existing Tuple / DeltaMod / ContentMatch / ContentFollow
 operators declare producer-consumer types so future reusable graph edits can be
 checked against an explicit contract.
 
+**2026-06-29 typed dependency enforcement:** The call path now checks the
+producer-consumer contract before forming a dependency-conditioned call.
+`ContentFollow` can consume a prerequisite only when that frame produced a
+`ContentMatch` binding; mismatched positional or follow bindings do not satisfy
+the call requirement. This keeps the current single-hop call substrate from
+silently treating all matched dependency frames as interchangeable.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

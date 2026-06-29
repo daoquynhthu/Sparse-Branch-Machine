@@ -29,7 +29,11 @@ bool execute_address_program(std::span<const std::uint32_t> window,
                              AddressExecutionFrame& out) noexcept {
     out = {};
     out.program = program;
+    out.input_state = address_program_input_state(program);
+    out.output_state = address_program_output_state(program);
     out.binding = binding_kind(program.op);
+    out.required_dependency_binding =
+        address_program_required_dependency_binding(program);
     out.binding_state = resolve_address_binding_state(window, program);
     out.signature = address_program_signature(
         window, alphabet,

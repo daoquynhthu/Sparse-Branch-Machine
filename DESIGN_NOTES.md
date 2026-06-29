@@ -250,7 +250,10 @@ Frames also carry an explicit state contract: `input_state`, `output_state` and
 produce positional signatures; ContentMatch consumes a token window and produces
 a content binding; ContentFollow consumes a content binding and produces a
 follow binding. This makes dependency calls type-checkable at the execution
-surface instead of relying only on channel lineage conventions.
+surface instead of relying only on channel lineage conventions. The call path
+now enforces this contract: a dependent frame only forms a call when the
+prerequisite frame's binding kind satisfies the caller's
+`required_dependency_binding`.
 
 Matched binding states also carry a stable `binding_key`. The key intentionally
 excludes absolute matched index and matched distance, so a content binding can

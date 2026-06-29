@@ -148,6 +148,13 @@ struct AddressExecutionFrame {
         : AddressBindingKind::None;
 }
 
+[[nodiscard]] inline bool address_dependency_satisfied(
+    const AddressProgram& program,
+    AddressBindingKind dependency_binding) noexcept {
+    const auto required = address_program_required_dependency_binding(program);
+    return required == AddressBindingKind::None || dependency_binding == required;
+}
+
 struct TopologyEvent {
     std::uint64_t step{};
     AddressProgram program{};
