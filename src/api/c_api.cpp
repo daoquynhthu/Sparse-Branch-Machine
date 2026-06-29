@@ -712,6 +712,13 @@ void sbm_machine_freeze_topology(sbm_machine_handle* machine) {
     if (machine != nullptr) machine->value.freeze_topology();
 }
 
+int sbm_machine_restore_channel(sbm_machine_handle* machine, uint32_t channel) {
+    return guarded([&] {
+        if (machine == nullptr) throw std::invalid_argument("machine is null");
+        return machine->value.restore_channel(channel) ? 1 : 0;
+    });
+}
+
 char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
     return guarded([&] {
         if (machine == nullptr) throw std::invalid_argument("machine is null");

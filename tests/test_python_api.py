@@ -78,6 +78,7 @@ with tempfile.TemporaryDirectory() as directory:
                         abs_tol=1e-6,
                     )
                 resumed.freeze_topology()
+                assert resumed.restore_channel(0) is False
                 eval_stats = resumed.step_token(1, 3, learn=False)
                 assert "channel_credit" in eval_stats
                 assert "channel_binding_kind" in eval_stats

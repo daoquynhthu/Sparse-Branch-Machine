@@ -30,6 +30,7 @@ public:
                                        bool learn = true);
     void reset_sequence();
     void freeze_topology();
+    [[nodiscard]] bool restore_channel(std::size_t channel);
     [[nodiscard]] std::size_t prune(std::uint32_t min_visits = 8,
                                     float utility_threshold = -0.05F);
     [[nodiscard]] std::size_t merge_redundant(std::size_t max_merges = 64);

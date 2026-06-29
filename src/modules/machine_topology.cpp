@@ -266,6 +266,35 @@ void SparseBranchMachine::recoverably_retire_channel(std::size_t channel) {
     topology_[channel].phase = ChannelPhase::RecoverableRetired;
 }
 
+bool SparseBranchMachine::restore_channel(std::size_t channel) {
+    if (channel >= topology_.size() || channel == 0U) return false;
+    auto& state = topology_[channel];
+    if (state.phase != ChannelPhase::RecoverableRetired &&
+        state.phase != ChannelPhase::Quarantined) {
+        return false;
+    }
+    const auto reuse_summary = binding_reuse_summary(channel);
+    const double reuse_bonus = binding_reuse_bonus(reuse_summary);
+    topology_events_.push_back({total_steps_, state.generation,
+                                state.program,
+                                TopologyDecision::Restored,
+                                state.credit_ema + static_cast<float>(reuse_bonus),
+                                state.credit_ema,
+                                static_cast<float>(reuse_bonus),
+                                reuse_summary.observations,
+                                reuse_summary.unique_keys,
+                                reuse_summary.events,
+                                static_cast<std::uint8_t>(channel),
+                                state.parent_channel,
+                                state.dependency_channel,
+                                state.parent_edge_kind,
+                                state.dependency_edge_kind});
+    state.phase = ChannelPhase::Active;
+    state.born_step = total_steps_;
+    state.observations = 0U;
+    return true;
+}
+
 void SparseBranchMachine::physically_erase_channel(std::size_t channel) {
     if (channel >= topology_.size() || channel == 0U) return;
     topology_[channel].phase = ChannelPhase::Retired;

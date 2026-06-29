@@ -23,7 +23,13 @@ enum class ChannelPhase : std::uint8_t {
     Quarantined,
     RecoverableRetired,
 };
-enum class TopologyDecision : std::uint8_t { Proposed, Accepted, Rejected, Pruned };
+enum class TopologyDecision : std::uint8_t {
+    Proposed,
+    Accepted,
+    Rejected,
+    Pruned,
+    Restored,
+};
 enum class AddressOp : std::uint8_t {
     Tuple = 0U,
     DeltaMod = 1U,

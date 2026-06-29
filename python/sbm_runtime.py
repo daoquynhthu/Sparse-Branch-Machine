@@ -181,6 +181,8 @@ class Runtime:
         lib.sbm_machine_step_token.restype = ctypes.c_int
         lib.sbm_machine_reset_sequence.argtypes = [ctypes.c_void_p]
         lib.sbm_machine_freeze_topology.argtypes = [ctypes.c_void_p]
+        lib.sbm_machine_restore_channel.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        lib.sbm_machine_restore_channel.restype = ctypes.c_int
         lib.sbm_machine_diagnostics_json.argtypes = [ctypes.c_void_p]
         lib.sbm_machine_diagnostics_json.restype = ctypes.c_void_p
         lib.sbm_machine_summary_json.argtypes = [ctypes.c_void_p]
@@ -765,6 +767,12 @@ class Machine:
 
     def freeze_topology(self) -> None:
         self.runtime.lib.sbm_machine_freeze_topology(self.pointer)
+
+    def restore_channel(self, channel: int) -> bool:
+        status = self.runtime.lib.sbm_machine_restore_channel(self.pointer, channel)
+        if status < 0:
+            raise self.runtime._error("restore channel")
+        return bool(status)
 
     def save_checkpoint(self, path: str | os.PathLike[str]) -> None:
         status = self.runtime.lib.sbm_machine_save_checkpoint(

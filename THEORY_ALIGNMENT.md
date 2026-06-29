@@ -134,6 +134,11 @@ The implementation also exposes a first-class caller-edge list, so multi-caller
 relationships no longer have to be inferred from per-channel downstream
 summaries. This is still graph metadata, not arbitrary learned graph editing,
 but it is the right object for future rollback and reusable-caller accounting.
+Recoverable and quarantined channels also have an explicit restore transition:
+the implementation can return a masked committed channel to active routing
+without changing its generation. This closes the first concrete rollback
+lifecycle loop for accepted structures, although it does not yet implement
+learned graph rewrites or automatic multi-caller repair.
 Matched content bindings additionally have stable binding keys that ignore
 absolute distance. This provides direct evidence about repeated reuse of the
 same binding, but it is still an audit mechanism rather than full variable
@@ -247,6 +252,8 @@ It is justified to say that the repository contains:
   attribution counters;
 - typed address-program input/output state contracts;
 - first-class dependency edge summaries for rollback-oriented audit.
+- explicit restore of masked committed channels while preserving channel
+  generation.
 
 It is not justified to say that it has demonstrated:
 

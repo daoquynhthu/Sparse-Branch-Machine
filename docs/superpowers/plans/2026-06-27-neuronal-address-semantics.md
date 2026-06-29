@@ -1040,6 +1040,14 @@ attach observations, call matches, call-key reuse and caller/dependency removal
 credit at edge level. This turns reusable caller relationships into direct
 graph objects rather than information inferred from downstream channel totals.
 
+**2026-06-29 explicit restore completion:** RecoverableRetire and Quarantine
+now have an actual restoration path. `SparseBranchMachine::restore_channel`
+returns a masked committed channel to Active, preserves the channel generation
+and emits a `TopologyDecision::Restored` event. C and Python stateful APIs
+expose the same operation. This completes the first concrete rollback lifecycle
+loop for accepted address-program instances; learned automatic repair remains
+future work.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

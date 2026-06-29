@@ -146,6 +146,7 @@ int main() {
         assert(std::abs(left_stats.cross_entropy - source_stats.cross_entropy) < 1e-6F);
     }
     sbm_machine_freeze_topology(resumed);
+    assert(sbm_machine_restore_channel(resumed, 0U) == 0);
     assert(sbm_machine_step_token(resumed, 1U, 3U, 0, &source_stats) == 0);
     assert(source_stats.channel_credit_count <= 8U);
     if (source_stats.channel_subset_available) {

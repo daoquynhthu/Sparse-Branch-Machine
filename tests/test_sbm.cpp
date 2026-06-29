@@ -528,6 +528,40 @@ int main() {
         assert(lifecycle_diag.recoverable_retired_channels == 1U);
         assert(lifecycle_diag.retired_channels == 0U);
         assert(lifecycle_diag.live_nodes > 0U);
+        const auto before_phase = lifecycle_model.learned_channel_phase();
+        const auto before_generation = lifecycle_model.learned_channel_generation();
+        std::size_t retired_channel = SIZE_MAX;
+        for (std::size_t channel = 0U; channel < before_phase.size(); ++channel) {
+            if (before_phase[channel] ==
+                static_cast<std::uint8_t>(
+                    sbm::ChannelPhase::RecoverableRetired)) {
+                retired_channel = channel;
+                break;
+            }
+        }
+        assert(retired_channel != SIZE_MAX);
+        assert(lifecycle_model.restore_channel(0U) == false);
+        assert(lifecycle_model.restore_channel(retired_channel) == true);
+        assert(lifecycle_model.restore_channel(retired_channel) == false);
+        const auto after_phase = lifecycle_model.learned_channel_phase();
+        const auto after_generation = lifecycle_model.learned_channel_generation();
+        assert(after_phase[retired_channel] ==
+               static_cast<std::uint8_t>(sbm::ChannelPhase::Active));
+        assert(after_generation[retired_channel] ==
+               before_generation[retired_channel]);
+        const auto restored_diag = lifecycle_model.diagnostics();
+        assert(restored_diag.recoverable_retired_channels == 0U);
+        assert(restored_diag.active_channels == lifecycle_diag.active_channels + 1U);
+        bool saw_restored = false;
+        for (const auto& event : lifecycle_model.topology_events()) {
+            if (event.decision == sbm::TopologyDecision::Restored &&
+                event.channel == retired_channel &&
+                event.channel_generation ==
+                    before_generation[retired_channel]) {
+                saw_restored = true;
+            }
+        }
+        assert(saw_restored);
     }
 
     const auto token_result = sbm::run_token_experiment(

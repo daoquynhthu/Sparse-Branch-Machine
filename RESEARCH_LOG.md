@@ -1361,3 +1361,16 @@ runtime attribution counters because it has no frozen evaluation window. Token
 experiment JSON carries the dynamic attribution. This is still not arbitrary
 learned graph editing, but it provides the direct edge object needed for
 multi-caller audit and rollback-oriented accounting.
+
+## 2026-06-29 — explicit restore for recoverable topology channels
+
+RecoverableRetire and Quarantine no longer only mask committed structures. The
+machine now exposes `restore_channel(channel)`, which reactivates a masked
+committed channel, emits a `Restored` topology event and preserves the existing
+channel generation. Rollback is therefore auditable as a lifecycle transition
+of the same address-program instance rather than an implicit re-proposal.
+
+The C ABI exposes `sbm_machine_restore_channel`, and the Python wrapper exposes
+`Machine.restore_channel`. Core lifecycle tests verify that a recoverably
+retired channel returns to Active, that generation is unchanged and that the
+diagnostic retired-channel count drops to zero.

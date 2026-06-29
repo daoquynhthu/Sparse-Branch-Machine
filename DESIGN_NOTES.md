@@ -208,6 +208,11 @@ Accepted-channel retirement has four explicit policies: Preserve, Quarantine,
 RecoverableRetire and PhysicalErase. The default preserves accepted structures.
 Quarantine and RecoverableRetire both mask routing while retaining channel state
 for audit; PhysicalErase is the only policy that removes channel-owned nodes.
+Masked committed channels can be explicitly restored. Restore changes a
+Quarantined or RecoverableRetired channel back to Active, emits a Restored
+topology event and preserves the channel generation. Rollback is therefore a
+tracked lifecycle transition of the same address-program instance, not an
+implicit re-proposal.
 
 ## Real-corpus invariants
 
@@ -296,6 +301,11 @@ state and required dependency binding. Frozen token experiments additionally
 attach edge-level observations, call matches, call-key reuse and caller /
 dependency removal credit. The per-channel dependency graph remains the summary;
 the edge list is the rollback and multi-caller audit surface.
+
+Rollback now has a concrete recovery operation for masked committed channels.
+Restoring a Quarantined or RecoverableRetired channel preserves its generation
+and existing graph identity, so dependency edges and topology events can be
+audited across prune and restore transitions.
 
 Dependent channels now also consume their prerequisite frame at execution time.
 When a dependency channel produces a matched binding key, the caller frame
