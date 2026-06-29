@@ -95,8 +95,10 @@ int main() {
            std::string_view::npos);
     assert(token_view.find("\"dependency_blocked_channels\"") !=
            std::string_view::npos);
+    assert(token_view.find("\"topology_restored\"") != std::string_view::npos);
     assert(token_view.find("\"learned_channel_effective_enabled\"") !=
            std::string_view::npos);
+    assert(token_view.find("\"decision_name\"") != std::string_view::npos);
     assert(token_view.find("\"structural_value_nats\"") != std::string_view::npos);
     assert(token_view.find("\"structural_description_cost\"") !=
            std::string_view::npos);
@@ -177,6 +179,8 @@ int main() {
     assert(std::string_view(machine_diag).find("\"binding_reuse_observations\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_diag).find("\"dependency_blocked_channels\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_diag).find("\"topology_restored\"") !=
            std::string_view::npos);
     sbm_string_free(machine_diag);
     char* machine_summary = sbm_machine_summary_json(resumed);

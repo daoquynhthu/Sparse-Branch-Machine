@@ -30,6 +30,18 @@ enum class TopologyDecision : std::uint8_t {
     Pruned,
     Restored,
 };
+
+[[nodiscard]] inline const char* topology_decision_name(
+    TopologyDecision decision) noexcept {
+    switch (decision) {
+    case TopologyDecision::Proposed: return "Proposed";
+    case TopologyDecision::Accepted: return "Accepted";
+    case TopologyDecision::Rejected: return "Rejected";
+    case TopologyDecision::Pruned: return "Pruned";
+    case TopologyDecision::Restored: return "Restored";
+    }
+    return "Unknown";
+}
 enum class AddressOp : std::uint8_t {
     Tuple = 0U,
     DeltaMod = 1U,
@@ -380,6 +392,7 @@ struct Diagnostics {
     std::uint64_t topology_accepted{};
     std::uint64_t topology_rejected{};
     std::uint64_t topology_pruned{};
+    std::uint64_t topology_restored{};
     std::uint64_t seed_channels{};
     std::uint64_t probe_channels{};
     std::uint64_t active_channels{};

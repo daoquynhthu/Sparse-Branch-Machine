@@ -330,6 +330,12 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     std::uint64_t quarantined_channels = 0U;
     std::uint64_t recoverable_retired_channels = 0U;
     std::uint64_t dependency_blocked_channels = 0U;
+    std::uint64_t topology_restored = 0U;
+    for (const auto& event : topology_events_) {
+        if (event.decision == TopologyDecision::Restored) {
+            ++topology_restored;
+        }
+    }
     for (std::size_t channel = 0U; channel < topology_.size(); ++channel) {
         const auto& state = topology_[channel];
         switch (state.phase) {
@@ -375,6 +381,7 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     result.topology_accepted = topology_accepted_;
     result.topology_rejected = topology_rejected_;
     result.topology_pruned = topology_pruned_;
+    result.topology_restored = topology_restored;
     result.seed_channels = seed_channels;
     result.probe_channels = probe_channels;
     result.active_channels = active_channels;

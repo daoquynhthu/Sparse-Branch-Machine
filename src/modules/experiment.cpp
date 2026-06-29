@@ -380,6 +380,15 @@ std::string to_json(const ExperimentResult& result) {
         if (i != 0U) out << ", ";
         out << static_cast<unsigned>(result.learned_channel_dependency_edge_kind[i]);
     }
+    out << "],\n  \"topology_decision_name_map\": [";
+    for (unsigned decision = 0U;
+         decision <= static_cast<unsigned>(TopologyDecision::Restored);
+         ++decision) {
+        if (decision != 0U) out << ", ";
+        const auto value = static_cast<TopologyDecision>(decision);
+        out << "{\"decision\":" << decision << ",\"decision_name\":\""
+            << topology_decision_name(value) << "\"}";
+    }
     out << "],\n  \"topology_events\": [";
     for (std::size_t i = 0; i < result.topology_events.size(); ++i) {
         if (i != 0U) out << ", ";
@@ -393,6 +402,8 @@ std::string to_json(const ExperimentResult& result) {
         }
         out << "],\"op\":" << static_cast<unsigned>(event.program.op)
             << ",\"decision\":" << static_cast<unsigned>(event.decision)
+            << ",\"decision_name\":\""
+            << topology_decision_name(event.decision) << "\""
             << ",\"credit\":" << event.credit
             << ",\"channel\":" << static_cast<unsigned>(event.channel)
             << ",\"parent_channel\":"
@@ -455,6 +466,7 @@ std::string to_json(const ExperimentResult& result) {
         << "  \"topology_accepted\": " << result.diagnostics.topology_accepted << ",\n"
         << "  \"topology_rejected\": " << result.diagnostics.topology_rejected << ",\n"
         << "  \"topology_pruned\": " << result.diagnostics.topology_pruned << ",\n"
+        << "  \"topology_restored\": " << result.diagnostics.topology_restored << ",\n"
         << "  \"active_channels\": " << result.diagnostics.active_channels << ",\n"
         << "  \"dependency_blocked_channels\": "
         << result.diagnostics.dependency_blocked_channels << ",\n"

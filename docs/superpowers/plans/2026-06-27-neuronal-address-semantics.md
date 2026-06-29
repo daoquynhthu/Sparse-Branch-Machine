@@ -1073,6 +1073,13 @@ the same effective routing state exposed by the stateful machine summary.
 `dependency_available`, so each dependency node is self-describing without an
 external join against top-level channel arrays.
 
+**2026-06-29 lifecycle checkpoint and event-name completion:** Checkpoint tests
+now cover manual masking of a producer with a dependency-blocked caller and
+verify phase, effective-enabled state, topology event count and blocked-channel
+diagnostics after reload. Topology event JSON emits `decision_name`, and
+machine/experiment JSON emit `topology_decision_name_map` for enum
+self-description even when a run has no events.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

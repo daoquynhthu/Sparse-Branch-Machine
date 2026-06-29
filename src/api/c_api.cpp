@@ -782,6 +782,7 @@ char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
             << ", \"topology_accepted\": " << diagnostics.topology_accepted
             << ", \"topology_rejected\": " << diagnostics.topology_rejected
             << ", \"topology_pruned\": " << diagnostics.topology_pruned
+            << ", \"topology_restored\": " << diagnostics.topology_restored
             << ", \"dependency_blocked_channels\": "
             << diagnostics.dependency_blocked_channels
             << "}";
@@ -993,6 +994,16 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
                                 dependency_edge_kind[caller])
                           : sbm::AddressGraphEdgeKind::None);
         }
+        out << "], \"topology_decision_name_map\": [";
+        for (unsigned decision = 0U;
+             decision <= static_cast<unsigned>(sbm::TopologyDecision::Restored);
+             ++decision) {
+            if (decision != 0U) out << ", ";
+            const auto value = static_cast<sbm::TopologyDecision>(decision);
+            out << "{\"decision\":" << decision
+                << ",\"decision_name\":\""
+                << sbm::topology_decision_name(value) << "\"}";
+        }
         out << "], \"topology_events\": [";
         const auto& events = machine->value.topology_events();
         for (std::size_t i = 0; i < events.size(); ++i) {
@@ -1007,6 +1018,8 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
             }
             out << "],\"op\":" << static_cast<unsigned>(event.program.op)
                 << ",\"decision\":" << static_cast<unsigned>(event.decision)
+                << ",\"decision_name\":\""
+                << sbm::topology_decision_name(event.decision) << "\""
                 << ",\"credit\":" << event.credit
                 << ",\"structural_value_without_reuse\":"
                 << event.structural_value_without_reuse

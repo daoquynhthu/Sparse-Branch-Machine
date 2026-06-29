@@ -326,6 +326,14 @@ Rollback now has a concrete recovery operation for masked committed channels.
 Restoring a Quarantined or RecoverableRetired channel preserves its generation
 and existing graph identity, so dependency edges and topology events can be
 audited across prune and restore transitions.
+Lifecycle transitions are checkpoint-covered: tests save and reload a graph
+with a masked producer and dependency-blocked caller, then compare phase,
+effective-enabled state, topology event count and blocked-channel diagnostics.
+
+Topology event JSON carries both numeric `decision` and readable
+`decision_name`. Experiment and machine-summary JSON also include a
+`topology_decision_name_map`, so empty-event runs still document the enum
+mapping.
 
 Dependent channels now also consume their prerequisite frame at execution time.
 When a dependency channel produces a matched binding key, the caller frame

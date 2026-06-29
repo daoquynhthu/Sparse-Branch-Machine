@@ -1417,3 +1417,15 @@ Token experiment `address_dependency_graph` entries now include
 summary surface. This makes each graph node self-describing: phase records
 committed lifecycle state, while effective fields record whether it can
 actually route under current dependency masking.
+
+## 2026-06-29 — lifecycle checkpoint and topology event names
+
+Lifecycle checkpoint coverage now includes manual masking of a ContentMatch
+producer with a dependent ContentFollow caller. The test saves and reloads the
+masked graph, then verifies lifecycle phase, effective-enabled state, topology
+event count and dependency-blocked diagnostics.
+
+Topology event JSON now includes readable `decision_name` in addition to the
+numeric enum. Token/vector experiment JSON and stateful machine summaries also
+emit `topology_decision_name_map`, so runs with no topology events still carry
+the enum meaning.

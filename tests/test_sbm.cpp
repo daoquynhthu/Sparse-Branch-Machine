@@ -737,6 +737,19 @@ int main() {
     assert(masked_enabled[content_match_channel] == 0U);
     assert(masked_enabled[content_follow_channel] == 0U);
     assert(lineage_machine.diagnostics().dependency_blocked_channels >= 1U);
+    const char* lifecycle_checkpoint_path = "sbm_lifecycle_checkpoint_test.sbc";
+    std::remove(lifecycle_checkpoint_path);
+    sbm::save_checkpoint(lineage_machine, lifecycle_checkpoint_path);
+    auto masked_reloaded = sbm::load_checkpoint(lifecycle_checkpoint_path);
+    std::remove(lifecycle_checkpoint_path);
+    assert(masked_reloaded.learned_channel_phase() ==
+           lineage_machine.learned_channel_phase());
+    assert(masked_reloaded.learned_channel_effective_enabled() ==
+           lineage_machine.learned_channel_effective_enabled());
+    assert(masked_reloaded.topology_events().size() ==
+           lineage_machine.topology_events().size());
+    assert(masked_reloaded.diagnostics().dependency_blocked_channels ==
+           lineage_machine.diagnostics().dependency_blocked_channels);
     assert(lineage_machine.restore_channel(content_match_channel));
     const auto restored_enabled =
         lineage_machine.learned_channel_effective_enabled();
