@@ -907,7 +907,8 @@ increments the C API to v6.
 **2026-06-28 binding-diagnostics completion:** Runtime diagnostics now include
 `address_binding_by_kind`, a compact per-binding-kind summary of frames, hits,
 hit rate, mean matched distance and mean pattern span. The counters are
-checkpointed in `SBMCKPT3` so exact resume preserves the diagnostic stream.
+first checkpointed in `SBMCKPT3` so exact resume preserves the diagnostic
+stream.
 
 **2026-06-28 shared-binding completion:** Content address signatures and
 interpreted execution frames now share `resolve_address_binding_state()`.
@@ -932,6 +933,14 @@ the existing routing signature for locality. C/Python step stats expose
 `channel_binding_key`, and frozen program attribution reports
 `unique_binding_keys` plus `binding_key_reuse_events`. This increments the C API
 to v7.
+
+**2026-06-29 persistent binding-reuse completion:** Binding keys now feed a
+bounded per-channel training registry rather than remaining only step-local
+diagnostics. The registry records observations, unique keys and repeated reuse
+events during learning only; frozen evaluation stays read-only. The registry is
+bounded by `max_binding_reuse_records_per_channel`, is cleared when a channel is
+physically erased, and is serialized in model checkpoints. This bumps the model
+checkpoint magic to `SBMCKPT4`.
 
 ### Task 7: Introduce Structural Value Gates
 
@@ -1164,10 +1173,10 @@ Contract boundary:
   archives;
 - the binary file magic is the checkpoint format version and must be bumped
   whenever a raw-serialized state struct changes layout;
-- `SBMCKPT3` is the current lineage-aware model checkpoint format. It includes
+- `SBMCKPT4` is the current lineage-aware model checkpoint format. It includes
   channel parent/dependency lineage in topology state and topology events,
-  binding-kind execution counters, plus all state required to continue
-  sparse-output learning exactly;
+  binding-kind execution counters, bounded binding-reuse registries, plus all
+  state required to continue sparse-output learning exactly;
 - runner checkpoints own the data cursor, manifest identity, phase, accumulated
   metrics and path to the model checkpoint. Exact long-run resume requires both
   runner and model checkpoint files;

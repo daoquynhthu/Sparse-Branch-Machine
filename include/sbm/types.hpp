@@ -210,6 +210,7 @@ struct Config {
     // per-address-channel counterfactual codelength contribution. Normal runs
     // leave it disabled to avoid attribution overhead.
     bool record_channel_attribution{false};
+    std::uint32_t max_binding_reuse_records_per_channel{4096};
 
     std::uint64_t output_tree_seed{7};
     std::uint64_t seed{7};
@@ -286,6 +287,9 @@ struct Diagnostics {
     std::uint64_t address_execution_frames{};
     std::uint64_t address_binding_hits{};
     std::uint64_t address_binding_misses{};
+    std::uint64_t binding_reuse_observations{};
+    std::uint64_t binding_reuse_unique_keys{};
+    std::uint64_t binding_reuse_events{};
     std::array<std::uint64_t, kAddressBindingKindCount> address_binding_kind_frames{};
     std::array<std::uint64_t, kAddressBindingKindCount> address_binding_kind_hits{};
     std::array<double, kAddressBindingKindCount> address_binding_kind_distance_sum{};

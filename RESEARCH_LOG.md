@@ -1120,12 +1120,28 @@ content/operation based rather than distance/index based, so repeated bindings
 can be counted across variable distances. C/Python step stats expose
 `channel_binding_key`; frozen program attribution reports
 `unique_binding_keys` and `binding_key_reuse_events`. This increments the C API
-to v7. The model checkpoint remains `SBMCKPT3` because execution frames are not
-serialized as checkpoint state.
+to v7. At this point the model checkpoint still remained `SBMCKPT3` because
+execution frames were not serialized as checkpoint state; the later persistent
+binding-reuse registry changed that boundary.
+
+## 2026-06-29 — persistent binding reuse registry
+
+Binding keys now feed a bounded per-channel training registry. Each channel
+retains up to `max_binding_reuse_records_per_channel` keys with observation
+count and last-seen step, records repeated reuse events, and exposes aggregate
+diagnostics through C++/C/token JSON. The registry is updated only while
+learning; frozen evaluation remains read-only.
+
+The registry is serialized in model checkpoints, so the checkpoint magic is now
+`SBMCKPT4`. The checkpoint regression verifies that uninterrupted and
+save/load/resume training match on binding-reuse observations, unique keys and
+reuse events in addition to the previous prediction/topology checks.
 
 Because topology state and topology events are raw-serialized in model
-checkpoints, the model checkpoint magic was bumped to `SBMCKPT3`. The checkpoint
-contract is exact same-format resume, not cross-version archive compatibility.
+checkpoints, the model checkpoint magic was bumped to `SBMCKPT3` and later to
+`SBMCKPT4` when bounded binding-reuse registries became persistent state. The
+checkpoint contract is exact same-format resume, not cross-version archive
+compatibility.
 
 The accepted-channel lifecycle also now exposes `RecoverableRetire` as a real
 policy. It masks routing, retains channel-owned state for audit and increments

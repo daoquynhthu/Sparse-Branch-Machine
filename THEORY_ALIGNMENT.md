@@ -129,6 +129,10 @@ Matched content bindings additionally have stable binding keys that ignore
 absolute distance. This provides direct evidence about repeated reuse of the
 same binding, but it is still an audit mechanism rather than full variable
 binding or subprogram invocation.
+Those keys are now retained in a bounded training-time reuse registry, so
+repeated bindings survive beyond one step and can later be used by lifecycle
+logic. The current implementation still does not route by that registry or call
+subprograms through it.
 
 ## 4. Lifecycle challenge under compositional programs
 

@@ -92,6 +92,11 @@ private:
         std::uint8_t sightings{};
         std::uint64_t last_seen_step{};
     };
+    struct BindingReuseRecord {
+        std::uint64_t key{};
+        std::uint64_t observations{};
+        std::uint64_t last_seen_step{};
+    };
     struct TraceFrame {
         std::vector<NodeId> route;
         std::vector<float> contribution;
@@ -129,9 +134,10 @@ private:
     [[nodiscard]] bool channel_enabled(std::size_t channel) const noexcept;
     [[nodiscard]] bool channel_learning_enabled(std::size_t channel) const noexcept;
     [[nodiscard]] std::span<const AddressExecutionFrame> execute_address_programs(
-        std::span<const std::uint32_t> window);
+        std::span<const std::uint32_t> window, bool learn);
     [[nodiscard]] std::span<const std::uint64_t> make_signatures(
-        std::span<const std::uint32_t> window);
+        std::span<const std::uint32_t> window, bool learn);
+    void observe_binding_reuse(std::size_t channel, std::uint64_t key);
     void maybe_begin_topology_probe(bool learn);
     void maybe_finalize_topology_probe();
     void observe_topology_credit(std::span<const float> channel_credit);
@@ -205,6 +211,7 @@ private:
     std::vector<std::uint8_t> channels_;
     std::vector<std::uint8_t> hot_indexed_;
     std::vector<NodeId> parents_;
+    std::vector<std::vector<BindingReuseRecord>> binding_reuse_;
     std::vector<float> output_vectors_;
     std::vector<std::vector<detail::SparseOutputEntry>> sparse_outputs_;
     std::vector<std::vector<SparseAdmissionCandidate>> sparse_admission_;
@@ -252,6 +259,8 @@ private:
     std::uint64_t address_execution_frames_{};
     std::uint64_t address_binding_hits_{};
     std::uint64_t address_binding_misses_{};
+    std::uint64_t binding_reuse_observations_{};
+    std::uint64_t binding_reuse_events_{};
     std::array<std::uint64_t, kAddressBindingKindCount>
         address_binding_kind_frames_{};
     std::array<std::uint64_t, kAddressBindingKindCount>

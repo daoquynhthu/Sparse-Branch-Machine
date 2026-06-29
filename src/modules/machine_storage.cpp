@@ -104,6 +104,7 @@ SparseBranchMachine::SparseBranchMachine(Config config)
                              0.0F, 0.0, 0U, 0U});
         proposed_program_keys_.push_back(address_program_key(program));
     }
+    binding_reuse_.resize(topology_.size());
     next_probe_step_ = config.topology_probe_interval;
     if (uses_sparse_token_output()) {
         if (config_.vector_dim < 2U) {

@@ -252,6 +252,12 @@ distance. Frozen attribution reports unique binding-key count and reuse events;
 these are diagnostic evidence for reusable binding, not a new routing decision
 rule.
 
+During learning, binding keys are also written into a bounded per-channel reuse
+registry. The registry records total binding observations, unique retained keys
+and repeated reuse events, and is serialized in checkpoints. It is not updated
+during frozen evaluation and is not yet used as an acceptance rule; it is the
+first persistent substrate for later binding/call lifecycle decisions.
+
 Routing signatures and execution frames use the same binding resolver. The
 signature path may still pack values differently for address locality, but it
 must not reimplement ContentMatch or ContentFollow matching semantics outside

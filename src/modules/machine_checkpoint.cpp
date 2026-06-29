@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '3'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '4'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -145,6 +145,7 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.max_sparse_decisions_per_node);
     write_scalar(out, config.decode_token_ranking_during_training);
     write_scalar(out, config.record_channel_attribution);
+    write_scalar(out, config.max_binding_reuse_records_per_channel);
     write_scalar(out, config.output_tree_seed);
     write_scalar(out, config.seed);
 }
@@ -219,6 +220,7 @@ Config read_config(std::istream& in) {
     config.max_sparse_decisions_per_node = read_scalar<std::uint32_t>(in);
     config.decode_token_ranking_during_training = read_scalar<bool>(in);
     config.record_channel_attribution = read_scalar<bool>(in);
+    config.max_binding_reuse_records_per_channel = read_scalar<std::uint32_t>(in);
     config.output_tree_seed = read_scalar<std::uint64_t>(in);
     config.seed = read_scalar<std::uint64_t>(in);
     return config;
@@ -307,6 +309,7 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_vector(out, machine.channels_);
     write_vector(out, machine.hot_indexed_);
     write_vector(out, machine.parents_);
+    write_nested_vector(out, machine.binding_reuse_);
     write_vector(out, machine.output_vectors_);
     write_nested_vector(out, machine.sparse_outputs_);
     write_nested_vector(out, machine.sparse_admission_);
@@ -337,6 +340,8 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_scalar(out, machine.address_execution_frames_);
     write_scalar(out, machine.address_binding_hits_);
     write_scalar(out, machine.address_binding_misses_);
+    write_scalar(out, machine.binding_reuse_observations_);
+    write_scalar(out, machine.binding_reuse_events_);
     write_scalar(out, machine.address_binding_kind_frames_);
     write_scalar(out, machine.address_binding_kind_hits_);
     write_scalar(out, machine.address_binding_kind_distance_sum_);
@@ -379,6 +384,8 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.channels_ = read_vector<std::uint8_t>(in);
     machine.hot_indexed_ = read_vector<std::uint8_t>(in);
     machine.parents_ = read_vector<NodeId>(in);
+    machine.binding_reuse_ =
+        read_nested_vector<SparseBranchMachine::BindingReuseRecord>(in);
     machine.output_vectors_ = read_vector<float>(in);
     machine.sparse_outputs_ = read_nested_vector<detail::SparseOutputEntry>(in);
     machine.sparse_admission_ =
@@ -410,6 +417,8 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.address_execution_frames_ = read_scalar<std::uint64_t>(in);
     machine.address_binding_hits_ = read_scalar<std::uint64_t>(in);
     machine.address_binding_misses_ = read_scalar<std::uint64_t>(in);
+    machine.binding_reuse_observations_ = read_scalar<std::uint64_t>(in);
+    machine.binding_reuse_events_ = read_scalar<std::uint64_t>(in);
     machine.address_binding_kind_frames_ =
         read_scalar<std::array<std::uint64_t, kAddressBindingKindCount>>(in);
     machine.address_binding_kind_hits_ =

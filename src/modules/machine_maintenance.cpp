@@ -376,6 +376,11 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     result.address_execution_frames = address_execution_frames_;
     result.address_binding_hits = address_binding_hits_;
     result.address_binding_misses = address_binding_misses_;
+    result.binding_reuse_observations = binding_reuse_observations_;
+    for (const auto& channel_records : binding_reuse_) {
+        result.binding_reuse_unique_keys += channel_records.size();
+    }
+    result.binding_reuse_events = binding_reuse_events_;
     result.address_binding_kind_frames = address_binding_kind_frames_;
     result.address_binding_kind_hits = address_binding_kind_hits_;
     result.address_binding_kind_distance_sum =

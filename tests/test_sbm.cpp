@@ -416,6 +416,12 @@ int main() {
                resumed_diag.address_binding_kind_distance_sum);
         assert(uninterrupted_diag.address_binding_kind_pattern_span_sum ==
                resumed_diag.address_binding_kind_pattern_span_sum);
+        assert(uninterrupted_diag.binding_reuse_observations ==
+               resumed_diag.binding_reuse_observations);
+        assert(uninterrupted_diag.binding_reuse_unique_keys ==
+               resumed_diag.binding_reuse_unique_keys);
+        assert(uninterrupted_diag.binding_reuse_events ==
+               resumed_diag.binding_reuse_events);
         assert(uninterrupted.learned_address_programs() ==
                resumed.learned_address_programs());
         assert(uninterrupted.learned_channel_phase() ==
@@ -519,6 +525,9 @@ int main() {
     }
     assert(binding_kind_frames ==
            token_result.diagnostics.address_execution_frames);
+    assert(token_result.diagnostics.binding_reuse_observations > 0U);
+    assert(token_result.diagnostics.binding_reuse_unique_keys > 0U);
+    assert(token_result.diagnostics.binding_reuse_events > 0U);
     for (const auto& event : token_result.topology_events) {
         if (event.decision != sbm::TopologyDecision::Proposed) {
             assert(std::isfinite(event.credit));

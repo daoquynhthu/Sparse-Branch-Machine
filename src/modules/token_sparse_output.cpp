@@ -209,7 +209,7 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         history_.push_back(token);
     }
     maybe_begin_topology_probe(learn);
-    const auto signatures = make_signatures(history_);
+    const auto signatures = make_signatures(history_, learn);
 
     const bool can_grow = learn || config_.allow_growth_when_frozen;
     std::uint32_t created = 0U;

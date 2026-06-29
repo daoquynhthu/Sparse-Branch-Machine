@@ -1107,6 +1107,12 @@ std::string to_json(const TokenExperimentResult& result) {
         << result.diagnostics.address_binding_hits << ",\n"
         << "  \"address_binding_misses\": "
         << result.diagnostics.address_binding_misses << ",\n"
+        << "  \"binding_reuse_observations\": "
+        << result.diagnostics.binding_reuse_observations << ",\n"
+        << "  \"binding_reuse_unique_keys\": "
+        << result.diagnostics.binding_reuse_unique_keys << ",\n"
+        << "  \"binding_reuse_events\": "
+        << result.diagnostics.binding_reuse_events << ",\n"
         << "  \"address_binding_by_kind\": [";
     for (std::size_t index = 0U; index < kAddressBindingKindCount; ++index) {
         if (index != 0U) out << ", ";

@@ -90,9 +90,13 @@ bool SparseBranchMachine::channel_learning_enabled(std::size_t channel) const no
 }
 
 std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_programs(
-    std::span<const std::uint32_t> window) {
+    std::span<const std::uint32_t> window,
+    bool learn) {
     execution_frames_.clear();
     std::fill(signature_buffer_.begin(), signature_buffer_.end(), 0U);
+    if (binding_reuse_.size() < topology_.size()) {
+        binding_reuse_.resize(topology_.size());
+    }
     for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
         if (!channel_enabled(channel)) continue;
         const auto& program = topology_[channel].program;
@@ -120,6 +124,9 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
                     static_cast<double>(frame.binding_state.pattern_span);
             }
         }
+        if (learn && frame.binding_state.binding_key != 0U) {
+            observe_binding_reuse(channel, frame.binding_state.binding_key);
+        }
         structural_description_cost_ += static_cast<double>(frame.description_cost);
         structural_execution_cost_ += static_cast<double>(frame.execution_cost);
     }
@@ -128,7 +135,8 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
 }
 
 std::span<const std::uint64_t> SparseBranchMachine::make_signatures(
-    std::span<const std::uint32_t> window) {
+    std::span<const std::uint32_t> window,
+    bool learn) {
     if (config_.address_execution_mode == AddressExecutionMode::LegacySignature) {
         std::fill(signature_buffer_.begin(), signature_buffer_.end(), 0U);
         for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
@@ -144,8 +152,40 @@ std::span<const std::uint64_t> SparseBranchMachine::make_signatures(
         return std::span<const std::uint64_t>(
             signature_buffer_.data(), topology_.size());
     }
-    (void)execute_address_programs(window);
+    (void)execute_address_programs(window, learn);
     return std::span<const std::uint64_t>(signature_buffer_.data(), topology_.size());
+}
+
+void SparseBranchMachine::observe_binding_reuse(std::size_t channel,
+                                                std::uint64_t key) {
+    if (channel >= topology_.size() || key == 0U) return;
+    if (binding_reuse_.size() < topology_.size()) binding_reuse_.resize(topology_.size());
+    auto& records = binding_reuse_[channel];
+    ++binding_reuse_observations_;
+    for (auto& record : records) {
+        if (record.key != key) continue;
+        ++record.observations;
+        record.last_seen_step = total_steps_;
+        ++binding_reuse_events_;
+        return;
+    }
+    const auto cap = config_.max_binding_reuse_records_per_channel;
+    if (cap == 0U) return;
+    if (records.size() < cap) {
+        records.push_back({key, 1U, total_steps_});
+        return;
+    }
+    auto victim = std::min_element(
+        records.begin(), records.end(),
+        [](const BindingReuseRecord& left, const BindingReuseRecord& right) {
+            if (left.observations != right.observations) {
+                return left.observations < right.observations;
+            }
+            return left.last_seen_step < right.last_seen_step;
+        });
+    if (victim != records.end()) {
+        *victim = {key, 1U, total_steps_};
+    }
 }
 
 void SparseBranchMachine::quarantine_channel(std::size_t channel) {
@@ -161,6 +201,7 @@ void SparseBranchMachine::recoverably_retire_channel(std::size_t channel) {
 void SparseBranchMachine::physically_erase_channel(std::size_t channel) {
     if (channel >= topology_.size() || channel == 0U) return;
     topology_[channel].phase = ChannelPhase::Retired;
+    if (channel < binding_reuse_.size()) binding_reuse_[channel].clear();
 
     for (std::size_t slot = ids_.size(); slot-- > 0;) {
         if (channels_[slot] == channel) erase_slot(slot);
@@ -406,12 +447,15 @@ void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
     if (slot == topology_.size()) {
         if (topology_.size() >= config_.max_address_channels) return;
         topology_.push_back({});
+        binding_reuse_.push_back({});
     }
 
     const auto [parent_channel, dependency_channel] =
         resolve_channel_lineage(*proposal);
     topology_[slot] = {*proposal, ChannelPhase::Probe, 0.0F, 0.0, 0U,
                        total_steps_, parent_channel, dependency_channel};
+    if (binding_reuse_.size() <= slot) binding_reuse_.resize(slot + 1U);
+    binding_reuse_[slot].clear();
     topology_events_.push_back({total_steps_, *proposal,
                                 TopologyDecision::Proposed, 0.0F,
                                 static_cast<std::uint8_t>(slot),

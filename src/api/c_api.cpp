@@ -295,6 +295,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"max_sparse_decisions_per_node", "uint32", "64", "8", "4096", "log", true, false, false, "Hard bound on local hierarchical decisions stored by one address node."},
     {"decode_token_ranking_during_training", "bool", "false", "", "", "categorical", false, false, false, "Compute token top-k ranking metrics during training; evaluation ranking is always computed."},
     {"record_channel_attribution", "bool", "false", "", "", "categorical", false, false, false, "Record frozen-evaluation per-channel counterfactual codelength attribution."},
+    {"max_binding_reuse_records_per_channel", "uint32", "4096", "0", "65536", "log", true, false, false, "Bounded per-channel training registry size for reusable binding keys."},
     {"output_tree_seed", "uint64", "7", "0", "18446744073709551615", "linear", true, false, false, "Seed for the fixed implicit output decomposition; keep constant across model seeds."},
     {"seed", "uint64", "7", "0", "18446744073709551615", "linear", false, false, false, "Model random seed."},
 };
@@ -378,6 +379,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(max_sparse_decisions_per_node)
     SBM_SET_BOOL(decode_token_ranking_during_training)
     SBM_SET_BOOL(record_channel_attribution)
+    SBM_SET_UINT(max_binding_reuse_records_per_channel)
     SBM_SET_U64(output_tree_seed)
     SBM_SET_U64(seed)
 #undef SBM_SET_UINT
@@ -472,6 +474,8 @@ std::string config_json(const sbm::Config& c) {
         << c.decode_token_ranking_during_training << ",\n"
         << "  \"record_channel_attribution\": "
         << c.record_channel_attribution << ",\n"
+        << "  \"max_binding_reuse_records_per_channel\": "
+        << c.max_binding_reuse_records_per_channel << ",\n"
         << "  \"output_tree_seed\": " << c.output_tree_seed << ",\n"
         << "  \"seed\": " << c.seed << "\n"
         << "}\n";
@@ -488,7 +492,8 @@ std::string_view parameter_tasks(std::string_view name) {
         name == "sparse_output_beam_width" ||
         name == "max_sparse_decisions_per_node" ||
         name == "decode_token_ranking_during_training" ||
-        name == "record_channel_attribution") {
+        name == "record_channel_attribution" ||
+        name == "max_binding_reuse_records_per_channel") {
         return "token-ce";
     }
     if (name == "residual_learning_rate" ||
@@ -711,6 +716,12 @@ char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
             << ", \"address_binding_hits\": " << diagnostics.address_binding_hits
             << ", \"address_binding_misses\": "
             << diagnostics.address_binding_misses
+            << ", \"binding_reuse_observations\": "
+            << diagnostics.binding_reuse_observations
+            << ", \"binding_reuse_unique_keys\": "
+            << diagnostics.binding_reuse_unique_keys
+            << ", \"binding_reuse_events\": "
+            << diagnostics.binding_reuse_events
             << ", \"address_binding_by_kind\": [";
         for (std::size_t index = 0U; index < sbm::kAddressBindingKindCount; ++index) {
             if (index != 0U) out << ", ";

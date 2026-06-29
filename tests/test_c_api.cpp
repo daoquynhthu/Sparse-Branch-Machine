@@ -20,6 +20,8 @@ int main() {
     assert(schema.find("accepted_channel_retirement") != std::string_view::npos);
     assert(schema.find("topology_accept_uses_structural_value") !=
            std::string_view::npos);
+    assert(schema.find("max_binding_reuse_records_per_channel") !=
+           std::string_view::npos);
     assert(schema.find("search_default") != std::string_view::npos);
 
     sbm_config_handle* config = sbm_config_create();
@@ -149,6 +151,8 @@ int main() {
     assert(std::string_view(machine_diag).find("\"steps\": 193") !=
            std::string_view::npos);
     assert(std::string_view(machine_diag).find("\"address_binding_by_kind\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_diag).find("\"binding_reuse_observations\"") !=
            std::string_view::npos);
     sbm_string_free(machine_diag);
     char* machine_summary = sbm_machine_summary_json(resumed);
