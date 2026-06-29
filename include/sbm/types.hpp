@@ -384,6 +384,7 @@ struct Diagnostics {
     std::uint64_t probe_channels{};
     std::uint64_t active_channels{};
     std::uint64_t retired_channels{};
+    std::uint64_t dependency_blocked_channels{};
     std::uint64_t address_execution_frames{};
     std::uint64_t address_binding_hits{};
     std::uint64_t address_binding_misses{};

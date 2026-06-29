@@ -1386,3 +1386,17 @@ own direct signature.
 
 This preserves the producer/consumer contract introduced for ContentMatch and
 ContentFollow without adding new operators or tuning admission thresholds.
+
+## 2026-06-29 — effective routing diagnostics and lifecycle control surface
+
+The machine now exposes explicit lifecycle control through
+`retire_channel(channel, policy)` in C++, `sbm_machine_retire_channel` in the C
+ABI and `Machine.retire_channel()` in Python. This is the counterpart to the
+previous restore operation and lets external controllers mask committed
+channels without relying on automatic prune timing.
+
+Diagnostics now report `dependency_blocked_channels`. Machine summaries expose
+`learned_channel_effective_enabled`, and each dependency-graph entry reports
+`effective_enabled` and `dependency_available`. This separates logical channel
+phase from actual routing eligibility, which is required once accepted callers
+can depend on masked producers.

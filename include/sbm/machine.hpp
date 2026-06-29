@@ -30,6 +30,8 @@ public:
                                        bool learn = true);
     void reset_sequence();
     void freeze_topology();
+    [[nodiscard]] bool retire_channel(std::size_t channel,
+                                      AcceptedChannelRetirement policy);
     [[nodiscard]] bool restore_channel(std::size_t channel);
     [[nodiscard]] std::size_t prune(std::uint32_t min_visits = 8,
                                     float utility_threshold = -0.05F);
@@ -49,6 +51,8 @@ public:
     [[nodiscard]] std::vector<AddressProgram> learned_address_programs() const;
     [[nodiscard]] std::vector<float> learned_channel_credit() const;
     [[nodiscard]] std::vector<std::uint8_t> learned_channel_phase() const;
+    [[nodiscard]] std::vector<std::uint8_t>
+        learned_channel_effective_enabled() const;
     [[nodiscard]] std::vector<std::uint8_t> learned_channel_parent() const;
     [[nodiscard]] std::vector<std::uint8_t> learned_channel_dependency() const;
     [[nodiscard]] std::vector<std::uint64_t> learned_channel_generation() const;

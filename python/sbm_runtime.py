@@ -181,6 +181,12 @@ class Runtime:
         lib.sbm_machine_step_token.restype = ctypes.c_int
         lib.sbm_machine_reset_sequence.argtypes = [ctypes.c_void_p]
         lib.sbm_machine_freeze_topology.argtypes = [ctypes.c_void_p]
+        lib.sbm_machine_retire_channel.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+        ]
+        lib.sbm_machine_retire_channel.restype = ctypes.c_int
         lib.sbm_machine_restore_channel.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
         lib.sbm_machine_restore_channel.restype = ctypes.c_int
         lib.sbm_machine_diagnostics_json.argtypes = [ctypes.c_void_p]
@@ -767,6 +773,31 @@ class Machine:
 
     def freeze_topology(self) -> None:
         self.runtime.lib.sbm_machine_freeze_topology(self.pointer)
+
+    @staticmethod
+    def _retirement_policy_value(policy: str | int) -> int:
+        if isinstance(policy, str):
+            values = {
+                "Preserve": 0,
+                "Quarantine": 1,
+                "PhysicalErase": 2,
+                "RecoverableRetire": 3,
+            }
+            try:
+                return values[policy]
+            except KeyError as error:
+                raise ValueError(f"unknown retirement policy: {policy}") from error
+        return int(policy)
+
+    def retire_channel(self, channel: int, policy: str | int) -> bool:
+        status = self.runtime.lib.sbm_machine_retire_channel(
+            self.pointer,
+            channel,
+            self._retirement_policy_value(policy),
+        )
+        if status < 0:
+            raise self.runtime._error("retire channel")
+        return bool(status)
 
     def restore_channel(self, channel: int) -> bool:
         status = self.runtime.lib.sbm_machine_restore_channel(self.pointer, channel)

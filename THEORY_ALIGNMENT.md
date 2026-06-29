@@ -165,6 +165,10 @@ Routing eligibility now also respects the same contract: a dependent caller is
 not enabled when its direct producer channel is masked. This prevents typed
 calls from becoming untyped fallback signatures during quarantine or
 recoverable retirement.
+The implementation now reports lifecycle phase separately from effective
+routing eligibility. This distinction matters for compositional programs: an
+accepted caller can remain a committed structure while temporarily unavailable
+because a required producer is masked.
 
 ## 4. Lifecycle challenge under compositional programs
 
@@ -256,6 +260,7 @@ It is justified to say that the repository contains:
   attribution counters;
 - typed address-program input/output state contracts;
 - dependency-aware routing eligibility for typed callers;
+- separate lifecycle phase and effective routing diagnostics;
 - first-class dependency edge summaries for rollback-oriented audit.
 - explicit restore of masked committed channels while preserving channel
   generation.

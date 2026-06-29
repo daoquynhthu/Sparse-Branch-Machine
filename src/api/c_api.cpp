@@ -712,6 +712,22 @@ void sbm_machine_freeze_topology(sbm_machine_handle* machine) {
     if (machine != nullptr) machine->value.freeze_topology();
 }
 
+int sbm_machine_retire_channel(sbm_machine_handle* machine,
+                               uint32_t channel,
+                               uint32_t retirement_policy) {
+    return guarded([&] {
+        if (machine == nullptr) throw std::invalid_argument("machine is null");
+        if (retirement_policy >
+            static_cast<uint32_t>(
+                sbm::AcceptedChannelRetirement::RecoverableRetire)) {
+            throw std::invalid_argument("invalid retirement policy");
+        }
+        const auto policy =
+            static_cast<sbm::AcceptedChannelRetirement>(retirement_policy);
+        return machine->value.retire_channel(channel, policy) ? 1 : 0;
+    });
+}
+
 int sbm_machine_restore_channel(sbm_machine_handle* machine, uint32_t channel) {
     return guarded([&] {
         if (machine == nullptr) throw std::invalid_argument("machine is null");
@@ -766,6 +782,8 @@ char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
             << ", \"topology_accepted\": " << diagnostics.topology_accepted
             << ", \"topology_rejected\": " << diagnostics.topology_rejected
             << ", \"topology_pruned\": " << diagnostics.topology_pruned
+            << ", \"dependency_blocked_channels\": "
+            << diagnostics.dependency_blocked_channels
             << "}";
         return duplicate_string(out.str());
     });
@@ -778,6 +796,8 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
         const auto lags = machine->value.learned_address_lags();
         const auto credit = machine->value.learned_channel_credit();
         const auto phase = machine->value.learned_channel_phase();
+        const auto effective_enabled =
+            machine->value.learned_channel_effective_enabled();
         const auto parent = machine->value.learned_channel_parent();
         const auto dependency = machine->value.learned_channel_dependency();
         const auto generation = machine->value.learned_channel_generation();
@@ -816,6 +836,11 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
         for (std::size_t i = 0; i < phase.size(); ++i) {
             if (i != 0U) out << ", ";
             out << static_cast<unsigned>(phase[i]);
+        }
+        out << "], \"learned_channel_effective_enabled\": [";
+        for (std::size_t i = 0; i < effective_enabled.size(); ++i) {
+            if (i != 0U) out << ", ";
+            out << static_cast<unsigned>(effective_enabled[i]);
         }
         out << "], \"learned_channel_parent\": [";
         for (std::size_t i = 0; i < parent.size(); ++i) {
@@ -881,6 +906,17 @@ char* sbm_machine_summary_json(const sbm_machine_handle* machine) {
                 << (i < dependency_edge_kind.size()
                         ? static_cast<unsigned>(dependency_edge_kind[i])
                         : static_cast<unsigned>(sbm::AddressGraphEdgeKind::None))
+                << ",\"effective_enabled\":"
+                << (i < effective_enabled.size()
+                        ? static_cast<unsigned>(effective_enabled[i])
+                        : 0U)
+                << ",\"dependency_available\":"
+                << (i < dependency.size() &&
+                    dependency[i] != sbm::kInvalidChannel &&
+                    dependency[i] < effective_enabled.size()
+                        ? static_cast<unsigned>(
+                              effective_enabled[dependency[i]])
+                        : 1U)
                 << ",\"input_state\":"
                 << static_cast<unsigned>(
                        sbm::address_program_input_state(programs[i]))

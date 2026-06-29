@@ -93,6 +93,8 @@ int main() {
     assert(token_view.find("\"quarantined_channels\"") != std::string_view::npos);
     assert(token_view.find("\"recoverable_retired_channels\"") !=
            std::string_view::npos);
+    assert(token_view.find("\"dependency_blocked_channels\"") !=
+           std::string_view::npos);
     assert(token_view.find("\"structural_value_nats\"") != std::string_view::npos);
     assert(token_view.find("\"structural_description_cost\"") !=
            std::string_view::npos);
@@ -146,6 +148,7 @@ int main() {
         assert(std::abs(left_stats.cross_entropy - source_stats.cross_entropy) < 1e-6F);
     }
     sbm_machine_freeze_topology(resumed);
+    assert(sbm_machine_retire_channel(resumed, 0U, 3U) == 0);
     assert(sbm_machine_restore_channel(resumed, 0U) == 0);
     assert(sbm_machine_step_token(resumed, 1U, 3U, 0, &source_stats) == 0);
     assert(source_stats.channel_credit_count <= 8U);
@@ -171,12 +174,17 @@ int main() {
            std::string_view::npos);
     assert(std::string_view(machine_diag).find("\"binding_reuse_observations\"") !=
            std::string_view::npos);
+    assert(std::string_view(machine_diag).find("\"dependency_blocked_channels\"") !=
+           std::string_view::npos);
     sbm_string_free(machine_diag);
     char* machine_summary = sbm_machine_summary_json(resumed);
     assert(machine_summary != nullptr);
     assert(std::string_view(machine_summary).find("\"learned_address_programs\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"learned_channel_phase\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find(
+               "\"learned_channel_effective_enabled\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"topology_events\"") !=
            std::string_view::npos);
@@ -217,6 +225,10 @@ int main() {
     assert(std::string_view(machine_summary).find("\"channel_generation\"") !=
            std::string_view::npos);
     assert(std::string_view(machine_summary).find("\"dependency_edge_kind\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"effective_enabled\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_summary).find("\"dependency_available\"") !=
            std::string_view::npos);
     sbm_string_free(machine_summary);
     sbm_machine_destroy(left);

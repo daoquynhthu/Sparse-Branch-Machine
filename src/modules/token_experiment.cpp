@@ -1372,6 +1372,8 @@ std::string to_json(const TokenExperimentResult& result) {
         << "  \"topology_rejected\": " << result.diagnostics.topology_rejected << ",\n"
         << "  \"topology_pruned\": " << result.diagnostics.topology_pruned << ",\n"
         << "  \"active_channels\": " << result.diagnostics.active_channels << ",\n"
+        << "  \"dependency_blocked_channels\": "
+        << result.diagnostics.dependency_blocked_channels << ",\n"
         << "  \"probe_channels\": " << result.diagnostics.probe_channels << ",\n"
         << "  \"address_execution_frames\": "
         << result.diagnostics.address_execution_frames << ",\n"

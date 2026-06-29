@@ -449,6 +449,8 @@ std::string to_json(const ExperimentResult& result) {
         << "  \"topology_rejected\": " << result.diagnostics.topology_rejected << ",\n"
         << "  \"topology_pruned\": " << result.diagnostics.topology_pruned << ",\n"
         << "  \"active_channels\": " << result.diagnostics.active_channels << ",\n"
+        << "  \"dependency_blocked_channels\": "
+        << result.diagnostics.dependency_blocked_channels << ",\n"
         << "  \"probe_channels\": " << result.diagnostics.probe_channels << ",\n"
         << "  \"simd_enabled\": " << (result.diagnostics.simd_enabled ? "true" : "false") << ",\n";
     emit_metrics("train", result.train);

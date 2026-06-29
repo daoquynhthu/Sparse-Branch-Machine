@@ -724,6 +724,24 @@ int main() {
     }
     assert(saw_follow_frame);
     assert(saw_matched_call_frame);
+    assert(lineage_machine.retire_channel(
+        content_match_channel,
+        sbm::AcceptedChannelRetirement::RecoverableRetire));
+    const auto masked_phase = lineage_machine.learned_channel_phase();
+    const auto masked_enabled =
+        lineage_machine.learned_channel_effective_enabled();
+    assert(masked_phase[content_match_channel] ==
+           static_cast<std::uint8_t>(sbm::ChannelPhase::RecoverableRetired));
+    assert(masked_phase[content_follow_channel] ==
+           static_cast<std::uint8_t>(sbm::ChannelPhase::Active));
+    assert(masked_enabled[content_match_channel] == 0U);
+    assert(masked_enabled[content_follow_channel] == 0U);
+    assert(lineage_machine.diagnostics().dependency_blocked_channels >= 1U);
+    assert(lineage_machine.restore_channel(content_match_channel));
+    const auto restored_enabled =
+        lineage_machine.learned_channel_effective_enabled();
+    assert(restored_enabled[content_match_channel] == 1U);
+    assert(restored_enabled[content_follow_channel] == 1U);
 
     sbm::Config fixed_topology_config = token_config;
     fixed_topology_config.adaptive_topology = false;

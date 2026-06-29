@@ -76,8 +76,9 @@ with tempfile.TemporaryDirectory() as directory:
                         left_stats["cross_entropy"],
                         resumed_stats["cross_entropy"],
                         abs_tol=1e-6,
-                    )
+                )
                 resumed.freeze_topology()
+                assert resumed.retire_channel(0, "RecoverableRetire") is False
                 assert resumed.restore_channel(0) is False
                 eval_stats = resumed.step_token(1, 3, learn=False)
                 assert "channel_credit" in eval_stats
@@ -92,9 +93,11 @@ with tempfile.TemporaryDirectory() as directory:
                 assert "channel_dependency_binding_key" in eval_stats
                 assert "channel_subset_available" in eval_stats
                 assert resumed.diagnostics()["steps"] == 193
+                assert "dependency_blocked_channels" in resumed.diagnostics()
                 summary = resumed.summary()
                 assert "learned_address_programs" in summary
                 assert "learned_channel_phase" in summary
+                assert "learned_channel_effective_enabled" in summary
             finally:
                 resumed.close()
         finally:

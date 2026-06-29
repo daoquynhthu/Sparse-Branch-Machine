@@ -1054,6 +1054,15 @@ only while its direct producer channel is Seed, Probe or Active. If the producer
 is masked by quarantine or recoverable retirement, the caller is masked too
 rather than executing as an untyped fallback signature.
 
+**2026-06-29 effective-routing diagnostics completion:** The lifecycle control
+surface is now symmetric enough for external controllers: C++, C and Python can
+retire a channel under Quarantine, RecoverableRetire or PhysicalErase and can
+restore recoverable/quarantined channels. Diagnostics report
+`dependency_blocked_channels`; machine summaries expose
+`learned_channel_effective_enabled`, per-channel `effective_enabled` and
+`dependency_available`. Phase now means committed lifecycle state, while
+effective-enabled means actual routing availability.
+
 ### Task 7: Introduce Structural Value Gates
 
 **Files:**

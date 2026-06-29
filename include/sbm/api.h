@@ -105,6 +105,10 @@ SBM_API int sbm_machine_step_token(
     sbm_step_stats* stats);
 SBM_API void sbm_machine_reset_sequence(sbm_machine_handle* machine);
 SBM_API void sbm_machine_freeze_topology(sbm_machine_handle* machine);
+SBM_API int sbm_machine_retire_channel(
+    sbm_machine_handle* machine,
+    uint32_t channel,
+    uint32_t retirement_policy);
 SBM_API int sbm_machine_restore_channel(sbm_machine_handle* machine, uint32_t channel);
 SBM_API char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine);
 SBM_API char* sbm_machine_summary_json(const sbm_machine_handle* machine);

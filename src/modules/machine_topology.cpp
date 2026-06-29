@@ -281,6 +281,46 @@ void SparseBranchMachine::recoverably_retire_channel(std::size_t channel) {
     topology_[channel].phase = ChannelPhase::RecoverableRetired;
 }
 
+bool SparseBranchMachine::retire_channel(
+    std::size_t channel,
+    AcceptedChannelRetirement policy) {
+    if (channel >= topology_.size() || channel == 0U ||
+        policy == AcceptedChannelRetirement::Preserve) {
+        return false;
+    }
+    auto& state = topology_[channel];
+    if (state.phase != ChannelPhase::Seed &&
+        state.phase != ChannelPhase::Probe &&
+        state.phase != ChannelPhase::Active) {
+        return false;
+    }
+    const auto reuse_summary = binding_reuse_summary(channel);
+    const double reuse_bonus = binding_reuse_bonus(reuse_summary);
+    topology_events_.push_back({total_steps_, state.generation,
+                                state.program,
+                                TopologyDecision::Pruned,
+                                state.credit_ema + static_cast<float>(reuse_bonus),
+                                state.credit_ema,
+                                static_cast<float>(reuse_bonus),
+                                reuse_summary.observations,
+                                reuse_summary.unique_keys,
+                                reuse_summary.events,
+                                static_cast<std::uint8_t>(channel),
+                                state.parent_channel,
+                                state.dependency_channel,
+                                state.parent_edge_kind,
+                                state.dependency_edge_kind});
+    if (policy == AcceptedChannelRetirement::Quarantine) {
+        quarantine_channel(channel);
+    } else if (policy == AcceptedChannelRetirement::RecoverableRetire) {
+        recoverably_retire_channel(channel);
+    } else {
+        physically_erase_channel(channel);
+    }
+    ++topology_pruned_;
+    return true;
+}
+
 bool SparseBranchMachine::restore_channel(std::size_t channel) {
     if (channel >= topology_.size() || channel == 0U) return false;
     auto& state = topology_[channel];
@@ -683,6 +723,16 @@ std::vector<std::uint8_t> SparseBranchMachine::learned_channel_phase() const {
     result.reserve(topology_.size());
     for (const auto& state : topology_) {
         result.push_back(static_cast<std::uint8_t>(state.phase));
+    }
+    return result;
+}
+
+std::vector<std::uint8_t>
+SparseBranchMachine::learned_channel_effective_enabled() const {
+    std::vector<std::uint8_t> result;
+    result.reserve(topology_.size());
+    for (std::size_t channel = 0U; channel < topology_.size(); ++channel) {
+        result.push_back(channel_enabled(channel) ? 1U : 0U);
     }
     return result;
 }

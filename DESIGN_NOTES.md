@@ -266,6 +266,13 @@ dependency channel is currently Seed, Probe or Active. This prevents a dependent
 caller from silently degrading into a direct signature path after its producer
 has been quarantined or recoverably retired.
 
+Lifecycle phase and routing eligibility are separate observables. A dependent
+caller may remain logically Active while being effectively disabled because its
+producer is masked. Diagnostics therefore report
+`dependency_blocked_channels`, and machine summaries expose
+`learned_channel_effective_enabled`, per-channel `effective_enabled` and
+`dependency_available`.
+
 Matched binding states also carry a stable `binding_key`. The key intentionally
 excludes absolute matched index and matched distance, so a content binding can
 be recognized as the same reusable relation when it appears at a different
