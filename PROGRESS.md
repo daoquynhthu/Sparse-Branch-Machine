@@ -8,126 +8,51 @@
 持续进行正式的工程推进，保持和计划文件同步，饱和式推进，保持连贯性。
 基础设施充分时避免保守增量，允许临时粗糙边缘，但最终状态必须经过验证。
 
+当前重点：在 `adaptive-computation-upgrade` 分支上执行升级实验方案，已完成 U2.1/U1.1/U1.2 并验证 10M 效果。
+
 ## Branch state
 
-- **Branch:** `theory-alignment-v9` (ahead origin by 15 commits)
-- **Working tree:** clean (only `.idea/` untracked)
-- **Last commit:** `2c229cf feat: restore dependency closure` (2026-06-29)
+- **Branch:** `adaptive-computation-upgrade` (created from `theory-alignment-v9`)
+- **Status:** ahead of origin, uncommitted changes from baselines/ remain untracked
+- **Last commits:**
+  - `bfc0af3` research: 10M validation and presets for upgrade-v1
+  - `6a89d21` fix: Adam bias correction for sparse decision momentum
+  - `3e9b661` feat: config presets with r3-baseline and upgrade-v1
+  - `59c1955` feat: iterative routing refinement with expanded neighbor radius
+  - `81abd27` feat: adaptive beam width with confidence-based truncation
+  - `8094de0` feat: per-entry Adam-like momentum for sparse decision logits
 
-## Completed: Neuronal Address Semantics (2026-06-27 plan)
+## Completed: Adaptive Computation Upgrade (plan `2026-06-30-adaptive-computation-upgrade.md`)
 
-**Plan:** `docs/superpowers/plans/2026-06-27-neuronal-address-semantics.md`
-**Status:** All 9 tasks complete. The plan also accumulated extensive
-beyond-plan work documented as "completion" notes in the plan file.
+### Implemented
 
-### The 15 commits on theory-alignment-v9
+| Item | Status | Commit |
+|---|---|---|
+| U2.1 Per-entry Adam-like momentum | Done | `8094de0` |
+| U1.1 Adaptive beam width | Done | `81abd27` |
+| U1.2 Iterative refinement | Done | `59c1955` |
+| Config presets (`r3-baseline`, `upgrade-v1`, `upgrade-v1-adaptive`) | Done | `3e9b661` |
+| Adam bias correction fix | Done | `6a89d21` |
+| 10M validation and result report | Done | `bfc0af3` |
 
-| Commit | Description |
-|---|---|
-| `a962bca` | research: run reuse-aware 1m validation |
-| `9c3a497` | feat: condition callers on dependency bindings |
-| `f9e89b6` | feat: attribute dependency call usage |
-| `f2a4e82` | feat: type address program IO contracts |
-| `dd42aa4` | feat: enforce typed dependency calls |
-| `f6bd7ca` | feat: version dependency graph edges |
-| `a5d0102` | feat: emit dependency edge graph |
-| `123031e` | feat: restore recoverable topology channels |
-| `4aa1b13` | fix: enforce dependency-aware channel enablement |
-| `572c51e` | feat: expose effective channel lifecycle state |
-| `7eb7fec` | feat: persist effective channel state in experiments |
-| `00aa383` | feat: annotate dependency graph effective state |
-| `353691b` | feat: name topology lifecycle decisions |
-| `1f95358` | feat: summarize direct caller availability |
-| `2c229cf` | feat: restore dependency closure |
+### 10M FineWeb-Edu Results
 
-### What was built (summary)
+| Configuration | eval NLL | Topology accepted | Bytes | Tok/s |
+|---|---:|---:|---:|---:|
+| r3-baseline | 6.3412 | 5 | 2.16 GB | 15,756 |
+| **upgrade-v1 (momentum)** | **6.2305 ± 0.0001** | 1 | 895 MB | 17,000 |
+| upgrade-v1-adaptive | 6.2559 ± 0.0002 | 1 | 896 MB | 12,444 |
 
-The address-semantics framework replaced one-shot sparse address signatures
-with an executable, auditable address-program system:
+Key finding: **momentum with bias correction improves NLL by 0.111 nats/token**, reduces model size by 59%, and increases throughput by 8%. Adaptive beam width + refinement are neutral/slightly negative in the current configuration.
 
-- **Explicit address execution:** AddressProgram runs through an interpreter
-  producing frames with operation, source, binding, signature, cost and
-  dependency fields (Tuple, DeltaMod, ContentMatch, ContentFollow).
-- **Persistent lifecycle:** Accepted structures use quarantine, masking and
-  recoverable retirement instead of physical deletion. Channels have explicit
-  phases (Seed -> Probe -> Active -> Quarantined/RecoverableRetired/PhysicalErase).
-- **Dependency-aware attribution:** Callers and prerequisites can be ablated
-  separately. The dependency graph carries edge kinds, caller/dependency
-  generations, binding keys, and call evidence.
-- **Structural value gates:** Accepted topology decisions report description
-  cost, execution cost, and structural value (credit minus costs). An optional
-  gate flag switches acceptance to use structural value.
-- **Graph-level rollback:** `restore_dependency_closure(channel)` restores a
-  producer and its recoverably masked direct callers.
-  `effective_direct_caller_count` and `blocked_direct_caller_count` audit how
-  many committed consumers are currently routable vs masked.
-- **Checkpoint/resume:** Exact model-state and corpus training-run checkpoint
-  with resumable evaluation. Multi-seed 10M/1M validation and held-out test
-  transfer passed.
+Full report: `research_results/adaptive_computation_upgrade_10m_20260630.md`
 
-### Validation gates passed (2026-06-29, re-verified 2026-06-30)
-
-- 10M/1M multi-seed validation: passed (2026-06-30 re-verification: mean eval NLL 6.341)
-- 10M/1M held-out test transfer: passed (2026-06-28)
-- Default description-only structural-value admission: passed
-- Training ranking decode removed from hot path
-- `ctest --test-dir build-fast --output-on-failure`: 15/15 passed
-- `python tests\test_python_api.py`: passed
-- `git diff --check`: clean
-- Dependency graph: 0 blocked callers, all channels effective-enabled
-- 2026-06-30 re-verification improved eval NLL by ~0.025 over 2026-06-28 baseline
-
-## Next: R3 100M Heterogeneous Stream
+## Next: 100M Heterogeneous Stream (R3) with upgrade-v1
 
 **Plan:** `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md`
-**Status:** Not started.
 
-### Prerequisites
+Use the proven `upgrade-v1` preset on the 100M FineWeb-Edu stream gate. Requires manifest construction first.
 
-- Build or import a true document-level 100M training manifest
-  (`sbm-corpus-manifest` with ~100M train + sealed validation/test slices)
-- Do not repurpose validation or test shards as training data
-- Run a short throughput/sizing gate before full 100M multi-seed validation
-- Keep 10M/1M results as the R3 admission baseline
+## Open Theoretical Gates
 
-### Corpus inventory
-
-    E:\SPM_EXPERIMENTS\fineweb_edu_v1_r1_train10m_eval1m
-      train:      9,989,918 examples
-      validation:   998,482 examples
-      test:         998,429 examples
-
-    E:\SPM_EXPERIMENTS\fineweb_edu_v1_r1_10m
-      train:      9,989,918 examples
-      validation: 88,064,143 examples
-      test:       87,202,822 examples
-
-There is no local 100M training manifest yet. R3 starts with manifest
-construction, not model training.
-
-## Open theoretical gates
-
-From `THEORY_ALIGNMENT.md` Section 8, in order:
-
-1. Establish real-corpus baselines and failure diagnostics — **10M done, 100M pending**
-2. Express structural value in prequential codelength and explicit complexity — **done**
-3. Identify failures not explained by bounded positional programs — **pending R3**
-4. Propose one minimal content-conditioned primitive — **partially implemented**
-5. Extend lineage and dependency-aware ablation to typed state, reusable caller
-   graphs and rollback — **explicit closure restore implemented**
-6. Test transfer across documents, shards and seeds — **10M verified, 100M pending**
-7. Only then consider composition, calls or deeper program graphs — **not started**
-
-## Build and test commands
-
-    cmake --build build-fast --config Release
-    ctest --test-dir build-fast --output-on-failure
-    python tests\test_python_api.py --library E:\SPM\build-fast\libsbm_api.dll
-    git diff --check -- . ':!.idea'
-
-## Interruption note
-
-The previous session (Codex, gpt-5.5) was interrupted on 2026-06-29 after
-commit `2c229cf` when the user lost OpenAI account access. No uncommitted
-changes remain. The active objective was carried over from the session's
-persistent goal.
+Same as before, with momentum validated on 10M and transfer to 100M pending.
