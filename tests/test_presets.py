@@ -17,11 +17,15 @@ def main() -> None:
 
     upgrade = apply_preset("upgrade-v1")
     assert upgrade["use_momentum"] is True
-    assert upgrade["beam_width_min"] == 2
-    assert upgrade["beam_width"] == 8
-    assert upgrade["max_refinement_rounds"] == 2
+    assert "beam_width_min" not in upgrade
 
-    overridden = apply_preset("upgrade-v1", {"beam_width": 12})
+    adaptive = apply_preset("upgrade-v1-adaptive")
+    assert adaptive["use_momentum"] is True
+    assert adaptive["beam_width_min"] == 2
+    assert adaptive["beam_width"] == 8
+    assert adaptive["max_refinement_rounds"] == 2
+
+    overridden = apply_preset("upgrade-v1-adaptive", {"beam_width": 12})
     assert overridden["beam_width"] == 12
     assert overridden["use_momentum"] is True
 

@@ -22,6 +22,21 @@ PRESETS: dict[str, dict[str, Any]] = {
         "topology_accept_uses_structural_value": True,
     },
     "upgrade-v1": {
+        # Proven 10M improvement over r3-baseline: -0.111 nats/token.
+        # Adam-like momentum on sparse decisions with bias correction.
+        "adaptive_topology": True,
+        "address_lags": 1,
+        "topology_enable_delta": False,
+        "max_sparse_decisions_per_node": 512,
+        "classification_learning_rate": 0.8,
+        "classification_mature_learning_rate": 0.2,
+        "record_channel_attribution": True,
+        "topology_accept_uses_structural_value": True,
+        "use_momentum": True,
+    },
+    "upgrade-v1-adaptive": {
+        # Experimental: adds adaptive beam width and iterative refinement.
+        # 10M result is slightly worse than upgrade-v1 but still beats baseline.
         "adaptive_topology": True,
         "address_lags": 1,
         "topology_enable_delta": False,

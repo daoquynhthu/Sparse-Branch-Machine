@@ -207,39 +207,46 @@ entry.logit = (1-logit_decay)*entry.logit + rate*(target - probability);
 
 **Expected:** +0.02-0.05 nats
 
-### Phase U4: Scaling and Validation
+## Phase U4: Scaling and Validation
 
-#### U4.1: 10M Multi-Seed Validation
+### U4.1: 10M FineWeb-Edu Validation
 
-- Run best configuration from U1-U3 on 10M FineWeb-Edu
-- 3 seeds (7, 11, 19)
-- Compare against baseline (6.341) and Transformer (5.527)
-- Report: eval NLL, PPL, avg_active, avg_candidates, throughput, memory
+- [x] Establish r3-baseline on 10M/1M: **6.3412 nats/token**
+- [x] Validate momentum-only (3 seeds): **6.2305 ± 0.0001 nats/token**
+- [x] Validate upgrade-v1-adaptive (3 seeds): **6.2559 ± 0.0002 nats/token**
+- [x] Document results in `research_results/adaptive_computation_upgrade_10m_20260630.md`
 
-#### U4.2: 100M Scaling Gate
+### Key Findings
 
-- Run on 100M FineWeb-Edu (D2)
-- Verify bounded active work: N_active(t) does not grow linearly with N_nodes(t)
-- Report node/edge/active/candidates curves
+| Configuration | eval NLL | Topology accepted | Bytes | Tok/s |
+|---|---:|---:|---:|---:|
+| r3-baseline | 6.3412 | 5 | 2.16 GB | 15,756 |
+| **upgrade-v1** | **6.2305** | 1 | 895 MB | 17,000 |
+| upgrade-v1-adaptive | 6.2559 | 1 | 896 MB | 12,444 |
 
-#### U4.3: Honest Comparison
+- **Adam bias correction is required.** Without it, momentum suppresses topology growth and degrades NLL to 6.414.
+- **Momentum is the dominant improvement** (-0.111 nats, 59% smaller, 8% faster).
+- **Adaptive beam width + refinement are neutral/slightly negative** in the current configuration.
 
-- Per Agent.md §10: state what was beaten, what remains unknown
-- Compare at matched tokens/second if possible
-- Document resource cost (CPU time, memory, energy)
+### U4.2: Preset Update
+
+Based on validation, `upgrade-v1` preset was simplified to momentum on top of r3-baseline. The full adaptive configuration was moved to `upgrade-v1-adaptive` for further tuning.
+
+### U4.3: Next Step
+
+Run `upgrade-v1` on the 100M heterogeneous stream gate (R3) to test transfer and scaling.
+
+---
 
 ## Expected Cumulative Impact
 
-| Phase | Expected Improvement | Cumulative NLL |
+| Phase | Expected Improvement | Actual (10M) |
 |---|---|---|
 | Baseline | — | 6.341 |
-| Phase 0 (Quick Wins) | +0.15-0.35 | 5.99-6.19 |
-| Phase U1 (Adaptive Computation) | +0.15-0.35 | 5.64-6.04 |
-| Phase U2 (Stronger Optimization) | +0.13-0.28 | 5.36-5.91 |
-| Phase U3 (Deeper Context) | +0.07-0.15 | 5.21-5.84 |
+| U2.1 (momentum) | +0.1-0.2 | **+0.111** |
+| U1.1 + U1.2 (adaptive) | +0.05-0.15 | -0.026 (when combined) |
+| **upgrade-v1** | — | **6.231** |
 
-**Optimistic:** 5.2-5.5 (near or at Transformer level)
-**Conservative:** 5.7-6.0 (significant narrowing but not closure)
 
 ## Implementation Order and Dependencies
 
