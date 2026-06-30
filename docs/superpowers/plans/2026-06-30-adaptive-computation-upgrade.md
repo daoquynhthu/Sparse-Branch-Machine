@@ -26,6 +26,10 @@ The Transformer small (10.5M params) achieves 5.527 nats on 10M FineWeb-Edu, bea
 
 ### Phase 0: Quick Wins (No Architectural Changes)
 
+- [ ] 0.1 Multi-epoch training
+- [ ] 0.2 beam_width sweep
+- [ ] 0.3 LR tuning
+
 **Hypothesis:** Multi-epoch training and hyperparameter tuning can immediately improve NLL, validating the optimizer bottleneck hypothesis.
 
 | Experiment | Change | Expected |
@@ -45,19 +49,29 @@ The Transformer small (10.5M params) achieves 5.527 nats on 10M FineWeb-Edu, bea
 
 #### U1.1: Adaptive Beam Width
 
-**Current:** `select_route()` in `machine_routing.cpp:152,168` uses `config_.beam_width` as hard cap.
+- [x] Add `beam_width_min` and `confidence_threshold` to `Config`
+- [x] Implement truncation logic in `select_route()` after responsibility assignment
+- [x] Register params in C API
+- [x] Update checkpoint format
+- [x] Write test `verify_adaptive_beam_width`
+
+**Current:** `select_route()` in `machine_routing.cpp` uses `config_.beam_width` as hard cap.
 
 **Change:**
-- After Phase 1 (exact-address guarantees), compute max responsibility of selected nodes
-- If max_responsibility > `confidence_threshold` (0.65), stop at `beam_width_min` (3)
-- Otherwise, continue filling to `beam_width_max` (16)
+- Select up to `beam_width` nodes as before
+- Assign responsibilities
+- If `selected.size() > beam_width_min` and max responsibility >= `confidence_threshold`, truncate to top `beam_width_min` nodes
+- Re-assign responsibilities
 
 **Files:**
-- Create: `types.hpp` additions: `beam_width_min{3}`, `beam_width_max{16}`, `confidence_threshold{0.65F}`
-- Modify: `machine_routing.cpp` Phase 2 termination logic
+- Modify: `types.hpp` additions: `beam_width_min{6}`, `confidence_threshold{0.8F}`
+- Modify: `machine_routing.cpp` truncation logic after `assign_responsibilities()`
 - Modify: `c_api.cpp` parameter registry
+- Modify: `machine_checkpoint.cpp` format fields
 
-**Constraint compliance (§4.2):** Average active nodes remain O(1) because most tokens are predictable (high confidence). Only uncertain tokens expand to 16.
+**Status:** Implemented in commit `81abd27`.
+
+**Constraint compliance (§4.2):** Average active nodes remain O(1) because truncation keeps the active set at `beam_width_min` on confident tokens. `beam_width` is still a fixed upper bound.
 
 **Expected:** +0.1-0.2 nats
 
@@ -86,6 +100,13 @@ The Transformer small (10.5M params) achieves 5.527 nats on 10M FineWeb-Edu, bea
 
 #### U2.1: Per-Node Momentum and Adaptive Learning Rate
 
+- [x] Add `momentum` and `variance` to `SparseOutputEntry`
+- [x] Add `use_momentum`, `momentum_beta1`, `momentum_beta2`, `momentum_eps` to `Config`
+- [x] Implement conditional Adam-like update in `token_sparse_output.cpp`
+- [x] Register params in C API
+- [x] Bump checkpoint magic `SBMCKPT6` → `SBMCKPT7`
+- [x] Write test `verify_momentum_learning`
+
 **Current:** `token_sparse_output.cpp:607-608`:
 ```cpp
 entry.logit = (1-logit_decay)*entry.logit + rate*(target - probability);
@@ -93,7 +114,7 @@ entry.logit = (1-logit_decay)*entry.logit + rate*(target - probability);
 
 **Change:**
 - Add per-entry `momentum` and `variance` buffers
-- Replace update with Adam-like rule:
+- Replace update with Adam-like rule when `use_momentum` is true:
   ```cpp
   float grad = target_right - probability_right;
   entry.momentum = beta1 * entry.momentum + (1-beta1) * grad;
@@ -103,14 +124,18 @@ entry.logit = (1-logit_decay)*entry.logit + rate*(target - probability);
   ```
 
 **Files:**
-- Modify: `types.hpp`: SparseEntry struct adds `float momentum{0.0F}`, `float variance{0.0F}`
-- Modify: `token_sparse_output.cpp`: learning update
-- Modify: `machine_storage.cpp`: allocate momentum/variance arrays
-- Modify: `c_api.cpp`: register beta1, beta2, eps parameters
+- Modify: `include/sbm/detail/sparse_output.hpp`
+- Modify: `include/sbm/types.hpp`
+- Modify: `src/modules/token_sparse_output.cpp`
+- Modify: `src/api/c_api.cpp`
+- Modify: `src/modules/machine_checkpoint.cpp`
+- Modify: `tests/test_scaling.cpp`
+
+**Status:** Implemented in commit `8094de0`.
 
 **Constraint compliance (§4.1):** Pure local per-entry update, no global backprop. Each sparse entry maintains independent momentum.
 
-**Memory cost:** +8 bytes per sparse entry. Estimate actual sparse entry count before committing.
+**Memory cost:** +8 bytes per sparse entry.
 
 **Expected:** +0.1-0.2 nats
 
