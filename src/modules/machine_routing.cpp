@@ -27,7 +27,8 @@ bool SparseBranchMachine::push_candidate(std::vector<CandidateNode>& values,
 }
 
 std::span<const SparseBranchMachine::CandidateNode>
-SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
+SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures,
+                                   std::int64_t max_radius) {
     const std::size_t channel_count = topology_.size();
     const std::size_t exact_budget = channel_count * config_.bucket_scan_limit;
     const std::size_t hard_limit = exact_budget +
@@ -79,7 +80,7 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures) {
     const auto raw_bucket_count = static_cast<std::int64_t>(
         std::size_t{1} << config_.bucket_bits);
     for (std::int64_t radius = 1;
-         output.size() < hard_limit && radius <= 2;
+         output.size() < hard_limit && radius <= max_radius;
          ++radius) {
         for (std::uint8_t channel = 0; channel < channel_count; ++channel) {
             if (!channel_enabled(channel)) continue;
@@ -123,8 +124,9 @@ double SparseBranchMachine::score(std::size_t slot,
 }
 
 std::pair<std::span<SparseBranchMachine::ScoredNode>, std::uint32_t>
-SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures) {
-    const auto candidates = candidate_ids(signatures);
+SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures,
+                                  std::int64_t max_radius) {
+    const auto candidates = candidate_ids(signatures, max_radius);
     auto& scored = scored_scratch_;
     scored.clear();
     for (const auto& candidate : candidates) {

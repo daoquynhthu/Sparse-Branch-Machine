@@ -267,6 +267,31 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     }
 
     auto [active, examined] = select_route(signatures);
+
+    // Iterative refinement: if responsibility is not concentrated, expand the
+    // neighbor radius and re-select. All rounds complete before the target is
+    // used, preserving causal ordering (§4.5).
+    if (config_.max_refinement_rounds > 0) {
+        float max_responsibility = 0.0F;
+        for (const auto& node : active) {
+            max_responsibility = std::max(max_responsibility, node.responsibility);
+        }
+        for (std::uint32_t round = 0;
+             round < config_.max_refinement_rounds &&
+             max_responsibility < config_.refinement_confidence_threshold;
+             ++round) {
+            const std::int64_t radius = 2 + static_cast<std::int64_t>(round) + 1;
+            auto [refined, examined_refined] = select_route(signatures, radius);
+            examined += examined_refined;
+            active = refined;
+            max_responsibility = 0.0F;
+            for (const auto& node : active) {
+                max_responsibility = std::max(max_responsibility,
+                                              node.responsibility);
+            }
+        }
+    }
+
     auto& output_tree = *implicit_output_;
     output_tree.target_path(target_token, token_path_scratch_);
     const float temperature = std::max(config_.softmax_temperature, 1e-5F);

@@ -215,6 +215,25 @@ void verify_fresh_decision_learning_in_mature_node() {
     assert(local_log_gain > 0.02);
 }
 
+void verify_refinement_rounds() {
+    auto refine_config = sparse_config(4U, 8U);
+    refine_config.max_specializations_per_bucket = 1U;
+    refine_config.split_min_visits = UINT32_MAX;
+    refine_config.max_refinement_rounds = 2U;
+    refine_config.refinement_confidence_threshold = 0.5F;
+
+    sbm::SparseBranchMachine refine_machine(refine_config);
+
+    float min_target_prob = 1.0F;
+    for (std::uint32_t step = 0U; step < 128U; ++step) {
+        const auto stats = refine_machine.step_token(2U, 5U, true);
+        min_target_prob = std::min(min_target_prob, stats.target_probability);
+        assert(stats.active_nodes > 0U);
+        assert(stats.active_nodes <= refine_config.beam_width);
+    }
+    assert(min_target_prob > 0.0F);
+}
+
 void verify_adaptive_beam_width() {
     auto adaptive_config = sparse_config(4U, 8U);
     adaptive_config.max_specializations_per_bucket = 1U;
@@ -511,6 +530,7 @@ int main(int argc, char** argv) {
         verify_fresh_decision_learning_in_mature_node();
         verify_momentum_learning();
         verify_adaptive_beam_width();
+        verify_refinement_rounds();
         verify_address_capacity_pressure();
         auto config = sparse_config(4U, 257U);
         config.max_sparse_decisions_per_node = 8U;

@@ -244,6 +244,11 @@ struct Config {
     // O(1) with respect to stored capacity.
     std::uint32_t beam_width_min{6};
     float confidence_threshold{0.8F};
+    // Iterative refinement: when the initial route has low maximum
+    // responsibility, repeat candidate selection with a larger neighbor radius
+    // up to max_refinement_rounds. All refinement stays before the target.
+    std::uint32_t max_refinement_rounds{0};
+    float refinement_confidence_threshold{0.5F};
     std::uint32_t bucket_scan_limit{32};
     std::uint32_t edge_scan_limit{8};
     std::uint32_t max_edges_per_node{32};

@@ -235,6 +235,8 @@ constexpr ParameterDescriptor kParameters[] = {
     {"beam_width", "uint32", "6", "1", "64", "linear", true, false, false, "Maximum active nodes per step."},
     {"beam_width_min", "uint32", "6", "1", "64", "linear", true, false, false, "Minimum active nodes when prediction is confident; beam_width remains the upper bound."},
     {"confidence_threshold", "float", "0.8", "0.0", "1.0", "linear", true, false, false, "Minimum max-responsibility concentration that triggers truncation to beam_width_min."},
+    {"max_refinement_rounds", "uint32", "0", "0", "8", "linear", true, false, false, "Maximum extra routing rounds with expanded neighbor radius for uncertain tokens."},
+    {"refinement_confidence_threshold", "float", "0.5", "0.0", "1.0", "linear", true, false, false, "Minimum max-responsibility that stops iterative refinement."},
     {"bucket_scan_limit", "uint32", "32", "4", "128", "log", true, false, false, "Maximum nodes examined from an address bucket."},
     {"edge_scan_limit", "uint32", "8", "1", "32", "linear", true, false, false, "Maximum outgoing edges examined per source node."},
     {"max_edges_per_node", "uint32", "32", "4", "128", "log", true, false, false, "Maximum stored sparse control edges per node."},
@@ -320,6 +322,8 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(beam_width)
     SBM_SET_UINT(beam_width_min)
     SBM_SET_FLOAT(confidence_threshold)
+    SBM_SET_UINT(max_refinement_rounds)
+    SBM_SET_FLOAT(refinement_confidence_threshold)
     SBM_SET_UINT(bucket_scan_limit)
     SBM_SET_UINT(edge_scan_limit)
     SBM_SET_UINT(max_edges_per_node)
@@ -414,6 +418,8 @@ std::string config_json(const sbm::Config& c) {
         << "  \"beam_width\": " << c.beam_width << ",\n"
         << "  \"beam_width_min\": " << c.beam_width_min << ",\n"
         << "  \"confidence_threshold\": " << c.confidence_threshold << ",\n"
+        << "  \"max_refinement_rounds\": " << c.max_refinement_rounds << ",\n"
+        << "  \"refinement_confidence_threshold\": " << c.refinement_confidence_threshold << ",\n"
         << "  \"bucket_scan_limit\": " << c.bucket_scan_limit << ",\n"
         << "  \"edge_scan_limit\": " << c.edge_scan_limit << ",\n"
         << "  \"max_edges_per_node\": " << c.max_edges_per_node << ",\n"

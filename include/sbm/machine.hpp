@@ -185,12 +185,14 @@ private:
                                   std::uint8_t channel = 0U);
     [[nodiscard]] std::size_t slot_of(NodeId id) const noexcept;
     [[nodiscard]] std::span<const CandidateNode> candidate_ids(
-        std::span<const std::uint64_t> signatures);
+        std::span<const std::uint64_t> signatures,
+        std::int64_t max_radius = 2);
     [[nodiscard]] double score(std::size_t slot,
                                std::span<const std::uint64_t> signatures,
                                float edge_prior) const noexcept;
     [[nodiscard]] std::pair<std::span<ScoredNode>, std::uint32_t>
-        select_route(std::span<const std::uint64_t> signatures);
+        select_route(std::span<const std::uint64_t> signatures,
+                     std::int64_t max_radius = 2);
     void assign_responsibilities(std::span<ScoredNode> active) const;
     void aggregate(std::span<const ScoredNode> active, std::span<float> output) const;
     void compute_counterfactual_contributions(std::span<ScoredNode> active,
