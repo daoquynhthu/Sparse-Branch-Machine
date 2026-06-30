@@ -83,6 +83,8 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.context_width);
     write_scalar(out, config.bucket_bits);
     write_scalar(out, config.beam_width);
+    write_scalar(out, config.beam_width_min);
+    write_scalar(out, config.confidence_threshold);
     write_scalar(out, config.bucket_scan_limit);
     write_scalar(out, config.edge_scan_limit);
     write_scalar(out, config.max_edges_per_node);
@@ -163,6 +165,8 @@ Config read_config(std::istream& in) {
     config.context_width = read_scalar<std::uint32_t>(in);
     config.bucket_bits = read_scalar<std::uint32_t>(in);
     config.beam_width = read_scalar<std::uint32_t>(in);
+    config.beam_width_min = read_scalar<std::uint32_t>(in);
+    config.confidence_threshold = read_scalar<float>(in);
     config.bucket_scan_limit = read_scalar<std::uint32_t>(in);
     config.edge_scan_limit = read_scalar<std::uint32_t>(in);
     config.max_edges_per_node = read_scalar<std::uint32_t>(in);

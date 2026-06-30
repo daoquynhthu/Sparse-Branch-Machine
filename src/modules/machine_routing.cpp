@@ -170,6 +170,27 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures) {
     }
 
     assign_responsibilities(std::span<ScoredNode>(selected.data(), selected.size()));
+
+    // Adaptive beam width: if responsibility is concentrated and we selected
+    // more than beam_width_min nodes, truncate to the minimum. This keeps
+    // average active work bounded without scaling with stored capacity.
+    if (config_.beam_width_min < config_.beam_width &&
+        selected.size() > config_.beam_width_min) {
+        float max_responsibility = 0.0F;
+        for (const auto& node : selected) {
+            max_responsibility = std::max(max_responsibility, node.responsibility);
+        }
+        if (max_responsibility >= config_.confidence_threshold) {
+            std::sort(selected.begin(), selected.end(),
+                      [](const ScoredNode& a, const ScoredNode& b) {
+                          return a.responsibility > b.responsibility;
+                      });
+            selected.resize(config_.beam_width_min);
+            assign_responsibilities(
+                std::span<ScoredNode>(selected.data(), selected.size()));
+        }
+    }
+
     return {std::span<ScoredNode>(selected.data(), selected.size()),
             static_cast<std::uint32_t>(candidates.size())};
 }

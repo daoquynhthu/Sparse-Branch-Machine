@@ -239,6 +239,11 @@ struct Config {
     std::uint32_t context_width{12};
     std::uint32_t bucket_bits{12};
     std::uint32_t beam_width{6};
+    // Adaptive beam width: on high-confidence tokens active set is truncated
+    // to beam_width_min; beam_width remains the hard upper bound. Both are
+    // O(1) with respect to stored capacity.
+    std::uint32_t beam_width_min{6};
+    float confidence_threshold{0.8F};
     std::uint32_t bucket_scan_limit{32};
     std::uint32_t edge_scan_limit{8};
     std::uint32_t max_edges_per_node{32};

@@ -215,6 +215,37 @@ void verify_fresh_decision_learning_in_mature_node() {
     assert(local_log_gain > 0.02);
 }
 
+void verify_adaptive_beam_width() {
+    auto adaptive_config = sparse_config(4U, 8U);
+    adaptive_config.max_specializations_per_bucket = 1U;
+    adaptive_config.split_min_visits = UINT32_MAX;
+    adaptive_config.beam_width_min = 2U;
+    adaptive_config.beam_width = 8U;
+    adaptive_config.confidence_threshold = 0.8F;
+
+    auto fixed_config = sparse_config(4U, 8U);
+    fixed_config.max_specializations_per_bucket = 1U;
+    fixed_config.split_min_visits = UINT32_MAX;
+    fixed_config.beam_width = 8U;
+
+    sbm::SparseBranchMachine adaptive_machine(adaptive_config);
+    sbm::SparseBranchMachine fixed_machine(fixed_config);
+
+    std::uint32_t min_adaptive_active = 999U;
+    std::uint32_t max_adaptive_active = 0U;
+    for (std::uint32_t step = 0U; step < 256U; ++step) {
+        const auto adaptive_stats = adaptive_machine.step_token(2U, 5U, true);
+        const auto fixed_stats = fixed_machine.step_token(2U, 5U, true);
+        min_adaptive_active = std::min(min_adaptive_active, adaptive_stats.active_nodes);
+        max_adaptive_active = std::max(max_adaptive_active, adaptive_stats.active_nodes);
+        assert(adaptive_stats.active_nodes <= fixed_stats.active_nodes);
+    }
+
+    assert(min_adaptive_active <= 2U);
+    assert(max_adaptive_active > 0U);
+    assert(max_adaptive_active <= 8U);
+}
+
 void verify_momentum_learning() {
     auto base_config = sparse_config(4U, 8U);
     base_config.max_specializations_per_bucket = 1U;
@@ -479,6 +510,7 @@ int main(int argc, char** argv) {
         verify_sparse_output_policy();
         verify_fresh_decision_learning_in_mature_node();
         verify_momentum_learning();
+        verify_adaptive_beam_width();
         verify_address_capacity_pressure();
         auto config = sparse_config(4U, 257U);
         config.max_sparse_decisions_per_node = 8U;
