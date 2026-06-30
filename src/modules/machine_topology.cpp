@@ -15,7 +15,8 @@ std::optional<AddressProgram> proposal_at(std::uint64_t ordinal,
                                           std::uint32_t max_lag,
                                           std::uint32_t max_arity,
                                           bool enable_delta,
-                                          bool enable_content_match) {
+                                          bool enable_content_match,
+                                          bool enable_content_follow_multi) {
     for (std::uint32_t outer = 2U; outer <= max_lag; ++outer) {
         const auto visit = [&](AddressOp op) -> std::optional<AddressProgram> {
             AddressProgram singleton = singleton_address_program(outer);
@@ -52,6 +53,22 @@ std::optional<AddressProgram> proposal_at(std::uint64_t ordinal,
                     follow.op = AddressOp::ContentFollow;
                     if (ordinal == 0U) return follow;
                     --ordinal;
+                    if (enable_content_follow_multi) {
+                        AddressProgram follow2;
+                        follow2.lags[0] = inner;
+                        follow2.lags[1] = outer;
+                        follow2.arity = 2U;
+                        follow2.op = AddressOp::ContentFollowMulti2;
+                        if (ordinal == 0U) return follow2;
+                        --ordinal;
+                        AddressProgram follow3;
+                        follow3.lags[0] = inner;
+                        follow3.lags[1] = outer;
+                        follow3.arity = 2U;
+                        follow3.op = AddressOp::ContentFollowMulti3;
+                        if (ordinal == 0U) return follow3;
+                        --ordinal;
+                    }
                 }
             }
         }
@@ -64,9 +81,14 @@ std::optional<AddressProgram> proposal_at(std::uint64_t ordinal,
 }
 
 [[nodiscard]] double program_execution_cost(const AddressProgram& program) noexcept {
-    if (program.op == AddressOp::ContentMatch || program.op == AddressOp::ContentFollow) {
+    if (program.op == AddressOp::ContentMatch) {
         return program.arity == 0U ? 1.0 :
             1.0 + static_cast<double>(program.lags[program.arity - 1U]);
+    }
+    if (is_content_follow_op(program.op)) {
+        const double hops = static_cast<double>(content_follow_hop_count(program.op));
+        return program.arity == 0U ? 1.0 :
+            1.0 + hops * static_cast<double>(program.lags[program.arity - 1U]);
     }
     return 1.0 + static_cast<double>(program.arity);
 }
@@ -469,7 +491,7 @@ std::pair<std::uint8_t, std::uint8_t> SparseBranchMachine::resolve_channel_linea
         const auto dependency = find_positional_channel_for_lag(max_lag);
         return {dependency, dependency};
     }
-    if (program.op == AddressOp::ContentFollow) {
+    if (is_content_follow_op(program.op)) {
         AddressProgram match = singleton_address_program(max_lag);
         match.op = AddressOp::ContentMatch;
         auto dependency = find_channel_for_program(match);
@@ -645,7 +667,8 @@ void SparseBranchMachine::maybe_begin_topology_probe(bool learn) {
         const auto candidate = proposal_at(proposal_cursor_++, config_.topology_max_lag,
                                            config_.topology_max_arity,
                                            config_.topology_enable_delta,
-                                           config_.topology_enable_content_match);
+                                           config_.topology_enable_content_match,
+                                           config_.topology_enable_content_follow_multi);
         if (!candidate.has_value()) break;
         const auto key = address_program_key(*candidate);
         if (std::find(proposed_program_keys_.begin(), proposed_program_keys_.end(), key) ==

@@ -47,6 +47,8 @@ enum class AddressOp : std::uint8_t {
     DeltaMod = 1U,
     ContentMatch = 2U,
     ContentFollow = 3U,
+    ContentFollowMulti2 = 4U,
+    ContentFollowMulti3 = 5U,
 };
 
 enum class AddressExecutionMode : std::uint8_t {
@@ -146,9 +148,24 @@ struct AddressExecutionFrame {
     return key;
 }
 
+[[nodiscard]] inline bool is_content_follow_op(AddressOp op) noexcept {
+    return op == AddressOp::ContentFollow ||
+           op == AddressOp::ContentFollowMulti2 ||
+           op == AddressOp::ContentFollowMulti3;
+}
+
+[[nodiscard]] inline std::uint8_t content_follow_hop_count(AddressOp op) noexcept {
+    switch (op) {
+    case AddressOp::ContentFollowMulti2: return 2U;
+    case AddressOp::ContentFollowMulti3: return 3U;
+    case AddressOp::ContentFollow:
+    default: return 1U;
+    }
+}
+
 [[nodiscard]] inline AddressStateKind address_program_input_state(
     const AddressProgram& program) noexcept {
-    return program.op == AddressOp::ContentFollow
+    return is_content_follow_op(program.op)
         ? AddressStateKind::ContentBinding
         : AddressStateKind::TokenWindow;
 }
@@ -159,6 +176,8 @@ struct AddressExecutionFrame {
     case AddressOp::ContentMatch:
         return AddressStateKind::ContentBinding;
     case AddressOp::ContentFollow:
+    case AddressOp::ContentFollowMulti2:
+    case AddressOp::ContentFollowMulti3:
         return AddressStateKind::FollowBinding;
     case AddressOp::Tuple:
     case AddressOp::DeltaMod:
@@ -169,7 +188,7 @@ struct AddressExecutionFrame {
 
 [[nodiscard]] inline AddressBindingKind address_program_required_dependency_binding(
     const AddressProgram& program) noexcept {
-    return program.op == AddressOp::ContentFollow
+    return is_content_follow_op(program.op)
         ? AddressBindingKind::ContentMatch
         : AddressBindingKind::None;
 }
@@ -187,6 +206,8 @@ struct AddressExecutionFrame {
     case AddressOp::ContentMatch:
         return AddressGraphEdgeKind::ContentMatchDependency;
     case AddressOp::ContentFollow:
+    case AddressOp::ContentFollowMulti2:
+    case AddressOp::ContentFollowMulti3:
         return AddressGraphEdgeKind::ContentFollowCall;
     case AddressOp::Tuple:
     case AddressOp::DeltaMod:
@@ -279,6 +300,7 @@ struct Config {
     std::uint32_t topology_max_arity{2};
     bool topology_enable_delta{true};
     bool topology_enable_content_match{true};
+    bool topology_enable_content_follow_multi{false};
     std::uint32_t topology_probe_interval{2048};
     std::uint32_t topology_probe_warmup{512};
     std::uint32_t topology_probe_steps{4096};

@@ -15,6 +15,8 @@ namespace {
         case AddressOp::ContentMatch:
             return AddressBindingKind::ContentMatch;
         case AddressOp::ContentFollow:
+        case AddressOp::ContentFollowMulti2:
+        case AddressOp::ContentFollowMulti3:
             return AddressBindingKind::ContentFollow;
     }
     return AddressBindingKind::None;
@@ -53,9 +55,10 @@ bool execute_address_program(std::span<const std::uint32_t> window,
         return out.matched;
     }
 
+    const std::uint8_t hops = content_follow_hop_count(program.op);
     const std::uint32_t max_lag = program.lags[program.arity - 1U];
     const auto bounded_lag = std::min<std::size_t>(max_lag, window.size() - 1U);
-    out.execution_cost += static_cast<float>(bounded_lag);
+    out.execution_cost += static_cast<float>(hops * bounded_lag);
     out.matched = out.binding_state.matched;
     out.source_index = out.binding_state.matched_index;
     out.matched_index = out.binding_state.matched_index;

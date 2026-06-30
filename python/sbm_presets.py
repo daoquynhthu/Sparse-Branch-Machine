@@ -33,6 +33,7 @@ PRESETS: dict[str, dict[str, Any]] = {
         "record_channel_attribution": True,
         "topology_accept_uses_structural_value": True,
         "use_momentum": True,
+        "topology_enable_content_follow_multi": True,
     },
     "upgrade-v1-adaptive": {
         # Experimental: adds adaptive beam width and iterative refinement.

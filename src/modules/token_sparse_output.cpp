@@ -387,10 +387,10 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             if (channel == 0U) seed_channel_mask |= bit;
             if (topology_[channel].phase == ChannelPhase::Active) {
                 active_channel_mask |= bit;
-                if (topology_[channel].program.op == AddressOp::ContentMatch ||
-                    topology_[channel].program.op == AddressOp::ContentFollow) {
+                const auto op = topology_[channel].program.op;
+                if (op == AddressOp::ContentMatch || is_content_follow_op(op)) {
                     content_channel_mask |= bit;
-                } else if (topology_[channel].program.op == AddressOp::Tuple) {
+                } else if (op == AddressOp::Tuple) {
                     tuple_channel_mask |= bit;
                 }
             }

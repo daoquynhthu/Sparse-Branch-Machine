@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '7'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '8'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -113,6 +113,7 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.topology_max_arity);
     write_scalar(out, config.topology_enable_delta);
     write_scalar(out, config.topology_enable_content_match);
+    write_scalar(out, config.topology_enable_content_follow_multi);
     write_scalar(out, config.topology_probe_interval);
     write_scalar(out, config.topology_probe_warmup);
     write_scalar(out, config.topology_probe_steps);
@@ -197,6 +198,7 @@ Config read_config(std::istream& in) {
     config.topology_max_arity = read_scalar<std::uint32_t>(in);
     config.topology_enable_delta = read_scalar<bool>(in);
     config.topology_enable_content_match = read_scalar<bool>(in);
+    config.topology_enable_content_follow_multi = read_scalar<bool>(in);
     config.topology_probe_interval = read_scalar<std::uint32_t>(in);
     config.topology_probe_warmup = read_scalar<std::uint32_t>(in);
     config.topology_probe_steps = read_scalar<std::uint32_t>(in);

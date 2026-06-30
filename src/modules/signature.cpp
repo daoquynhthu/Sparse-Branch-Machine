@@ -4,6 +4,7 @@
 #include "sbm/types.hpp"
 #include <bit>
 #include <cstring>
+#include <optional>
 
 namespace sbm {
 
@@ -39,11 +40,49 @@ namespace {
 
 } // namespace
 
+namespace {
+
+struct ContentMatchResult {
+    std::uint32_t index{};
+    std::uint32_t distance{};
+};
+
+[[nodiscard]] std::optional<ContentMatchResult> find_content_match(
+    std::span<const std::uint32_t> window,
+    std::size_t current_index,
+    std::uint32_t max_lag,
+    const std::array<std::uint32_t, kMaxAddressProgramArity>& lags,
+    std::size_t pattern_count) noexcept {
+    if (current_index == 0U || window.empty()) return std::nullopt;
+    const auto bounded_lag = std::min<std::size_t>(max_lag, current_index);
+    const auto current_token = window[current_index];
+    for (std::size_t distance = 1U; distance <= bounded_lag; ++distance) {
+        const auto candidate_index = current_index - distance;
+        if (window[candidate_index] != current_token) continue;
+        bool pattern_matches = true;
+        for (std::size_t index = 0; index < pattern_count; ++index) {
+            const auto lag = static_cast<std::size_t>(lags[index]);
+            if (lag > current_index || lag > candidate_index ||
+                window[current_index - lag] != window[candidate_index - lag]) {
+                pattern_matches = false;
+                break;
+            }
+        }
+        if (!pattern_matches) continue;
+        return ContentMatchResult{
+            static_cast<std::uint32_t>(candidate_index),
+            static_cast<std::uint32_t>(distance)};
+    }
+    return std::nullopt;
+}
+
+} // namespace
+
 AddressBindingState resolve_address_binding_state(
     std::span<const std::uint32_t> window,
     const AddressProgram& program) noexcept {
     AddressBindingState state;
-    state.pattern_terms = program.op == AddressOp::ContentFollow &&
+    state.pattern_terms = is_content_follow_op(program.op) &&
         program.arity > 1U
         ? static_cast<std::uint8_t>(program.arity - 1U)
         : 0U;
@@ -62,34 +101,36 @@ AddressBindingState resolve_address_binding_state(
         return state;
     }
 
-    const auto current_index = window.size() - 1U;
+    const auto original_current_index = window.size() - 1U;
     const std::uint32_t max_lag = program.lags[program.arity - 1U];
-    const auto bounded_lag = std::min<std::size_t>(max_lag, current_index);
     const std::size_t pattern_count = state.pattern_terms;
+    const std::uint8_t hops = content_follow_hop_count(program.op);
 
-    for (std::size_t distance = 1U; distance <= bounded_lag; ++distance) {
-        const auto candidate_index = current_index - distance;
-        if (window[candidate_index] != state.current_token) continue;
-        bool pattern_matches = true;
-        for (std::size_t index = 0; index < pattern_count; ++index) {
-            const auto lag = static_cast<std::size_t>(program.lags[index]);
-            if (lag > current_index || lag > candidate_index ||
-                window[current_index - lag] != window[candidate_index - lag]) {
-                pattern_matches = false;
-                break;
-            }
+    std::uint32_t final_index = 0U;
+    std::uint32_t final_distance = 0U;
+    auto current_index = original_current_index;
+
+    for (std::uint8_t hop = 0U; hop < hops; ++hop) {
+        const auto match = find_content_match(
+            window, current_index, max_lag, program.lags, pattern_count);
+        if (!match.has_value()) {
+            state.matched = false;
+            return state;
         }
-        if (!pattern_matches) continue;
-        state.matched = true;
-        state.matched_index = static_cast<std::uint32_t>(candidate_index);
-        state.matched_token = window[candidate_index];
-        state.matched_successor =
-            window[std::min(candidate_index + 1U, current_index)];
-        state.matched_distance = static_cast<std::uint32_t>(distance);
-        state.pattern_span = max_lag;
-        state.binding_key = binding_state_key(state, program);
-        return state;
+        final_index = match->index;
+        final_distance = match->distance;
+        current_index = static_cast<std::size_t>(final_index) + 1U;
     }
+
+    state.matched = true;
+    state.matched_index = final_index;
+    state.matched_token = window[final_index];
+    state.matched_successor =
+        window[std::min(static_cast<std::size_t>(final_index) + 1U,
+                        original_current_index)];
+    state.matched_distance = final_distance;
+    state.pattern_span = max_lag;
+    state.binding_key = binding_state_key(state, program);
     return state;
 }
 
@@ -180,7 +221,7 @@ std::uint64_t address_program_signature(std::span<const std::uint32_t> window,
     const auto current = window.back();
     selected[count++] = current;
     std::uint32_t matched_distance = 0U;
-    if (op == AddressOp::ContentMatch || op == AddressOp::ContentFollow) {
+    if (op == AddressOp::ContentMatch || is_content_follow_op(op)) {
         AddressProgram program;
         program.arity = static_cast<std::uint8_t>(
             std::min<std::size_t>(lags.size(), kMaxAddressProgramArity));
@@ -209,7 +250,7 @@ std::uint64_t address_program_signature(std::span<const std::uint32_t> window,
 
     std::uint64_t mixed = seed ^ mix64(static_cast<std::uint64_t>(count)) ^
         mix64(static_cast<std::uint64_t>(op) + 0xD1B54A32D192ED03ULL);
-    if (op == AddressOp::ContentMatch || op == AddressOp::ContentFollow) {
+    if (op == AddressOp::ContentMatch || is_content_follow_op(op)) {
         mixed ^= mix64(static_cast<std::uint64_t>(matched_distance) +
                        0xA24BAED4963EE407ULL);
         for (std::size_t index = 0; index < lags.size(); ++index) {
