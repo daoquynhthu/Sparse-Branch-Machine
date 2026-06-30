@@ -12,6 +12,8 @@ struct SparseOutputEntry {
     std::uint32_t visits{};
     float gain_ema{};
     std::uint64_t last_update_step{};
+    float momentum{};
+    float variance{};
 };
 
 [[nodiscard]] float sparse_decision_learning_rate(

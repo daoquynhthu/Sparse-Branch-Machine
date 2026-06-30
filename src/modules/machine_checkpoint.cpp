@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '6'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '7'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -145,6 +145,10 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.sparse_output_beam_width);
     write_scalar(out, config.max_sparse_decisions_per_node);
     write_scalar(out, config.decode_token_ranking_during_training);
+    write_scalar(out, config.use_momentum);
+    write_scalar(out, config.momentum_beta1);
+    write_scalar(out, config.momentum_beta2);
+    write_scalar(out, config.momentum_eps);
     write_scalar(out, config.record_channel_attribution);
     write_scalar(out, config.max_binding_reuse_records_per_channel);
     write_scalar(out, config.output_tree_seed);
@@ -221,6 +225,10 @@ Config read_config(std::istream& in) {
     config.sparse_output_beam_width = read_scalar<std::uint32_t>(in);
     config.max_sparse_decisions_per_node = read_scalar<std::uint32_t>(in);
     config.decode_token_ranking_during_training = read_scalar<bool>(in);
+    config.use_momentum = read_scalar<bool>(in);
+    config.momentum_beta1 = read_scalar<float>(in);
+    config.momentum_beta2 = read_scalar<float>(in);
+    config.momentum_eps = read_scalar<float>(in);
     config.record_channel_attribution = read_scalar<bool>(in);
     config.max_binding_reuse_records_per_channel = read_scalar<std::uint32_t>(in);
     config.output_tree_seed = read_scalar<std::uint64_t>(in);

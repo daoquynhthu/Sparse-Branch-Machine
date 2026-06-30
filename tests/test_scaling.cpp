@@ -215,6 +215,36 @@ void verify_fresh_decision_learning_in_mature_node() {
     assert(local_log_gain > 0.02);
 }
 
+void verify_momentum_learning() {
+    auto base_config = sparse_config(4U, 8U);
+    base_config.max_specializations_per_bucket = 1U;
+    base_config.split_min_visits = UINT32_MAX;
+    base_config.classification_learning_rate = 0.35F;
+    base_config.classification_mature_learning_rate = 0.08F;
+
+    auto momentum_config = base_config;
+    momentum_config.use_momentum = true;
+
+    auto plain_config = base_config;
+    plain_config.use_momentum = false;
+
+    sbm::SparseBranchMachine momentum_machine(momentum_config);
+    sbm::SparseBranchMachine plain_machine(plain_config);
+
+    for (std::uint32_t step = 0U; step < 128U; ++step) {
+        (void)momentum_machine.step_token(2U, 5U, true);
+        (void)plain_machine.step_token(2U, 5U, true);
+    }
+
+    const float momentum_prob =
+        momentum_machine.step_token(2U, 5U, false).target_probability;
+    const float plain_prob =
+        plain_machine.step_token(2U, 5U, false).target_probability;
+
+    assert(momentum_prob > plain_prob);
+    assert(momentum_prob > 0.02F);
+}
+
 void verify_conserved_channel_mass() {
     auto single_left_config = sparse_config(6U, 32U);
     single_left_config.residual_channel_gain = 0.5F;
@@ -448,6 +478,7 @@ int main(int argc, char** argv) {
     if (mode == "capacity") {
         verify_sparse_output_policy();
         verify_fresh_decision_learning_in_mature_node();
+        verify_momentum_learning();
         verify_address_capacity_pressure();
         auto config = sparse_config(4U, 257U);
         config.max_sparse_decisions_per_node = 8U;

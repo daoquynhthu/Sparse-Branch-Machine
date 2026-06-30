@@ -604,8 +604,20 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                     config_.classification_learning_rate,
                     config_.classification_mature_learning_rate,
                     config_.mature_visits) * within_channel_responsibility / temperature;
-                entry.logit = (1.0F - config_.logit_decay) * entry.logit +
-                        rate * (target_right - probability_right);
+                const float grad = target_right - probability_right;
+                if (config_.use_momentum) {
+                    entry.momentum = config_.momentum_beta1 * entry.momentum +
+                        (1.0F - config_.momentum_beta1) * grad;
+                    entry.variance = config_.momentum_beta2 * entry.variance +
+                        (1.0F - config_.momentum_beta2) * grad * grad;
+                    const float adaptive_rate = rate /
+                        (std::sqrt(entry.variance) + config_.momentum_eps);
+                    entry.logit = (1.0F - config_.logit_decay) * entry.logit +
+                        adaptive_rate * entry.momentum;
+                } else {
+                    entry.logit = (1.0F - config_.logit_decay) * entry.logit +
+                        rate * grad;
+                }
                 entry.gain_ema = 0.99F * entry.gain_ema + 0.01F * gain;
                 if (entry.visits != std::numeric_limits<std::uint32_t>::max()) {
                     ++entry.visits;
