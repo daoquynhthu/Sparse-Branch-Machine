@@ -77,20 +77,33 @@ The Transformer small (10.5M params) achieves 5.527 nats on 10M FineWeb-Edu, bea
 
 #### U1.2: Iterative Refinement
 
+- [x] Add `max_refinement_rounds` and `refinement_confidence_threshold` to `Config`
+- [x] Add `max_radius` parameter to `candidate_ids()` and `select_route()`
+- [x] Implement refinement loop in `step_token_sparse()`
+- [x] Register params in C API
+- [x] Update checkpoint format
+- [x] Write test `verify_refinement_rounds`
+
 **Current:** `step_token_sparse()` is single-pass.
 
 **Change:**
-- After first pass, compute prediction path logit entropy
-- If entropy > `refinement_entropy_threshold`, expand candidate pool (larger radius), re-score, re-select, re-aggregate
-- Max `max_refinement_rounds` (3) rounds
-- All refinement happens before target is read
+- After first `select_route()`, compute max responsibility
+- If max responsibility < `refinement_confidence_threshold` and rounds remain, call `select_route(signatures, radius)` with an expanded neighbor radius
+- Repeat up to `max_refinement_rounds` times
+- All refinement happens before `output_tree.target_path(target_token, ...)`
 
 **Files:**
-- Modify: `token_sparse_output.cpp`: add refinement loop in `step_token_sparse()`
-- Modify: `machine_routing.cpp`: add `expand_candidate_pool()` for refinement
-- Modify: `types.hpp`: add `max_refinement_rounds`, `refinement_entropy_threshold`
+- Modify: `include/sbm/machine.hpp`
+- Modify: `include/sbm/types.hpp`
+- Modify: `src/modules/machine_routing.cpp`
+- Modify: `src/modules/token_sparse_output.cpp`
+- Modify: `src/api/c_api.cpp`
+- Modify: `src/modules/machine_checkpoint.cpp`
+- Modify: `tests/test_scaling.cpp`
 
-**Constraint compliance (§4.5):** All refinement completes before target is read. Prediction fixed before target-dependent computation.
+**Status:** Implemented in commit `59c1955`.
+
+**Constraint compliance (§4.5):** All refinement completes before target is used for prediction or learning.
 
 **Expected:** +0.05-0.15 nats
 
