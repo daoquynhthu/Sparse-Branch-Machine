@@ -1455,3 +1455,22 @@ Tests cover a ContentMatch producer with a dependent ContentFollow caller:
 both are recoverably retired, then restoring the producer's dependency closure
 reactivates both and makes both effective-routable. This is a deterministic
 controller operation, not learned automatic graph repair.
+
+## 2026-06-30 — 10M full architecture re-verification
+
+Full re-verification of the address-semantics framework on 10M/1M FineWeb-Edu
+after the dependency-closure and caller-availability extensions (commits
+a5d0102..2c229cf plus skill migration afff217).
+
+Three seeds (7, 11, 19) all beat the current-token control by ~0.159 nats/token
+and the interpolated multiscale control by ~0.428 nats/token. Mean eval NLL is
+6.341195 (std 0.000096). All 5 accepted programs remain the same as the
+2026-06-28 baseline. Bounded-work diagnostics stable (avg_active ~6,
+max_bucket_candidates 8, dependency_blocked_channels 0, 0 blocked callers).
+
+The eval NLL improved by ~0.025 nats/token over the 2026-06-28 structural-value
+multiseed result, attributable to dependency-aware routing eligibility and
+effective-state lifecycle changes. The learned program structure is unchanged,
+so the improvement is from routing quality.
+
+Result file: research_results/address_semantics_10m_verify_20260630.md.

@@ -65,15 +65,17 @@ with an executable, auditable address-program system:
   with resumable evaluation. Multi-seed 10M/1M validation and held-out test
   transfer passed.
 
-### Validation gates passed (2026-06-29)
+### Validation gates passed (2026-06-29, re-verified 2026-06-30)
 
-- 10M/1M multi-seed validation: passed
-- 10M/1M held-out test transfer: passed
+- 10M/1M multi-seed validation: passed (2026-06-30 re-verification: mean eval NLL 6.341)
+- 10M/1M held-out test transfer: passed (2026-06-28)
 - Default description-only structural-value admission: passed
 - Training ranking decode removed from hot path
 - `ctest --test-dir build-fast --output-on-failure`: 15/15 passed
 - `python tests\test_python_api.py`: passed
 - `git diff --check`: clean
+- Dependency graph: 0 blocked callers, all channels effective-enabled
+- 2026-06-30 re-verification improved eval NLL by ~0.025 over 2026-06-28 baseline
 
 ## Next: R3 100M Heterogeneous Stream
 
