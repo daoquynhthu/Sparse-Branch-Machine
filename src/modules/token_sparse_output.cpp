@@ -635,10 +635,23 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                         (1.0F - config_.momentum_beta1) * grad;
                     entry.variance = config_.momentum_beta2 * entry.variance +
                         (1.0F - config_.momentum_beta2) * grad * grad;
+                    // Adam bias correction: first few updates would otherwise
+                    // have an inflated effective learning rate.
+                    const std::uint32_t step_count = entry.visits + 1U;
+                    const float bias_correction1 =
+                        1.0F - std::pow(config_.momentum_beta1,
+                                        static_cast<float>(step_count));
+                    const float bias_correction2 =
+                        1.0F - std::pow(config_.momentum_beta2,
+                                        static_cast<float>(step_count));
+                    const float m_hat = entry.momentum /
+                        std::max(bias_correction1, 1e-8F);
+                    const float v_hat = entry.variance /
+                        std::max(bias_correction2, 1e-8F);
                     const float adaptive_rate = rate /
-                        (std::sqrt(entry.variance) + config_.momentum_eps);
+                        (std::sqrt(v_hat) + config_.momentum_eps);
                     entry.logit = (1.0F - config_.logit_decay) * entry.logit +
-                        adaptive_rate * entry.momentum;
+                        adaptive_rate * m_hat;
                 } else {
                     entry.logit = (1.0F - config_.logit_decay) * entry.logit +
                         rate * grad;
