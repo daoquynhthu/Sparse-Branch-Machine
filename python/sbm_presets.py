@@ -47,6 +47,7 @@ PRESETS: dict[str, dict[str, Any]] = {
         "record_channel_attribution": True,
         "topology_accept_uses_structural_value": True,
         "use_momentum": True,
+        "topology_enable_content_follow_multi": True,
         "beam_width": 8,
         "beam_width_min": 2,
         "confidence_threshold": 0.7,
