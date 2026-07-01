@@ -6,128 +6,79 @@
 ## Active objective
 
 持续进行正式的工程推进，保持和计划文件同步，饱和式推进，保持连贯性。
-基础设施充分时避免保守增量，允许临时粗糙边缘，但最终状态必须经过验证。
+
+当前重点是 **Global Predictive Address Field (GPAF)** 的工程收尾和文档完备化。
+GPAF 的 engineering milestone 已完成并通过 10M 真实语料验证。当前是所有 6 个 Task
+的收尾提交和 PR 合并准备。
 
 ## Branch state
 
-- **Branch:** `theory-alignment-v9` (ahead origin by 15 commits)
-- **Working tree:** clean (only `.idea/` untracked)
-- **Last commit:** `2c229cf feat: restore dependency closure` (2026-06-29)
+- **Branch:** `codex/explore-research-project-repository-mgvpni` (PR #1)
+- **Status:** GPAF 实现已完成，21/21 测试通过，10M 验证完成，文档已更新
+- **Key documents:**
+  - Spec: `docs/superpowers/specs/2026-06-30-global-predictive-address-field-design.md`
+  - Plan: `docs/superpowers/plans/2026-06-30-global-predictive-address-field.md`
+  - 10M result: appended in `RESEARCH_LOG.md`
 
-## Completed: Neuronal Address Semantics (2026-06-27 plan)
+## GPAF Implementation Status (plan `2026-06-30-global-predictive-address-field.md`)
 
-**Plan:** `docs/superpowers/plans/2026-06-27-neuronal-address-semantics.md`
-**Status:** All 9 tasks complete. The plan also accumulated extensive
-beyond-plan work documented as "completion" notes in the plan file.
+| Task | Status | Commit(s) |
+|---|---|---|
+| T1: Route-source and token-similarity diagnostics | Done | `392ea7b` |
+| T2: Shadow GPAF role-key observation | Done | `392ea7b` |
+| T3: Bounded GPAF candidate retrieval | Done | `392ea7b` |
+| T4: Slot lifecycle and frozen ablation | Done | `392ea7b`, `d46b731` |
+| T5: Structural-call role keys | Done | `d46b731` |
+| T6: Experiment gates, presets and documentation | Done | (this commit) |
 
-### The 15 commits on theory-alignment-v9
+### 10M FineWeb-Edu Results (2026-07-01)
 
-| Commit | Description |
+| Configuration | Seed 7 | Seed 11 | Seed 19 | Mean (7/11) | Topology |
+|---|---|---|---|---|---|
+| upgrade-v1 (baseline) | 6.21185 | 6.21391 | 6.27662 | **6.2129** | 2,2,5 |
+| gpaf-retrieval-v1 | 6.21365 | 6.21517 | 6.27561 | **6.2144** | 2,2,5 |
+
+GPAF retrieval is neutral at the noise level (+0.0015 nats on seeds 7/11).
+GPAF internal state (seed 7): 59.9M observations, 21 unique role keys,
+19 Active slots, 118M candidates returned. Frozen ablation shows +0.203 nats
+codelength gain when GPAF slots are removed, with ~0.100 nats false positive
+cost. The architecture works correctly; net benefit is currently within eval
+noise due to conservative scoring and no description-cost gating.
+
+### GPAF Config Presets
+
+| Preset | Description |
 |---|---|
-| `a962bca` | research: run reuse-aware 1m validation |
-| `9c3a497` | feat: condition callers on dependency bindings |
-| `f9e89b6` | feat: attribute dependency call usage |
-| `f2a4e82` | feat: type address program IO contracts |
-| `dd42aa4` | feat: enforce typed dependency calls |
-| `f6bd7ca` | feat: version dependency graph edges |
-| `a5d0102` | feat: emit dependency edge graph |
-| `123031e` | feat: restore recoverable topology channels |
-| `4aa1b13` | fix: enforce dependency-aware channel enablement |
-| `572c51e` | feat: expose effective channel lifecycle state |
-| `7eb7fec` | feat: persist effective channel state in experiments |
-| `00aa383` | feat: annotate dependency graph effective state |
-| `353691b` | feat: name topology lifecycle decisions |
-| `1f95358` | feat: summarize direct caller availability |
-| `2c229cf` | feat: restore dependency closure |
+| `gpaf-shadow-v1` | Role-key observation only; no prediction change. Verified on 10M. |
+| `gpaf-retrieval-v1` | Full bounded candidate retrieval + structural call roles. Experimental. |
 
-### What was built (summary)
+## Completed: Adaptive Computation Upgrade (plan `2026-06-30-adaptive-computation-upgrade.md`)
 
-The address-semantics framework replaced one-shot sparse address signatures
-with an executable, auditable address-program system:
+| Item | Commit |
+|---|---|
+| U2.1 Momentum | `8094de0` |
+| U1.1 Adaptive beam width | `81abd27` |
+| U1.2 Iterative refinement | `59c1955` |
+| U3.1 Multi-hop content following | `1b730de` |
+| Presets (`r3-baseline`, `upgrade-v1`, `upgrade-v1-adaptive`) | `3e9b661` |
+| 10M validation | `bfc0af3` |
 
-- **Explicit address execution:** AddressProgram runs through an interpreter
-  producing frames with operation, source, binding, signature, cost and
-  dependency fields (Tuple, DeltaMod, ContentMatch, ContentFollow).
-- **Persistent lifecycle:** Accepted structures use quarantine, masking and
-  recoverable retirement instead of physical deletion. Channels have explicit
-  phases (Seed -> Probe -> Active -> Quarantined/RecoverableRetired/PhysicalErase).
-- **Dependency-aware attribution:** Callers and prerequisites can be ablated
-  separately. The dependency graph carries edge kinds, caller/dependency
-  generations, binding keys, and call evidence.
-- **Structural value gates:** Accepted topology decisions report description
-  cost, execution cost, and structural value (credit minus costs). An optional
-  gate flag switches acceptance to use structural value.
-- **Graph-level rollback:** `restore_dependency_closure(channel)` restores a
-  producer and its recoverably masked direct callers.
-  `effective_direct_caller_count` and `blocked_direct_caller_count` audit how
-  many committed consumers are currently routable vs masked.
-- **Checkpoint/resume:** Exact model-state and corpus training-run checkpoint
-  with resumable evaluation. Multi-seed 10M/1M validation and held-out test
-  transfer passed.
+Key finding: **momentum with bias correction improves NLL by 0.111 nats** on 10M.
+Multi-hop content following adds ~0.018 nats on 10M. Adaptive beam + refinement
+is neutral in current configuration.
 
-### Validation gates passed (2026-06-29, re-verified 2026-06-30)
+## Next work queue
 
-- 10M/1M multi-seed validation: passed (2026-06-30 re-verification: mean eval NLL 6.341)
-- 10M/1M held-out test transfer: passed (2026-06-28)
-- Default description-only structural-value admission: passed
-- Training ranking decode removed from hot path
-- `ctest --test-dir build-fast --output-on-failure`: 15/15 passed
-- `python tests\test_python_api.py`: passed
-- `git diff --check`: clean
-- Dependency graph: 0 blocked callers, all channels effective-enabled
-- 2026-06-30 re-verification improved eval NLL by ~0.025 over 2026-06-28 baseline
-
-## Next: R3 100M Heterogeneous Stream
-
-**Plan:** `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md`
-**Status:** Not started.
-
-### Prerequisites
-
-- Build or import a true document-level 100M training manifest
-  (`sbm-corpus-manifest` with ~100M train + sealed validation/test slices)
-- Do not repurpose validation or test shards as training data
-- Run a short throughput/sizing gate before full 100M multi-seed validation
-- Keep 10M/1M results as the R3 admission baseline
-
-### Corpus inventory
-
-    E:\SPM_EXPERIMENTS\fineweb_edu_v1_r1_train10m_eval1m
-      train:      9,989,918 examples
-      validation:   998,482 examples
-      test:         998,429 examples
-
-    E:\SPM_EXPERIMENTS\fineweb_edu_v1_r1_10m
-      train:      9,989,918 examples
-      validation: 88,064,143 examples
-      test:       87,202,822 examples
-
-There is no local 100M training manifest yet. R3 starts with manifest
-construction, not model training.
+1. **GPAF research next steps:** description/execution cost attribution, automatic
+   frozen-codelength slot acceptance, richer per-slot ablation breakdown.
+2. **R3 100M heterogeneous stream gate:** `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md`
+   — requires manifest construction.
+3. Do not claim language semantics from GPAF unless real-data provenance,
+   frozen validation, multi-seed stability, shard transfer and strong controls pass.
 
 ## Open theoretical gates
 
-From `THEORY_ALIGNMENT.md` Section 8, in order:
-
-1. Establish real-corpus baselines and failure diagnostics — **10M done, 100M pending**
-2. Express structural value in prequential codelength and explicit complexity — **done**
-3. Identify failures not explained by bounded positional programs — **pending R3**
-4. Propose one minimal content-conditioned primitive — **partially implemented**
-5. Extend lineage and dependency-aware ablation to typed state, reusable caller
-   graphs and rollback — **explicit closure restore implemented**
-6. Test transfer across documents, shards and seeds — **10M verified, 100M pending**
-7. Only then consider composition, calls or deeper program graphs — **not started**
-
-## Build and test commands
-
-    cmake --build build-fast --config Release
-    ctest --test-dir build-fast --output-on-failure
-    python tests\test_python_api.py --library E:\SPM\build-fast\libsbm_api.dll
-    git diff --check -- . ':!.idea'
-
-## Interruption note
-
-The previous session (Codex, gpt-5.5) was interrupted on 2026-06-29 after
-commit `2c229cf` when the user lost OpenAI account access. No uncommitted
-changes remain. The active objective was carried over from the session's
-persistent goal.
+GPAF is intended to create room for global sparse retrieval to emerge from
+predictive role reuse. It does not by itself solve content-conditioned variable
+binding, relation-following, task-comparable topology value, long-horizon credit
+or stable cross-domain language structure.

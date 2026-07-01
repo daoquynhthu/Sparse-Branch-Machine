@@ -11,6 +11,7 @@ using NodeId = std::uint32_t;
 inline constexpr NodeId kInvalidNode = UINT32_MAX;
 inline constexpr std::uint8_t kInvalidChannel = UINT8_MAX;
 inline constexpr std::size_t kMaxAddressChannels = 8U;
+inline constexpr std::size_t kMaxGpafAblationKeys = 8U;
 inline constexpr std::size_t kMaxAddressProgramArity = 2U;
 inline constexpr std::size_t kAddressBindingKindCount = 4U;
 
@@ -47,6 +48,8 @@ enum class AddressOp : std::uint8_t {
     DeltaMod = 1U,
     ContentMatch = 2U,
     ContentFollow = 3U,
+    ContentFollowMulti2 = 4U,
+    ContentFollowMulti3 = 5U,
 };
 
 enum class AddressExecutionMode : std::uint8_t {
@@ -146,9 +149,24 @@ struct AddressExecutionFrame {
     return key;
 }
 
+[[nodiscard]] inline bool is_content_follow_op(AddressOp op) noexcept {
+    return op == AddressOp::ContentFollow ||
+           op == AddressOp::ContentFollowMulti2 ||
+           op == AddressOp::ContentFollowMulti3;
+}
+
+[[nodiscard]] inline std::uint8_t content_follow_hop_count(AddressOp op) noexcept {
+    switch (op) {
+    case AddressOp::ContentFollowMulti2: return 2U;
+    case AddressOp::ContentFollowMulti3: return 3U;
+    case AddressOp::ContentFollow:
+    default: return 1U;
+    }
+}
+
 [[nodiscard]] inline AddressStateKind address_program_input_state(
     const AddressProgram& program) noexcept {
-    return program.op == AddressOp::ContentFollow
+    return is_content_follow_op(program.op)
         ? AddressStateKind::ContentBinding
         : AddressStateKind::TokenWindow;
 }
@@ -159,6 +177,8 @@ struct AddressExecutionFrame {
     case AddressOp::ContentMatch:
         return AddressStateKind::ContentBinding;
     case AddressOp::ContentFollow:
+    case AddressOp::ContentFollowMulti2:
+    case AddressOp::ContentFollowMulti3:
         return AddressStateKind::FollowBinding;
     case AddressOp::Tuple:
     case AddressOp::DeltaMod:
@@ -169,7 +189,7 @@ struct AddressExecutionFrame {
 
 [[nodiscard]] inline AddressBindingKind address_program_required_dependency_binding(
     const AddressProgram& program) noexcept {
-    return program.op == AddressOp::ContentFollow
+    return is_content_follow_op(program.op)
         ? AddressBindingKind::ContentMatch
         : AddressBindingKind::None;
 }
@@ -187,6 +207,8 @@ struct AddressExecutionFrame {
     case AddressOp::ContentMatch:
         return AddressGraphEdgeKind::ContentMatchDependency;
     case AddressOp::ContentFollow:
+    case AddressOp::ContentFollowMulti2:
+    case AddressOp::ContentFollowMulti3:
         return AddressGraphEdgeKind::ContentFollowCall;
     case AddressOp::Tuple:
     case AddressOp::DeltaMod:
@@ -239,6 +261,16 @@ struct Config {
     std::uint32_t context_width{12};
     std::uint32_t bucket_bits{12};
     std::uint32_t beam_width{6};
+    // Adaptive beam width: on high-confidence tokens active set is truncated
+    // to beam_width_min; beam_width remains the hard upper bound. Both are
+    // O(1) with respect to stored capacity.
+    std::uint32_t beam_width_min{6};
+    float confidence_threshold{0.8F};
+    // Iterative refinement: when the initial route has low maximum
+    // responsibility, repeat candidate selection with a larger neighbor radius
+    // up to max_refinement_rounds. All refinement stays before the target.
+    std::uint32_t max_refinement_rounds{0};
+    float refinement_confidence_threshold{0.5F};
     std::uint32_t bucket_scan_limit{32};
     std::uint32_t edge_scan_limit{8};
     std::uint32_t max_edges_per_node{32};
@@ -269,6 +301,7 @@ struct Config {
     std::uint32_t topology_max_arity{2};
     bool topology_enable_delta{true};
     bool topology_enable_content_match{true};
+    bool topology_enable_content_follow_multi{false};
     std::uint32_t topology_probe_interval{2048};
     std::uint32_t topology_probe_warmup{512};
     std::uint32_t topology_probe_steps{4096};
@@ -285,6 +318,13 @@ struct Config {
     float structural_execution_cost_weight{0.0F};
     float binding_reuse_value_weight{0.0F};
     bool topology_accept_uses_structural_value{false};
+    bool gpaf_shadow_observation{false};
+    bool gpaf_candidate_retrieval{false};
+    std::uint32_t gpaf_query_keys_per_step{0};
+    std::uint32_t gpaf_slots{0};
+    std::uint32_t gpaf_residents_per_slot{0};
+    std::uint32_t gpaf_probe_min_observations{64};
+    std::uint32_t gpaf_probe_min_residents{1};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};
     float residual_mature_learning_rate{0.030F};
@@ -313,6 +353,13 @@ struct Config {
     std::uint32_t sparse_output_beam_width{16};
     std::uint32_t max_sparse_decisions_per_node{64};
     bool decode_token_ranking_during_training{false};
+    // Per-entry Adam-like momentum for sparse decision logits. When enabled,
+    // each SparseOutputEntry accumulates momentum and gradient variance,
+    // adapting its effective learning rate per decision.
+    bool use_momentum{false};
+    float momentum_beta1{0.9F};
+    float momentum_beta2{0.999F};
+    float momentum_eps{1e-8F};
     // Optional R2 diagnostic. When enabled, frozen token evaluation records
     // per-address-channel counterfactual codelength contribution. Normal runs
     // leave it disabled to avoid attribution overhead.
@@ -345,6 +392,17 @@ struct StepStats {
     float active_only_cross_entropy{};
     float content_only_cross_entropy{};
     float tuple_only_cross_entropy{};
+    bool gpaf_ablation_available{};
+    float gpaf_removed_cross_entropy{};
+    float gpaf_codelength_gain{};
+    float gpaf_false_positive_cost{};
+    std::uint32_t gpaf_ablation_nodes{};
+    std::uint8_t gpaf_ablation_key_count{};
+    std::array<std::uint64_t, kMaxGpafAblationKeys> gpaf_ablation_keys{};
+    std::array<std::uint32_t, kMaxGpafAblationKeys> gpaf_ablation_key_nodes{};
+    std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_removed_cross_entropy{};
+    std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_gain{};
+    std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_false_positive_cost{};
     std::array<std::uint32_t, kMaxAddressChannels> channel_dependency{};
     std::array<std::uint8_t, kMaxAddressChannels> channel_parent_channel{};
     std::array<std::uint8_t, kMaxAddressChannels> channel_dependency_channel{};
@@ -386,6 +444,31 @@ struct Diagnostics {
     std::uint64_t residual_nodes{};
     std::uint64_t stale_bucket_refs_skipped{};
     std::uint64_t stale_edge_refs_skipped{};
+    std::uint64_t candidate_source_exact_bucket{};
+    std::uint64_t candidate_source_control_edge{};
+    std::uint64_t candidate_source_neighbor_bucket{};
+    double route_score_hamming_sum{};
+    double route_score_exact_sum{};
+    double route_score_edge_prior_sum{};
+    std::uint64_t gpaf_role_observations{};
+    std::uint64_t gpaf_unique_role_keys{};
+    std::uint64_t gpaf_slots_allocated{};
+    std::uint64_t gpaf_probe_slots{};
+    std::uint64_t gpaf_active_slots{};
+    std::uint64_t gpaf_quarantined_slots{};
+    std::uint64_t gpaf_recoverable_retired_slots{};
+    std::uint64_t gpaf_physically_erased_slots{};
+    std::uint64_t gpaf_slot_promotions{};
+    std::uint64_t gpaf_slot_quarantines{};
+    std::uint64_t gpaf_slot_recoverable_retires{};
+    std::uint64_t gpaf_slot_restores{};
+    std::uint64_t gpaf_shadow_updates{};
+    std::uint64_t gpaf_slots_probed{};
+    std::uint64_t gpaf_candidates_returned{};
+    std::uint64_t gpaf_structural_call_observations{};
+    std::uint64_t gpaf_structural_call_keys{};
+    std::uint64_t gpaf_structural_call_candidates_returned{};
+    std::uint64_t gpaf_structural_call_blocked{};
     std::uint64_t estimated_bytes{};
     std::uint64_t sparse_output_entries{};
     std::uint64_t topology_proposals{};

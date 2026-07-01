@@ -209,6 +209,81 @@ int main() {
         assert(frame.binding_state.pattern_span == 0U);
     }
 
+    {
+        // Multi-hop content follow: single-hop matches at the first hop position,
+        // while two-hop and three-hop variants chain backward to earlier positions.
+        sbm::Config interpreter_config;
+        interpreter_config.token_alphabet = 4096U;
+        const std::array<std::uint32_t, 12> data{
+            1U, 2U, 3U, 1U, 2U, 4U, 1U, 2U, 3U, 1U, 2U, 3U};
+        const std::array<std::uint32_t, 15> data3{
+            1U, 2U, 3U, 1U, 2U, 4U, 1U, 2U, 3U, 1U, 2U, 3U, 1U, 2U, 3U};
+
+        sbm::AddressProgram single;
+        single.lags[0] = 1U;
+        single.lags[1] = 6U;
+        single.arity = 2U;
+        single.op = sbm::AddressOp::ContentFollow;
+
+        sbm::AddressProgram multi2;
+        multi2.lags[0] = 1U;
+        multi2.lags[1] = 6U;
+        multi2.arity = 2U;
+        multi2.op = sbm::AddressOp::ContentFollowMulti2;
+
+        sbm::AddressProgram multi3;
+        multi3.lags[0] = 1U;
+        multi3.lags[1] = 6U;
+        multi3.arity = 2U;
+        multi3.op = sbm::AddressOp::ContentFollowMulti3;
+
+        sbm::AddressExecutionFrame single_frame{};
+        sbm::AddressExecutionFrame multi2_frame{};
+        sbm::AddressExecutionFrame multi3_frame{};
+
+        const bool single_matched = sbm::execute_address_program(
+            data, interpreter_config.token_alphabet, single, 17U, single_frame);
+        const bool multi2_matched = sbm::execute_address_program(
+            data, interpreter_config.token_alphabet, multi2, 17U, multi2_frame);
+        const bool multi3_matched = sbm::execute_address_program(
+            data3, interpreter_config.token_alphabet, multi3, 17U, multi3_frame);
+
+        assert(single_matched);
+        assert(multi2_matched);
+        assert(multi3_matched);
+
+        assert(single_frame.binding_state.matched_index == 8U);
+        assert(single_frame.binding_state.matched_token == 3U);
+        assert(single_frame.binding_state.matched_successor == 1U);
+        assert(single_frame.binding_state.matched_distance == 3U);
+
+        assert(multi2_frame.binding_state.matched_index == 3U);
+        assert(multi2_frame.binding_state.matched_token == 1U);
+        assert(multi2_frame.binding_state.matched_successor == 2U);
+        assert(multi2_frame.binding_state.matched_distance == 6U);
+
+        assert(multi3_frame.binding_state.matched_index == 7U);
+        assert(multi3_frame.binding_state.matched_token == 2U);
+        assert(multi3_frame.binding_state.matched_successor == 3U);
+        assert(multi3_frame.binding_state.matched_distance == 3U);
+
+        assert(multi2_frame.binding == sbm::AddressBindingKind::ContentFollow);
+        assert(multi3_frame.binding == sbm::AddressBindingKind::ContentFollow);
+        assert(multi2_frame.input_state == sbm::AddressStateKind::ContentBinding);
+        assert(multi2_frame.output_state == sbm::AddressStateKind::FollowBinding);
+        assert(multi3_frame.input_state == sbm::AddressStateKind::ContentBinding);
+        assert(multi3_frame.output_state == sbm::AddressStateKind::FollowBinding);
+        assert(sbm::address_program_required_dependency_binding(multi2) ==
+               sbm::AddressBindingKind::ContentMatch);
+        assert(sbm::address_program_required_dependency_binding(multi3) ==
+               sbm::AddressBindingKind::ContentMatch);
+        assert(multi2_frame.binding_state.binding_key != 0U);
+        assert(multi3_frame.binding_state.binding_key != 0U);
+        assert(multi2_frame.binding_state.binding_key != single_frame.binding_state.binding_key);
+        assert(multi2_frame.execution_cost > single_frame.execution_cost);
+        assert(multi3_frame.execution_cost > multi2_frame.execution_cost);
+    }
+
     auto dataset = sbm::generate_vector_process(8000, 32, 16, 20, 9);
     assert(dataset.tokens.size() == 8000);
     assert(dataset.targets.size() == 8000 * 16);
@@ -654,7 +729,7 @@ int main() {
         assert(program.arity >= 1U &&
                program.arity <= topology_config.topology_max_arity);
         assert(static_cast<unsigned>(program.op) <=
-               static_cast<unsigned>(sbm::AddressOp::ContentFollow));
+               static_cast<unsigned>(sbm::AddressOp::ContentFollowMulti3));
     }
 
     sbm::Config lineage_config = token_config;

@@ -266,7 +266,32 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         }
     }
 
-    auto [active, examined] = select_route(signatures);
+    auto [active, examined] = select_route(signatures, 2, learn);
+
+    // Iterative refinement: if responsibility is not concentrated, expand the
+    // neighbor radius and re-select. All rounds complete before the target is
+    // used, preserving causal ordering (§4.5).
+    if (config_.max_refinement_rounds > 0) {
+        float max_responsibility = 0.0F;
+        for (const auto& node : active) {
+            max_responsibility = std::max(max_responsibility, node.responsibility);
+        }
+        for (std::uint32_t round = 0;
+             round < config_.max_refinement_rounds &&
+             max_responsibility < config_.refinement_confidence_threshold;
+             ++round) {
+            const std::int64_t radius = 2 + static_cast<std::int64_t>(round) + 1;
+            auto [refined, examined_refined] = select_route(signatures, radius, learn);
+            examined += examined_refined;
+            active = refined;
+            max_responsibility = 0.0F;
+            for (const auto& node : active) {
+                max_responsibility = std::max(max_responsibility,
+                                              node.responsibility);
+            }
+        }
+    }
+
     auto& output_tree = *implicit_output_;
     output_tree.target_path(target_token, token_path_scratch_);
     const float temperature = std::max(config_.softmax_temperature, 1e-5F);
@@ -282,6 +307,82 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     const float target_probability = std::exp(-std::min(cross_entropy, 80.0F));
     const float normalized_loss = cross_entropy /
         std::max(std::log(static_cast<float>(config_.vector_dim)), 1e-5F);
+
+    bool gpaf_ablation_available = false;
+    float gpaf_removed_cross_entropy = 0.0F;
+    float gpaf_codelength_gain = 0.0F;
+    float gpaf_false_positive_cost = 0.0F;
+    std::uint32_t gpaf_ablation_nodes = 0U;
+    std::uint8_t gpaf_ablation_key_count = 0U;
+    std::array<std::uint64_t, kMaxGpafAblationKeys> gpaf_ablation_keys{};
+    std::array<std::uint32_t, kMaxGpafAblationKeys> gpaf_ablation_key_nodes{};
+    std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_removed_cross_entropy{};
+    std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_gain{};
+    std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_false_positive_cost{};
+    gpaf_ablation_keys.fill(UINT64_MAX);
+    if (!learn) {
+        for (const auto& node : active) {
+            if (node.source != CandidateSource::GpafRole ||
+                node.gpaf_key == UINT64_MAX) {
+                continue;
+            }
+            ++gpaf_ablation_nodes;
+            std::size_t key_index = SIZE_MAX;
+            for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
+                if (gpaf_ablation_keys[i] == node.gpaf_key) {
+                    key_index = i;
+                    break;
+                }
+            }
+            if (key_index == SIZE_MAX &&
+                gpaf_ablation_key_count < kMaxGpafAblationKeys) {
+                key_index = gpaf_ablation_key_count++;
+                gpaf_ablation_keys[key_index] = node.gpaf_key;
+            }
+            if (key_index != SIZE_MAX) ++gpaf_ablation_key_nodes[key_index];
+        }
+        if (gpaf_ablation_nodes != 0U) {
+            gpaf_ablation_available = true;
+            std::size_t path_position = 0U;
+            for (const auto& step : token_path_scratch_) {
+                float removed = 0.0F;
+                std::array<float, kMaxGpafAblationKeys> removed_by_key{};
+                for (const auto& node : active) {
+                    if (node.source != CandidateSource::GpafRole ||
+                        node.gpaf_key == UINT64_MAX) {
+                        continue;
+                    }
+                    const auto slot = slot_of(node.id);
+                    if (slot == SIZE_MAX) continue;
+                    const float node_logit =
+                        node.responsibility * sparse_logit(slot, step.id);
+                    removed += node_logit;
+                    for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
+                        if (gpaf_ablation_keys[i] == node.gpaf_key) {
+                            removed_by_key[i] += node_logit;
+                            break;
+                        }
+                    }
+                }
+                gpaf_removed_cross_entropy += branch_loss(
+                    (path_logits[path_position] - removed) / temperature, step.right);
+                for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
+                    gpaf_ablation_key_removed_cross_entropy[i] += branch_loss(
+                        (path_logits[path_position] - removed_by_key[i]) / temperature,
+                        step.right);
+                }
+                ++path_position;
+            }
+            gpaf_codelength_gain = gpaf_removed_cross_entropy - cross_entropy;
+            gpaf_false_positive_cost = std::max(0.0F, -gpaf_codelength_gain);
+            for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
+                gpaf_ablation_key_gain[i] =
+                    gpaf_ablation_key_removed_cross_entropy[i] - cross_entropy;
+                gpaf_ablation_key_false_positive_cost[i] =
+                    std::max(0.0F, -gpaf_ablation_key_gain[i]);
+            }
+        }
+    }
 
     const bool measure_channel_credit = learn || config_.record_channel_attribution;
     std::uint32_t seed_channel_mask = 0U;
@@ -362,10 +463,10 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             if (channel == 0U) seed_channel_mask |= bit;
             if (topology_[channel].phase == ChannelPhase::Active) {
                 active_channel_mask |= bit;
-                if (topology_[channel].program.op == AddressOp::ContentMatch ||
-                    topology_[channel].program.op == AddressOp::ContentFollow) {
+                const auto op = topology_[channel].program.op;
+                if (op == AddressOp::ContentMatch || is_content_follow_op(op)) {
                     content_channel_mask |= bit;
-                } else if (topology_[channel].program.op == AddressOp::Tuple) {
+                } else if (op == AddressOp::Tuple) {
                     tuple_channel_mask |= bit;
                 }
             }
@@ -555,6 +656,7 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         contributions.push_back(node.contribution);
     }
 
+    if (learn) observe_gpaf_shadow_roles(active);
     if (learn) observe_global_output_path(token_path_scratch_);
 
     if (learn) {
@@ -604,8 +706,33 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                     config_.classification_learning_rate,
                     config_.classification_mature_learning_rate,
                     config_.mature_visits) * within_channel_responsibility / temperature;
-                entry.logit = (1.0F - config_.logit_decay) * entry.logit +
-                        rate * (target_right - probability_right);
+                const float grad = target_right - probability_right;
+                if (config_.use_momentum) {
+                    entry.momentum = config_.momentum_beta1 * entry.momentum +
+                        (1.0F - config_.momentum_beta1) * grad;
+                    entry.variance = config_.momentum_beta2 * entry.variance +
+                        (1.0F - config_.momentum_beta2) * grad * grad;
+                    // Adam bias correction: first few updates would otherwise
+                    // have an inflated effective learning rate.
+                    const std::uint32_t step_count = entry.visits + 1U;
+                    const float bias_correction1 =
+                        1.0F - std::pow(config_.momentum_beta1,
+                                        static_cast<float>(step_count));
+                    const float bias_correction2 =
+                        1.0F - std::pow(config_.momentum_beta2,
+                                        static_cast<float>(step_count));
+                    const float m_hat = entry.momentum /
+                        std::max(bias_correction1, 1e-8F);
+                    const float v_hat = entry.variance /
+                        std::max(bias_correction2, 1e-8F);
+                    const float adaptive_rate = rate /
+                        (std::sqrt(v_hat) + config_.momentum_eps);
+                    entry.logit = (1.0F - config_.logit_decay) * entry.logit +
+                        adaptive_rate * m_hat;
+                } else {
+                    entry.logit = (1.0F - config_.logit_decay) * entry.logit +
+                        rate * grad;
+                }
                 entry.gain_ema = 0.99F * entry.gain_ema + 0.01F * gain;
                 if (entry.visits != std::numeric_limits<std::uint32_t>::max()) {
                     ++entry.visits;
@@ -662,6 +789,19 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     stats.route = std::move(route);
     stats.cross_entropy = cross_entropy;
     stats.target_probability = target_probability;
+    stats.gpaf_ablation_available = gpaf_ablation_available;
+    stats.gpaf_removed_cross_entropy = gpaf_removed_cross_entropy;
+    stats.gpaf_codelength_gain = gpaf_codelength_gain;
+    stats.gpaf_false_positive_cost = gpaf_false_positive_cost;
+    stats.gpaf_ablation_nodes = gpaf_ablation_nodes;
+    stats.gpaf_ablation_key_count = gpaf_ablation_key_count;
+    stats.gpaf_ablation_keys = gpaf_ablation_keys;
+    stats.gpaf_ablation_key_nodes = gpaf_ablation_key_nodes;
+    stats.gpaf_ablation_key_removed_cross_entropy =
+        gpaf_ablation_key_removed_cross_entropy;
+    stats.gpaf_ablation_key_gain = gpaf_ablation_key_gain;
+    stats.gpaf_ablation_key_false_positive_cost =
+        gpaf_ablation_key_false_positive_cost;
     stats.top1_correct = ranking_available && predicted == target_token;
     stats.top5_correct = ranking_available && top5;
     stats.ranking_available = ranking_available;

@@ -232,7 +232,11 @@ constexpr ParameterDescriptor kParameters[] = {
     {"vector_dim", "uint32", "16", "1", "4096", "linear", false, false, true, "Target vector dimension; overwritten by the dataset at run time."},
     {"context_width", "uint32", "12", "2", "256", "linear", true, false, false, "Maximum retained token history."},
     {"bucket_bits", "uint32", "12", "6", "18", "linear", true, false, false, "Bits used by each address-channel bucket index."},
-    {"beam_width", "uint32", "6", "3", "16", "linear", true, false, false, "Maximum active nodes per step."},
+    {"beam_width", "uint32", "6", "1", "64", "linear", true, false, false, "Maximum active nodes per step."},
+    {"beam_width_min", "uint32", "6", "1", "64", "linear", true, false, false, "Minimum active nodes when prediction is confident; beam_width remains the upper bound."},
+    {"confidence_threshold", "float", "0.8", "0.0", "1.0", "linear", true, false, false, "Minimum max-responsibility concentration that triggers truncation to beam_width_min."},
+    {"max_refinement_rounds", "uint32", "0", "0", "8", "linear", true, false, false, "Maximum extra routing rounds with expanded neighbor radius for uncertain tokens."},
+    {"refinement_confidence_threshold", "float", "0.5", "0.0", "1.0", "linear", true, false, false, "Minimum max-responsibility that stops iterative refinement."},
     {"bucket_scan_limit", "uint32", "32", "4", "128", "log", true, false, false, "Maximum nodes examined from an address bucket."},
     {"edge_scan_limit", "uint32", "8", "1", "32", "linear", true, false, false, "Maximum outgoing edges examined per source node."},
     {"max_edges_per_node", "uint32", "32", "4", "128", "log", true, false, false, "Maximum stored sparse control edges per node."},
@@ -259,6 +263,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"topology_max_arity", "uint32", "2", "1", "2", "linear", true, false, false, "Maximum number of history offsets in an address program."},
     {"topology_enable_delta", "bool", "true", "", "", "categorical", false, false, false, "Allow the generic modular-difference address operator to be proposed."},
     {"topology_enable_content_match", "bool", "true", "", "", "categorical", false, false, false, "Allow bounded content-conditioned match/follow address operators to be proposed."},
+    {"topology_enable_content_follow_multi", "bool", "false", "", "", "categorical", false, false, false, "Allow bounded multi-hop content-follow address operators to be proposed."},
     {"topology_probe_interval", "uint32", "2048", "128", "16384", "log", true, false, false, "Delay between topology proposals."},
     {"topology_probe_warmup", "uint32", "512", "0", "4096", "linear", true, false, false, "Probe steps ignored before credit collection."},
     {"topology_probe_steps", "uint32", "4096", "512", "32768", "log", true, false, false, "Lifetime of a candidate address channel."},
@@ -295,8 +300,19 @@ constexpr ParameterDescriptor kParameters[] = {
     {"sparse_output_beam_width", "uint32", "16", "5", "128", "log", true, false, false, "Fixed candidate beam for O(B log V) hierarchical decoding."},
     {"max_sparse_decisions_per_node", "uint32", "64", "8", "4096", "log", true, false, false, "Hard bound on local hierarchical decisions stored by one address node."},
     {"decode_token_ranking_during_training", "bool", "false", "", "", "categorical", false, false, false, "Compute token top-k ranking metrics during training; evaluation ranking is always computed."},
+    {"use_momentum", "bool", "false", "", "", "categorical", false, false, false, "Enable per-entry Adam-like momentum for sparse decision logits."},
+    {"momentum_beta1", "float", "0.9", "0.0", "0.999", "linear", true, false, false, "Exponential decay rate for the first moment estimate."},
+    {"momentum_beta2", "float", "0.999", "0.0", "0.99999", "linear", true, false, false, "Exponential decay rate for the second moment estimate."},
+    {"momentum_eps", "float", "1e-8", "1e-12", "1e-3", "log", true, false, false, "Epsilon for numerical stability in adaptive learning rate."},
     {"record_channel_attribution", "bool", "false", "", "", "categorical", false, false, false, "Record frozen-evaluation per-channel counterfactual codelength attribution."},
     {"max_binding_reuse_records_per_channel", "uint32", "4096", "0", "65536", "log", true, false, false, "Bounded per-channel training registry size for reusable binding keys."},
+    {"gpaf_shadow_observation", "bool", "false", "", "", "categorical", false, false, false, "Record Global Predictive Address Field role keys without changing routing."},
+    {"gpaf_candidate_retrieval", "bool", "false", "", "", "categorical", false, false, false, "Allow GPAF slots to inject bounded candidates; disabled by default."},
+    {"gpaf_query_keys_per_step", "uint32", "0", "0", "32", "linear", true, false, false, "Maximum GPAF role query keys per step."},
+    {"gpaf_slots", "uint32", "0", "0", "1048576", "log", true, false, false, "Maximum GPAF shadow/address slots."},
+    {"gpaf_residents_per_slot", "uint32", "0", "0", "64", "linear", true, false, false, "Maximum resident candidates returned by one GPAF slot."},
+    {"gpaf_probe_min_observations", "uint32", "64", "1", "1048576", "log", true, false, false, "Minimum repeated role observations before a GPAF Probe slot may become Active."},
+    {"gpaf_probe_min_residents", "uint32", "1", "0", "64", "linear", true, false, false, "Minimum distinct residents before a GPAF Probe slot may become Active."},
     {"output_tree_seed", "uint64", "7", "0", "18446744073709551615", "linear", true, false, false, "Seed for the fixed implicit output decomposition; keep constant across model seeds."},
     {"seed", "uint64", "7", "0", "18446744073709551615", "linear", false, false, false, "Model random seed."},
 };
@@ -312,6 +328,10 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(context_width)
     SBM_SET_UINT(bucket_bits)
     SBM_SET_UINT(beam_width)
+    SBM_SET_UINT(beam_width_min)
+    SBM_SET_FLOAT(confidence_threshold)
+    SBM_SET_UINT(max_refinement_rounds)
+    SBM_SET_FLOAT(refinement_confidence_threshold)
     SBM_SET_UINT(bucket_scan_limit)
     SBM_SET_UINT(edge_scan_limit)
     SBM_SET_UINT(max_edges_per_node)
@@ -338,6 +358,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(topology_max_arity)
     SBM_SET_BOOL(topology_enable_delta)
     SBM_SET_BOOL(topology_enable_content_match)
+    SBM_SET_BOOL(topology_enable_content_follow_multi)
     SBM_SET_UINT(topology_probe_interval)
     SBM_SET_UINT(topology_probe_warmup)
     SBM_SET_UINT(topology_probe_steps)
@@ -380,8 +401,19 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(sparse_output_beam_width)
     SBM_SET_UINT(max_sparse_decisions_per_node)
     SBM_SET_BOOL(decode_token_ranking_during_training)
+    SBM_SET_BOOL(use_momentum)
+    SBM_SET_FLOAT(momentum_beta1)
+    SBM_SET_FLOAT(momentum_beta2)
+    SBM_SET_FLOAT(momentum_eps)
     SBM_SET_BOOL(record_channel_attribution)
     SBM_SET_UINT(max_binding_reuse_records_per_channel)
+    SBM_SET_BOOL(gpaf_shadow_observation)
+    SBM_SET_BOOL(gpaf_candidate_retrieval)
+    SBM_SET_UINT(gpaf_query_keys_per_step)
+    SBM_SET_UINT(gpaf_slots)
+    SBM_SET_UINT(gpaf_residents_per_slot)
+    SBM_SET_UINT(gpaf_probe_min_observations)
+    SBM_SET_UINT(gpaf_probe_min_residents)
     SBM_SET_U64(output_tree_seed)
     SBM_SET_U64(seed)
 #undef SBM_SET_UINT
@@ -400,6 +432,10 @@ std::string config_json(const sbm::Config& c) {
         << "  \"context_width\": " << c.context_width << ",\n"
         << "  \"bucket_bits\": " << c.bucket_bits << ",\n"
         << "  \"beam_width\": " << c.beam_width << ",\n"
+        << "  \"beam_width_min\": " << c.beam_width_min << ",\n"
+        << "  \"confidence_threshold\": " << c.confidence_threshold << ",\n"
+        << "  \"max_refinement_rounds\": " << c.max_refinement_rounds << ",\n"
+        << "  \"refinement_confidence_threshold\": " << c.refinement_confidence_threshold << ",\n"
         << "  \"bucket_scan_limit\": " << c.bucket_scan_limit << ",\n"
         << "  \"edge_scan_limit\": " << c.edge_scan_limit << ",\n"
         << "  \"max_edges_per_node\": " << c.max_edges_per_node << ",\n"
@@ -432,6 +468,8 @@ std::string config_json(const sbm::Config& c) {
         << "  \"topology_enable_delta\": " << c.topology_enable_delta << ",\n"
         << "  \"topology_enable_content_match\": "
         << c.topology_enable_content_match << ",\n"
+        << "  \"topology_enable_content_follow_multi\": "
+        << c.topology_enable_content_follow_multi << ",\n"
         << "  \"topology_probe_interval\": " << c.topology_probe_interval << ",\n"
         << "  \"topology_probe_warmup\": " << c.topology_probe_warmup << ",\n"
         << "  \"topology_probe_steps\": " << c.topology_probe_steps << ",\n"
@@ -476,10 +514,27 @@ std::string config_json(const sbm::Config& c) {
         << c.max_sparse_decisions_per_node << ",\n"
         << "  \"decode_token_ranking_during_training\": "
         << c.decode_token_ranking_during_training << ",\n"
+        << "  \"use_momentum\": " << c.use_momentum << ",\n"
+        << "  \"momentum_beta1\": " << c.momentum_beta1 << ",\n"
+        << "  \"momentum_beta2\": " << c.momentum_beta2 << ",\n"
+        << "  \"momentum_eps\": " << c.momentum_eps << ",\n"
         << "  \"record_channel_attribution\": "
         << c.record_channel_attribution << ",\n"
         << "  \"max_binding_reuse_records_per_channel\": "
         << c.max_binding_reuse_records_per_channel << ",\n"
+        << "  \"gpaf_shadow_observation\": "
+        << c.gpaf_shadow_observation << ",\n"
+        << "  \"gpaf_candidate_retrieval\": "
+        << c.gpaf_candidate_retrieval << ",\n"
+        << "  \"gpaf_query_keys_per_step\": "
+        << c.gpaf_query_keys_per_step << ",\n"
+        << "  \"gpaf_slots\": " << c.gpaf_slots << ",\n"
+        << "  \"gpaf_residents_per_slot\": "
+        << c.gpaf_residents_per_slot << ",\n"
+        << "  \"gpaf_probe_min_observations\": "
+        << c.gpaf_probe_min_observations << ",\n"
+        << "  \"gpaf_probe_min_residents\": "
+        << c.gpaf_probe_min_residents << ",\n"
         << "  \"output_tree_seed\": " << c.output_tree_seed << ",\n"
         << "  \"seed\": " << c.seed << "\n"
         << "}\n";
@@ -496,9 +551,20 @@ std::string_view parameter_tasks(std::string_view name) {
         name == "sparse_output_beam_width" ||
         name == "max_sparse_decisions_per_node" ||
         name == "decode_token_ranking_during_training" ||
+        name == "use_momentum" ||
+        name == "momentum_beta1" ||
+        name == "momentum_beta2" ||
+        name == "momentum_eps" ||
         name == "record_channel_attribution" ||
         name == "binding_reuse_value_weight" ||
-        name == "max_binding_reuse_records_per_channel") {
+        name == "max_binding_reuse_records_per_channel" ||
+        name == "gpaf_shadow_observation" ||
+        name == "gpaf_candidate_retrieval" ||
+        name == "gpaf_query_keys_per_step" ||
+        name == "gpaf_slots" ||
+        name == "gpaf_residents_per_slot" ||
+        name == "gpaf_probe_min_observations" ||
+        name == "gpaf_probe_min_residents") {
         return "token-ce";
     }
     if (name == "residual_learning_rate" ||
@@ -758,6 +824,56 @@ char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
             << ", \"logical_ids_issued\": " << diagnostics.logical_ids_issued
             << ", \"avg_active\": " << diagnostics.avg_active
             << ", \"avg_candidates\": " << diagnostics.avg_candidates
+            << ", \"candidate_source_exact_bucket\": "
+            << diagnostics.candidate_source_exact_bucket
+            << ", \"candidate_source_control_edge\": "
+            << diagnostics.candidate_source_control_edge
+            << ", \"candidate_source_neighbor_bucket\": "
+            << diagnostics.candidate_source_neighbor_bucket
+            << ", \"route_score_hamming_sum\": "
+            << diagnostics.route_score_hamming_sum
+            << ", \"route_score_exact_sum\": "
+            << diagnostics.route_score_exact_sum
+            << ", \"route_score_edge_prior_sum\": "
+            << diagnostics.route_score_edge_prior_sum
+            << ", \"gpaf_role_observations\": "
+            << diagnostics.gpaf_role_observations
+            << ", \"gpaf_unique_role_keys\": "
+            << diagnostics.gpaf_unique_role_keys
+            << ", \"gpaf_slots_allocated\": "
+            << diagnostics.gpaf_slots_allocated
+            << ", \"gpaf_probe_slots\": "
+            << diagnostics.gpaf_probe_slots
+            << ", \"gpaf_active_slots\": "
+            << diagnostics.gpaf_active_slots
+            << ", \"gpaf_quarantined_slots\": "
+            << diagnostics.gpaf_quarantined_slots
+            << ", \"gpaf_recoverable_retired_slots\": "
+            << diagnostics.gpaf_recoverable_retired_slots
+            << ", \"gpaf_physically_erased_slots\": "
+            << diagnostics.gpaf_physically_erased_slots
+            << ", \"gpaf_slot_promotions\": "
+            << diagnostics.gpaf_slot_promotions
+            << ", \"gpaf_slot_quarantines\": "
+            << diagnostics.gpaf_slot_quarantines
+            << ", \"gpaf_slot_recoverable_retires\": "
+            << diagnostics.gpaf_slot_recoverable_retires
+            << ", \"gpaf_slot_restores\": "
+            << diagnostics.gpaf_slot_restores
+            << ", \"gpaf_shadow_updates\": "
+            << diagnostics.gpaf_shadow_updates
+            << ", \"gpaf_slots_probed\": "
+            << diagnostics.gpaf_slots_probed
+            << ", \"gpaf_candidates_returned\": "
+            << diagnostics.gpaf_candidates_returned
+            << ", \"gpaf_structural_call_observations\": "
+            << diagnostics.gpaf_structural_call_observations
+            << ", \"gpaf_structural_call_keys\": "
+            << diagnostics.gpaf_structural_call_keys
+            << ", \"gpaf_structural_call_candidates_returned\": "
+            << diagnostics.gpaf_structural_call_candidates_returned
+            << ", \"gpaf_structural_call_blocked\": "
+            << diagnostics.gpaf_structural_call_blocked
             << ", \"address_execution_frames\": "
             << diagnostics.address_execution_frames
             << ", \"address_binding_hits\": " << diagnostics.address_binding_hits

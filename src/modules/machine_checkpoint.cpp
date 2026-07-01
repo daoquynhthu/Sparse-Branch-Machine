@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', '6'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', 'D'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -76,6 +76,70 @@ std::vector<std::vector<T>> read_nested_vector(std::istream& in) {
     return values;
 }
 
+void write_u64_map(std::ostream& out,
+                   const std::unordered_map<std::uint64_t, std::uint64_t>& values) {
+    write_scalar<std::uint64_t>(out, values.size());
+    for (const auto& [key, value] : values) {
+        write_scalar(out, key);
+        write_scalar(out, value);
+    }
+}
+
+std::unordered_map<std::uint64_t, std::uint64_t> read_u64_map(std::istream& in) {
+    const auto size = read_scalar<std::uint64_t>(in);
+    std::unordered_map<std::uint64_t, std::uint64_t> values;
+    values.reserve(static_cast<std::size_t>(size));
+    for (std::uint64_t index = 0; index < size; ++index) {
+        const auto key = read_scalar<std::uint64_t>(in);
+        const auto value = read_scalar<std::uint64_t>(in);
+        values.emplace(key, value);
+    }
+    return values;
+}
+
+void write_u64_u8_map(std::ostream& out,
+                      const std::unordered_map<std::uint64_t, std::uint8_t>& values) {
+    write_scalar<std::uint64_t>(out, values.size());
+    for (const auto& [key, value] : values) {
+        write_scalar(out, key);
+        write_scalar(out, value);
+    }
+}
+
+std::unordered_map<std::uint64_t, std::uint8_t> read_u64_u8_map(std::istream& in) {
+    const auto size = read_scalar<std::uint64_t>(in);
+    std::unordered_map<std::uint64_t, std::uint8_t> values;
+    values.reserve(static_cast<std::size_t>(size));
+    for (std::uint64_t index = 0; index < size; ++index) {
+        const auto key = read_scalar<std::uint64_t>(in);
+        const auto value = read_scalar<std::uint8_t>(in);
+        values.emplace(key, value);
+    }
+    return values;
+}
+
+void write_resident_map(
+    std::ostream& out,
+    const std::unordered_map<std::uint64_t, std::vector<NodeId>>& values) {
+    write_scalar<std::uint64_t>(out, values.size());
+    for (const auto& [key, residents] : values) {
+        write_scalar(out, key);
+        write_vector(out, residents);
+    }
+}
+
+std::unordered_map<std::uint64_t, std::vector<NodeId>> read_resident_map(
+    std::istream& in) {
+    const auto size = read_scalar<std::uint64_t>(in);
+    std::unordered_map<std::uint64_t, std::vector<NodeId>> values;
+    values.reserve(static_cast<std::size_t>(size));
+    for (std::uint64_t index = 0; index < size; ++index) {
+        const auto key = read_scalar<std::uint64_t>(in);
+        values.emplace(key, read_vector<NodeId>(in));
+    }
+    return values;
+}
+
 void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.objective);
     write_scalar(out, config.token_alphabet);
@@ -83,6 +147,10 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.context_width);
     write_scalar(out, config.bucket_bits);
     write_scalar(out, config.beam_width);
+    write_scalar(out, config.beam_width_min);
+    write_scalar(out, config.confidence_threshold);
+    write_scalar(out, config.max_refinement_rounds);
+    write_scalar(out, config.refinement_confidence_threshold);
     write_scalar(out, config.bucket_scan_limit);
     write_scalar(out, config.edge_scan_limit);
     write_scalar(out, config.max_edges_per_node);
@@ -109,6 +177,7 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.topology_max_arity);
     write_scalar(out, config.topology_enable_delta);
     write_scalar(out, config.topology_enable_content_match);
+    write_scalar(out, config.topology_enable_content_follow_multi);
     write_scalar(out, config.topology_probe_interval);
     write_scalar(out, config.topology_probe_warmup);
     write_scalar(out, config.topology_probe_steps);
@@ -145,8 +214,19 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.sparse_output_beam_width);
     write_scalar(out, config.max_sparse_decisions_per_node);
     write_scalar(out, config.decode_token_ranking_during_training);
+    write_scalar(out, config.use_momentum);
+    write_scalar(out, config.momentum_beta1);
+    write_scalar(out, config.momentum_beta2);
+    write_scalar(out, config.momentum_eps);
     write_scalar(out, config.record_channel_attribution);
     write_scalar(out, config.max_binding_reuse_records_per_channel);
+    write_scalar(out, config.gpaf_shadow_observation);
+    write_scalar(out, config.gpaf_candidate_retrieval);
+    write_scalar(out, config.gpaf_query_keys_per_step);
+    write_scalar(out, config.gpaf_slots);
+    write_scalar(out, config.gpaf_residents_per_slot);
+    write_scalar(out, config.gpaf_probe_min_observations);
+    write_scalar(out, config.gpaf_probe_min_residents);
     write_scalar(out, config.output_tree_seed);
     write_scalar(out, config.seed);
 }
@@ -159,6 +239,10 @@ Config read_config(std::istream& in) {
     config.context_width = read_scalar<std::uint32_t>(in);
     config.bucket_bits = read_scalar<std::uint32_t>(in);
     config.beam_width = read_scalar<std::uint32_t>(in);
+    config.beam_width_min = read_scalar<std::uint32_t>(in);
+    config.confidence_threshold = read_scalar<float>(in);
+    config.max_refinement_rounds = read_scalar<std::uint32_t>(in);
+    config.refinement_confidence_threshold = read_scalar<float>(in);
     config.bucket_scan_limit = read_scalar<std::uint32_t>(in);
     config.edge_scan_limit = read_scalar<std::uint32_t>(in);
     config.max_edges_per_node = read_scalar<std::uint32_t>(in);
@@ -185,6 +269,7 @@ Config read_config(std::istream& in) {
     config.topology_max_arity = read_scalar<std::uint32_t>(in);
     config.topology_enable_delta = read_scalar<bool>(in);
     config.topology_enable_content_match = read_scalar<bool>(in);
+    config.topology_enable_content_follow_multi = read_scalar<bool>(in);
     config.topology_probe_interval = read_scalar<std::uint32_t>(in);
     config.topology_probe_warmup = read_scalar<std::uint32_t>(in);
     config.topology_probe_steps = read_scalar<std::uint32_t>(in);
@@ -221,8 +306,19 @@ Config read_config(std::istream& in) {
     config.sparse_output_beam_width = read_scalar<std::uint32_t>(in);
     config.max_sparse_decisions_per_node = read_scalar<std::uint32_t>(in);
     config.decode_token_ranking_during_training = read_scalar<bool>(in);
+    config.use_momentum = read_scalar<bool>(in);
+    config.momentum_beta1 = read_scalar<float>(in);
+    config.momentum_beta2 = read_scalar<float>(in);
+    config.momentum_eps = read_scalar<float>(in);
     config.record_channel_attribution = read_scalar<bool>(in);
     config.max_binding_reuse_records_per_channel = read_scalar<std::uint32_t>(in);
+    config.gpaf_shadow_observation = read_scalar<bool>(in);
+    config.gpaf_candidate_retrieval = read_scalar<bool>(in);
+    config.gpaf_query_keys_per_step = read_scalar<std::uint32_t>(in);
+    config.gpaf_slots = read_scalar<std::uint32_t>(in);
+    config.gpaf_residents_per_slot = read_scalar<std::uint32_t>(in);
+    config.gpaf_probe_min_observations = read_scalar<std::uint32_t>(in);
+    config.gpaf_probe_min_residents = read_scalar<std::uint32_t>(in);
     config.output_tree_seed = read_scalar<std::uint64_t>(in);
     config.seed = read_scalar<std::uint64_t>(in);
     return config;
@@ -313,6 +409,10 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_vector(out, machine.hot_indexed_);
     write_vector(out, machine.parents_);
     write_nested_vector(out, machine.binding_reuse_);
+    write_u64_map(out, machine.gpaf_role_observations_);
+    write_u64_map(out, machine.gpaf_structural_call_observations_);
+    write_u64_u8_map(out, machine.gpaf_slot_phases_);
+    write_resident_map(out, machine.gpaf_residents_);
     write_vector(out, machine.output_vectors_);
     write_nested_vector(out, machine.sparse_outputs_);
     write_nested_vector(out, machine.sparse_admission_);
@@ -336,6 +436,22 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_scalar(out, machine.total_created_);
     write_scalar(out, machine.total_merged_);
     write_scalar(out, machine.total_pruned_);
+    write_scalar(out, machine.candidate_source_exact_bucket_);
+    write_scalar(out, machine.candidate_source_control_edge_);
+    write_scalar(out, machine.candidate_source_neighbor_bucket_);
+    write_scalar(out, machine.route_score_hamming_sum_);
+    write_scalar(out, machine.route_score_exact_sum_);
+    write_scalar(out, machine.route_score_edge_prior_sum_);
+    write_scalar(out, machine.gpaf_role_observations_total_);
+    write_scalar(out, machine.gpaf_slot_promotions_);
+    write_scalar(out, machine.gpaf_slot_quarantines_);
+    write_scalar(out, machine.gpaf_slot_recoverable_retires_);
+    write_scalar(out, machine.gpaf_slot_restores_);
+    write_scalar(out, machine.gpaf_shadow_updates_);
+    write_scalar(out, machine.gpaf_slots_probed_);
+    write_scalar(out, machine.gpaf_candidates_returned_);
+    write_scalar(out, machine.gpaf_structural_call_candidates_returned_);
+    write_scalar(out, machine.gpaf_structural_call_blocked_);
     write_scalar(out, machine.stale_bucket_refs_skipped_);
     write_scalar(out, machine.stale_edge_refs_skipped_);
     write_scalar(out, machine.max_bucket_candidates_inspected_);
@@ -390,6 +506,10 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.parents_ = read_vector<NodeId>(in);
     machine.binding_reuse_ =
         read_nested_vector<SparseBranchMachine::BindingReuseRecord>(in);
+    machine.gpaf_role_observations_ = read_u64_map(in);
+    machine.gpaf_structural_call_observations_ = read_u64_map(in);
+    machine.gpaf_slot_phases_ = read_u64_u8_map(in);
+    machine.gpaf_residents_ = read_resident_map(in);
     machine.output_vectors_ = read_vector<float>(in);
     machine.sparse_outputs_ = read_nested_vector<detail::SparseOutputEntry>(in);
     machine.sparse_admission_ =
@@ -414,6 +534,23 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.total_created_ = read_scalar<std::uint64_t>(in);
     machine.total_merged_ = read_scalar<std::uint64_t>(in);
     machine.total_pruned_ = read_scalar<std::uint64_t>(in);
+    machine.candidate_source_exact_bucket_ = read_scalar<std::uint64_t>(in);
+    machine.candidate_source_control_edge_ = read_scalar<std::uint64_t>(in);
+    machine.candidate_source_neighbor_bucket_ = read_scalar<std::uint64_t>(in);
+    machine.route_score_hamming_sum_ = read_scalar<double>(in);
+    machine.route_score_exact_sum_ = read_scalar<double>(in);
+    machine.route_score_edge_prior_sum_ = read_scalar<double>(in);
+    machine.gpaf_role_observations_total_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_slot_promotions_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_slot_quarantines_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_slot_recoverable_retires_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_slot_restores_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_shadow_updates_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_slots_probed_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_candidates_returned_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_structural_call_candidates_returned_ =
+        read_scalar<std::uint64_t>(in);
+    machine.gpaf_structural_call_blocked_ = read_scalar<std::uint64_t>(in);
     machine.stale_bucket_refs_skipped_ = read_scalar<std::uint64_t>(in);
     machine.stale_edge_refs_skipped_ = read_scalar<std::uint64_t>(in);
     machine.max_bucket_candidates_inspected_ = read_scalar<std::uint64_t>(in);

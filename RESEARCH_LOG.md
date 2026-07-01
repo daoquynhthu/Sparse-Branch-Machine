@@ -1474,3 +1474,44 @@ effective-state lifecycle changes. The learned program structure is unchanged,
 so the improvement is from routing quality.
 
 Result file: research_results/address_semantics_10m_verify_20260630.md.
+
+## 2026-07-01 — GPAF retrieval 10M FineWeb-Edu validation
+
+First real-corpus validation of Global Predictive Address Field (GPAF) bounded
+candidate retrieval on 10M/1M FineWeb-Edu. Compared `upgrade-v1` (momentum +
+multi-hop content follow, no GPAF) against `gpaf-retrieval-v1` (same plus
+GPAF shadow + retrieval: gpaf_slots=1024, gpaf_residents_per_slot=4,
+gpaf_query_keys_per_step=4).
+
+Three seeds (7, 11, 19), 10M train / 1M eval:
+
+| Config | Seed 7 | Seed 11 | Seed 19 | Mean (7/11) |
+|---|---|---|---|---|
+| upgrade-v1 (baseline) | 6.21185 | 6.21391 | 6.27662 | 6.2129 |
+| gpaf-retrieval-v1 | 6.21365 | 6.21517 | 6.27561 | 6.2144 |
+
+GPAF retrieval is neutral at the noise level (+0.0015 nats on seeds 7/11).
+GPAF internal diagnostics confirm the architecture is working correctly:
+
+- 21 unique role keys allocated (out of 1024 config slots)
+- 19 slots promoted Probe→Active
+- 59.9M role observations, 39.9M slots probed (4/token), 118M candidates returned
+- 20.4M structural-call observations across 11 unique keys
+- 0 structural-call blocks (all dependency channels remained enabled)
+
+Frozen ablation (62,471 eval examples) shows:
+- Removing GPAF slots increases cross-entropy by +0.203 nats/example
+- False-positive cost totals 6263.5 (~0.100 nats/example)
+- Net benefit ≈ 0.103 nats/example
+
+The ablation indicates predictive value, but the net effect on overall eval NLL
+is within noise. This is expected for a first retrieval implementation: the
+score signal is conservative (no direct GPAF score boost), and description/
+execution cost attribution is not yet integrated into the acceptance gate.
+
+Notable: the upgrade-v1 baseline on this branch (6.2129) improved over the
+earlier address-semantics baseline (6.3412) by 0.128 nats, attributable to
+momentum + multi-hop content following. The GPAF retrieval variant preserves
+this improvement with negligible overhead.
+
+Run directory: `E:\SPM_EXPERIMENTS\runs\gpaf_10m_verify`

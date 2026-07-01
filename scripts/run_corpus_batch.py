@@ -38,6 +38,10 @@ def main() -> int:
     parser.add_argument("--max-workers", type=int)
     parser.add_argument("--bucket-bits", type=int, default=14)
     parser.add_argument("--adaptive-topology", action="store_true")
+    parser.add_argument(
+        "--preset",
+        help="Named config preset from python/sbm_presets.py",
+    )
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument(
         "--set",
@@ -55,6 +59,8 @@ def main() -> int:
         parser.error("--max-train-examples and --max-eval-examples must be supplied together")
     if args.worker_memory_mib < 1:
         parser.error("worker memory must be positive")
+    if args.adaptive_topology and args.preset:
+        parser.error("--adaptive-topology is already part of presets; use --preset only")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     policy = ResourcePolicy(
         args.cpu_fraction,
@@ -83,6 +89,8 @@ def main() -> int:
         ]
         if args.library:
             command.extend(["--library", str(Path(args.library).resolve())])
+        if args.preset:
+            command.extend(["--preset", args.preset])
         if args.adaptive_topology:
             command.append("--adaptive-topology")
         if args.max_train_examples is not None:
