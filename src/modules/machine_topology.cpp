@@ -264,6 +264,93 @@ void SparseBranchMachine::observe_binding_reuse(std::size_t channel,
     }
 }
 
+std::uint64_t SparseBranchMachine::gpaf_role_key_for_channel(
+    std::uint8_t channel_index) const noexcept {
+    if (channel_index >= topology_.size() || config_.gpaf_slots == 0U) return 0U;
+    const auto& channel = topology_[channel_index];
+    std::uint64_t key = mix64(
+        (static_cast<std::uint64_t>(channel.program.op) << 56U) ^
+        (static_cast<std::uint64_t>(channel.program.arity) << 48U) ^
+        (static_cast<std::uint64_t>(channel_index) << 40U) ^
+        (static_cast<std::uint64_t>(channel.dependency_edge_kind) << 32U) ^
+        (static_cast<std::uint64_t>(channel.parent_edge_kind) << 24U) ^
+        mix64(channel.generation + 0xD1B54A32D192ED03ULL));
+    key %= std::max<std::uint32_t>(1U, config_.gpaf_slots);
+    return key;
+}
+
+void SparseBranchMachine::observe_gpaf_shadow_roles(
+    std::span<const ScoredNode> active) {
+    if (!config_.gpaf_shadow_observation || config_.gpaf_slots == 0U) return;
+    for (const auto& node : active) {
+        if (node.channel >= topology_.size() || node.id == kInvalidNode) continue;
+        const std::uint64_t key = gpaf_role_key_for_channel(node.channel);
+        ++gpaf_role_observations_[key];
+        auto [phase, inserted] = gpaf_slot_phases_.try_emplace(
+            key, static_cast<std::uint8_t>(GpafSlotPhase::Probe));
+        (void)inserted;
+        ++gpaf_role_observations_total_;
+        ++gpaf_shadow_updates_;
+        if (config_.gpaf_residents_per_slot == 0U) continue;
+        auto& residents = gpaf_residents_[key];
+        if (std::find(residents.begin(), residents.end(), node.id) == residents.end()) {
+            if (residents.size() < config_.gpaf_residents_per_slot) {
+                residents.push_back(node.id);
+            } else {
+                residents[total_steps_ % residents.size()] = node.id;
+            }
+        }
+        if (phase->second == static_cast<std::uint8_t>(GpafSlotPhase::Probe) &&
+            config_.gpaf_probe_min_observations > 0U &&
+            gpaf_role_observations_[key] >= config_.gpaf_probe_min_observations &&
+            residents.size() >= config_.gpaf_probe_min_residents) {
+            phase->second = static_cast<std::uint8_t>(GpafSlotPhase::Active);
+            ++gpaf_slot_promotions_;
+        }
+    }
+}
+
+std::size_t SparseBranchMachine::quarantine_gpaf_slots() {
+    std::size_t changed = 0U;
+    for (auto& [key, phase] : gpaf_slot_phases_) {
+        (void)key;
+        if (phase == static_cast<std::uint8_t>(GpafSlotPhase::Active)) {
+            phase = static_cast<std::uint8_t>(GpafSlotPhase::Quarantined);
+            ++changed;
+        }
+    }
+    gpaf_slot_quarantines_ += changed;
+    return changed;
+}
+
+std::size_t SparseBranchMachine::recoverably_retire_gpaf_slots() {
+    std::size_t changed = 0U;
+    for (auto& [key, phase] : gpaf_slot_phases_) {
+        (void)key;
+        if (phase == static_cast<std::uint8_t>(GpafSlotPhase::Active) ||
+            phase == static_cast<std::uint8_t>(GpafSlotPhase::Quarantined)) {
+            phase = static_cast<std::uint8_t>(GpafSlotPhase::RecoverableRetired);
+            ++changed;
+        }
+    }
+    gpaf_slot_recoverable_retires_ += changed;
+    return changed;
+}
+
+std::size_t SparseBranchMachine::restore_gpaf_slots() {
+    std::size_t changed = 0U;
+    for (auto& [key, phase] : gpaf_slot_phases_) {
+        (void)key;
+        if (phase == static_cast<std::uint8_t>(GpafSlotPhase::Quarantined) ||
+            phase == static_cast<std::uint8_t>(GpafSlotPhase::RecoverableRetired)) {
+            phase = static_cast<std::uint8_t>(GpafSlotPhase::Active);
+            ++changed;
+        }
+    }
+    gpaf_slot_restores_ += changed;
+    return changed;
+}
+
 SparseBranchMachine::BindingReuseSummary SparseBranchMachine::binding_reuse_summary(
     std::size_t channel) const noexcept {
     BindingReuseSummary result;
