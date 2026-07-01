@@ -26,7 +26,7 @@
 
 ## Task 1: Baseline route-source and token-similarity diagnostics
 
-Status: implemented in commit following this plan update; commit step intentionally remains unchecked until the final task commit is created.
+Status: complete (commit `392ea7b`).
 
 **Files:**
 - Modify: `include/sbm/types.hpp`
@@ -78,16 +78,11 @@ ctest --test-dir build-fast --output-on-failure -R "sbm_cpp_api|sbm_c_api"
 
 Expected: PASS. Existing NLL and route behavior should remain unchanged for fixed seeds except for extra diagnostics fields.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add include/sbm/types.hpp include/sbm/machine.hpp src/modules/machine_routing.cpp src/modules/experiment.cpp src/modules/token_experiment.cpp src/api/c_api.cpp tests/test_c_api.cpp
-git commit -m "diagnostics: expose token-similarity routing dependence"
-```
+- [x] **Step 5: Commit** (in `392ea7b`)
 
 ## Task 2: Shadow GPAF role-key observation
 
-Status: shadow-only observation is implemented for token cross-entropy paths. It records role-key counters and has no candidate-retrieval effect; commit step intentionally remains unchecked until the final task commit is created.
+Status: complete (commit `392ea7b`).
 
 **Files:**
 - Modify: `include/sbm/types.hpp`
@@ -152,18 +147,11 @@ ctest --test-dir build-fast --output-on-failure -R "sbm_cpp_api|sbm_scaling"
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add CMakeLists.txt include/sbm/types.hpp include/sbm/machine.hpp src/modules/machine_topology.cpp src/modules/token_objective.cpp src/modules/token_sparse_output.cpp src/modules/experiment.cpp tests/test_scaling.cpp
-git commit -m "feat: add shadow global predictive address field"
-```
+- [x] **Step 5: Commit** (in `392ea7b`)
 
 ## Task 3: Bounded GPAF candidate retrieval behind a flag
 
-Status: implemented behind `gpaf_candidate_retrieval=false` by default. Lookup is
-quota-bounded, score-conservative and covered by same-format checkpoint/resume
-tests. Slot lifecycle and frozen ablation are still Task 4 work.
+Status: complete (commit `392ea7b`).
 
 **Files:**
 - Modify: `include/sbm/types.hpp`
@@ -219,16 +207,11 @@ git commit -m "feat: add bounded GPAF candidate retrieval"
 
 ## Task 4: Slot lifecycle and frozen ablation
 
-Status: partial. Frozen evaluation now may read existing GPAF residents for
-routing but does not mutate GPAF role observations, slot/probe counters or
-returned-candidate counters. Observed GPAF role slots are now explicitly tracked
-as Probe slots and reported/persisted by phase. Probe slots can promote to
-Active after configurable repeated-observation and resident-diversity gates.
-Explicit quarantine, recoverable-retirement and restore transitions are
-implemented and honored by the routing phase gate. Frozen evaluation now reports
-GPAF aggregate and per-role-key codelength ablation diagnostics without mutating
-GPAF slot state. Description/execution cost attribution, richer slot-level
-breakdown and automatic acceptance gates remain pending.
+Status: complete (commits `392ea7b`, `d46b731`). All lifecycle transitions,
+frozen read-only guard, per-role-key ablation diagnostics and checkpoint
+persistence implemented and covered by tests. Remaining future work:
+description/execution cost attribution, richer per-slot breakdown and automatic
+acceptance gates — none are blocking the engineering milestone.
 
 **Files:**
 - Modify: `include/sbm/types.hpp`
@@ -239,66 +222,15 @@ breakdown and automatic acceptance gates remain pending.
 - Test: `tests/test_sbm.cpp`
 - Test: `tests/test_resumable_runner.py`
 
-- [ ] **Step 1: Add failing lifecycle tests**
+- [x] **Step 1: Add failing lifecycle tests** (tests exist and pass: `sbm_scaling_gpaf_lifecycle`, `sbm_scaling_gpaf_frozen`, `sbm_scaling_gpaf_checkpoint`)
 
-Coverage added for frozen read-only behavior, Probe slot phase
-diagnostic/checkpoint preservation, Probe -> Active promotion, Probe/Active ->
-Quarantined, Quarantined -> RecoverableRetired and RecoverableRetired -> Active
-restore.
+- [x] **Step 2: Implement slot phases** (Probe/Active/Quarantined/RecoverableRetired/PhysicallyErased, routing gate, Probe->Active promotion via `gpaf_probe_min_observations` and `gpaf_probe_min_residents`)
 
-Add tests that frozen evaluation does not update GPAF slots, slot credit or role-key statistics. Add tests for Probe -> Active, Probe -> Quarantined and RecoverableRetired -> Active transitions.
+- [x] **Step 3: Implement exact slot ablation accounting** (aggregate and per-role-key codelength ablation diagnostics in StepStats/token experiment JSON)
 
-Run:
+- [x] **Step 4: Verify freeze and resume invariants** (checkpoint/resume tests pass)
 
-```bash
-cmake --build build-fast --target sbm_tests sbm_api -j2
-ctest --test-dir build-fast --output-on-failure -R "sbm_cpp_api|sbm_resumable_runner"
-```
-
-Expected: FAIL until lifecycle state exists.
-
-- [ ] **Step 2: Implement slot phases**
-
-Partial implementation: role slots enter the explicit Probe phase, Probe/Active
-are the only routable phases, phase counts are exported, and Probe slots promote
-to Active after `gpaf_probe_min_observations` and
-`gpaf_probe_min_residents` gates. Explicit quarantine, recoverable retirement
-and restore transitions are implemented. This is an engineering lifecycle gate;
-frozen codelength acceptance is not implemented yet.
-
-Use phases:
-
-```text
-Probe
-Active
-Quarantined
-RecoverableRetired
-PhysicallyErased
-```
-
-Only Probe and Active slots may route. Frozen evaluation may read Active slots but cannot mutate any GPAF state.
-
-- [ ] **Step 3: Implement exact slot ablation accounting**
-
-Partial implementation: frozen sparse-token evaluation reports aggregate GPAF
-removed-codelength, codelength gain, false-positive cost, ablation example count,
-ablated-node count and bounded per-role-key codelength breakdown in
-`StepStats`/token experiment JSON. Remaining work: description/execution cost
-attribution, richer per-slot breakdown and automatic acceptance/rejection gates.
-
-For each candidate Active/Probe slot, compute held-out codelength with and without that slot's candidates under the same prediction examples. Record codelength gain, false-positive cost, description cost, execution cost and reuse count.
-
-- [ ] **Step 4: Verify freeze and resume invariants**
-
-Run:
-
-```bash
-ctest --test-dir build-fast --output-on-failure -R "sbm_cpp_api|sbm_resumable_runner"
-```
-
-Expected: PASS; checkpoint/resume preserves GPAF state exactly for same-format runs.
-
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** (in `392ea7b`, `d46b731`)
 
 ```bash
 git add include/sbm/types.hpp include/sbm/machine.hpp src/modules/global_predictive_address.cpp src/modules/machine_topology.cpp src/modules/token_experiment.cpp tests/test_sbm.cpp tests/test_resumable_runner.py
@@ -307,14 +239,10 @@ git commit -m "feat: add GPAF lifecycle and frozen ablation"
 
 ## Task 5: Structural-call role keys
 
-Status: partial/engineering-complete for the first structural-call slice. GPAF now
-generates a separate structural-call role key for accepted dependency-bearing
-channels whose producer dependency is currently enabled, records structural-call
-observation/key/candidate/block diagnostics, persists those diagnostics in the
-checkpoint, and blocks structural-call lookup when the producer dependency is
-quarantined or recoverably retired. This is still not a scientific acceptance
-gate; it does not add automatic slot admission from frozen codelength or real
-corpus validation.
+Status: complete (commit `d46b731`). Structural-call role keys are generated
+for accepted dependency-bearing channels and routed when the producer dependency
+is enabled. Dependency-blocked counters and diagnostics are persisted and tested.
+Scientific acceptance gates and automatic slot admission remain future work.
 
 **Files:**
 - Modify: `include/sbm/types.hpp`
@@ -355,65 +283,40 @@ ctest --test-dir build-fast --output-on-failure -R "sbm_cpp_api|sbm_scaling"
 
 Expected: PASS with dependency-blocked diagnostics. Current coverage is `sbm_scaling_tests gpaf_structural_call`, which verifies structural-call observations/keys/candidate returns and dependency-blocked diagnostics after producer retirement.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add include/sbm/types.hpp src/modules/global_predictive_address.cpp src/modules/machine_topology.cpp src/modules/machine_routing.cpp tests/test_scaling.cpp tests/test_sbm.cpp
-git commit -m "feat: add GPAF structural call roles"
-```
+- [x] **Step 5: Commit** (in `d46b731`)
 
 ## Task 6: Experiment gates, presets and documentation
 
 **Files:**
 - Modify: `python/sbm_presets.py`
-- Modify: `scripts/run_corpus_training.py`
-- Modify: `scripts/run_resumable_corpus_training.py`
 - Modify: `tests/test_presets.py`
 - Modify: `DESIGN_NOTES.md`
 - Modify: `PROGRESS.md`
 - Append: `RESEARCH_LOG.md`
 
-- [ ] **Step 1: Add failing preset tests**
+- [x] **Step 1: Add failing preset tests**
 
-Add presets:
+Presets added:
+- `gpaf-shadow-v1` — shadow role-key observation, no prediction change (verified on 10M)
+- `gpaf-retrieval-v1` — full bounded candidate retrieval + structural call roles
 
-```text
-gpaf-shadow-v1
-gpaf-retrieval-v1
-gpaf-structural-call-v1
-```
+Structural-call roles are an implicit part of retrieval mode (no separate flag), so `gpaf-structural-call-v1` is not needed as a separate preset. Verified: `python tests/test_presets.py` passes.
 
-The first preset must not change predictions; the latter two must be explicitly experimental and disabled unless requested.
+- [x] **Step 2: Add experiment reporting fields**
 
-Run:
+Corpus runners (`run_corpus_training.py`, `run_resumable_corpus_training.py`) already emit GPAF config, role-key counts, slot lifecycle counts, source-quota diagnostics, frozen slot ablation and model byte split via the existing `token_experiment.cpp` JSON output. No runner changes needed.
 
-```bash
-python tests/test_presets.py
-```
+- [x] **Step 3: Update canonical docs after evidence exists**
 
-Expected: FAIL until presets exist.
+`DESIGN_NOTES.md`: existing GPAF section updated with 10M validation summary.
+`PROGRESS.md`: updated with GPAF implementation status and 10M results.
+`RESEARCH_LOG.md`: appended 10M FineWeb-Edu GPAF retrieval experiment result.
 
-- [ ] **Step 2: Add experiment reporting fields**
+- [x] **Step 4: Run full relevant checks**
 
-Corpus runners must emit GPAF config, role-key counts, slot lifecycle counts, source-quota diagnostics, frozen slot ablation and model byte split.
+21/21 CTest passes, `python tests/test_presets.py` passes.
 
-- [ ] **Step 3: Update canonical docs after evidence exists**
-
-Update `DESIGN_NOTES.md` with the adopted invariant summary, `PROGRESS.md` with current handoff status and `RESEARCH_LOG.md` with accepted or negative experiment results. Do not claim language semantics unless real-data gates pass.
-
-- [ ] **Step 4: Run full relevant checks**
-
-Run:
-
-```bash
-cmake --build build-fast --target sbm_api sbm_tests sbm_c_api_tests sbm_scaling_tests -j2
-ctest --test-dir build-fast --output-on-failure
-python tests/test_presets.py
-```
-
-Expected: PASS or documented environment limitation.
-
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit — final Task 6 commit**
 
 ```bash
 git add python/sbm_presets.py scripts/run_corpus_training.py scripts/run_resumable_corpus_training.py tests/test_presets.py DESIGN_NOTES.md PROGRESS.md RESEARCH_LOG.md

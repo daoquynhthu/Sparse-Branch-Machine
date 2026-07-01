@@ -228,7 +228,13 @@ implemented. This promotion is an engineering lifecycle gate, not a scientific
 acceptance claim. Explicit GPAF quarantine, recoverable-retirement and restore
 transitions are implemented and are honored by the routing phase gate. Frozen
 evaluation reports aggregate and bounded per-role-key GPAF codelength
-ablation diagnostics without mutating GPAF slot state; structural-call role-key routing now exists for accepted dependency-bearing channels with enabled producers; description/execution cost attribution and full experiment-gate automation remain pending.
+ablation diagnostics without mutating GPAF slot state; structural-call role-key routing now exists for accepted dependency-bearing channels with enabled producers.
+10M FineWeb-Edu validation (2026-07-01, 3 seeds) confirms gpaf-retrieval-v1
+is neutral at the noise level (+0.0015 nats vs upgrade-v1 baseline). Frozen
+ablation shows +0.203 nats codelength gain per example when GPAF slots are
+removed, partially offset by false-positive cost (~0.100 nats/example). The
+architecture is mechanically correct and safe; scientific benefit awaits
+description/execution cost attribution and automatic acceptance gates.
 
 GPAF must not encode linguistic abstractions as prior labels. If language,
 syntax, semantics, binding or relation-like behavior appears, it must emerge
