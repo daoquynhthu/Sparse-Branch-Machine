@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <optional>
 
@@ -279,13 +280,53 @@ std::uint64_t SparseBranchMachine::gpaf_role_key_for_channel(
     return key;
 }
 
+std::uint64_t SparseBranchMachine::gpaf_structural_call_key_for_channel(
+    std::uint8_t channel_index) const noexcept {
+    if (channel_index >= topology_.size() || config_.gpaf_slots == 0U) return 0U;
+    const auto& channel = topology_[channel_index];
+    if (channel.phase != ChannelPhase::Active ||
+        channel.dependency_channel == kInvalidChannel ||
+        channel.dependency_edge_kind == AddressGraphEdgeKind::None) {
+        return 0U;
+    }
+    if (!channel_enabled(channel_index)) return 0U;
+    const auto dependency = static_cast<std::size_t>(channel.dependency_channel);
+    if (dependency >= topology_.size()) return 0U;
+    const auto reuse = binding_reuse_summary(channel_index);
+    const std::uint64_t reuse_bucket =
+        std::min<std::uint64_t>(15U, std::bit_width(reuse.events));
+    const std::uint64_t execution_bucket = is_content_follow_op(channel.program.op)
+        ? content_follow_hop_count(channel.program.op)
+        : 1U;
+    std::uint64_t key = mix64(
+        0xC4115A1C5A1E0000ULL ^
+        mix64(address_program_key(channel.program)) ^
+        (static_cast<std::uint64_t>(
+             address_program_output_state(channel.program)) << 48U) ^
+        (static_cast<std::uint64_t>(channel.dependency_edge_kind) << 40U) ^
+        (static_cast<std::uint64_t>(
+             topology_[dependency].dependency_edge_kind) << 32U) ^
+        (reuse_bucket << 24U) ^
+        (execution_bucket << 16U) ^
+        mix64(channel.generation + topology_[dependency].generation));
+    key %= std::max<std::uint32_t>(1U, config_.gpaf_slots);
+    return key;
+}
+
 void SparseBranchMachine::observe_gpaf_shadow_roles(
     std::span<const ScoredNode> active) {
     if (!config_.gpaf_shadow_observation || config_.gpaf_slots == 0U) return;
     for (const auto& node : active) {
         if (node.channel >= topology_.size() || node.id == kInvalidNode) continue;
-        const std::uint64_t key = gpaf_role_key_for_channel(node.channel);
+        const std::uint64_t structural_key =
+            gpaf_structural_call_key_for_channel(node.channel);
+        const bool structural_call = structural_key != 0U;
+        const std::uint64_t key = structural_call
+            ? structural_key
+            : gpaf_role_key_for_channel(node.channel);
+        if (key == 0U) continue;
         ++gpaf_role_observations_[key];
+        if (structural_call) ++gpaf_structural_call_observations_[key];
         auto [phase, inserted] = gpaf_slot_phases_.try_emplace(
             key, static_cast<std::uint8_t>(GpafSlotPhase::Probe));
         (void)inserted;
@@ -425,6 +466,13 @@ bool SparseBranchMachine::retire_channel(
         recoverably_retire_channel(channel);
     } else {
         physically_erase_channel(channel);
+    }
+    for (std::size_t dependent = 0U; dependent < topology_.size(); ++dependent) {
+        if (dependent == channel) continue;
+        if (topology_[dependent].phase == ChannelPhase::Active &&
+            topology_[dependent].dependency_channel == channel) {
+            ++gpaf_structural_call_blocked_;
+        }
     }
     ++topology_pruned_;
     return true;

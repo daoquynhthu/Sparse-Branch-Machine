@@ -8,7 +8,7 @@
 持续进行正式的工程推进，保持和计划文件同步，饱和式推进，保持连贯性。
 基础设施充分时避免保守增量，允许临时粗糙边缘，但最终状态必须经过验证。
 
-当前新增架构方向：下一代 **Global Predictive Address Field (GPAF)** 已开始实施。当前完成的是工程安全的前置层：路由来源/token-signature 依赖诊断、不改变预测的 shadow-only GPAF role-key 观测、默认关闭的有界 GPAF candidate retrieval、frozen evaluation 的 GPAF read-only 保护、Probe/Active/Quarantined/RecoverableRetired phase 统计/持久化、基于重复观测和 resident 多样性的 Probe -> Active promotion、显式 quarantine / recoverable-retire / restore 生命周期转换，以及冻结评估中的 GPAF aggregate/per-role-key codelength ablation 诊断。structural-call routing、description/execution cost attribution 和完整实验准入尚未实现。
+当前新增架构方向：下一代 **Global Predictive Address Field (GPAF)** 已开始实施。当前完成的是工程安全的前置层：路由来源/token-signature 依赖诊断、不改变预测的 shadow-only GPAF role-key 观测、默认关闭的有界 GPAF candidate retrieval、frozen evaluation 的 GPAF read-only 保护、Probe/Active/Quarantined/RecoverableRetired phase 统计/持久化、基于重复观测和 resident 多样性的 Probe -> Active promotion、显式 quarantine / recoverable-retire / restore 生命周期转换，以及冻结评估中的 GPAF aggregate/per-role-key codelength ablation 诊断。structural-call role-key routing 的第一版已实现；description/execution cost attribution、自动实验准入和真实语料验证尚未实现。
 
 ## Branch state
 
@@ -18,7 +18,7 @@
   - Spec: `docs/superpowers/specs/2026-06-30-global-predictive-address-field-design.md`
   - Plan: `docs/superpowers/plans/2026-06-30-global-predictive-address-field.md`
   - Architecture note: `DESIGN_NOTES.md` next-generation GPAF section
-  - Implemented: route-source score diagnostics, shadow-only GPAF role-key counters, bounded GPAF candidate retrieval, frozen read-only GPAF retrieval, GPAF slot phase diagnostics, Probe -> Active promotion, explicit quarantine/recoverable-retire/restore transitions, frozen GPAF aggregate/per-role-key codelength ablation diagnostics and same-format checkpoint persistence
+  - Implemented: route-source score diagnostics, shadow-only GPAF role-key counters, bounded GPAF candidate retrieval, frozen read-only GPAF retrieval, GPAF slot phase diagnostics, Probe -> Active promotion, explicit quarantine/recoverable-retire/restore transitions, frozen GPAF aggregate/per-role-key codelength ablation diagnostics, structural-call role-key routing/diagnostics and same-format checkpoint persistence
 
 ## Completed: Adaptive Computation Upgrade (plan `2026-06-30-adaptive-computation-upgrade.md`)
 
@@ -48,7 +48,7 @@ Full report: `research_results/adaptive_computation_upgrade_10m_20260630.md`
 ## Next work queue
 
 1. Finish or explicitly supersede the active R3 100M heterogeneous stream gate: `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md`.
-2. Continue GPAF from `docs/superpowers/plans/2026-06-30-global-predictive-address-field.md`: next pending work is structural-call role keys and experiment gates; bounded retrieval is implemented but still experimental and disabled by default.
+2. Continue GPAF from `docs/superpowers/plans/2026-06-30-global-predictive-address-field.md`: next pending work is description/execution cost attribution, automatic experiment gates and presets; structural-call role keys are implemented but still experimental and disabled by default through GPAF retrieval config.
 3. Do not claim language semantics from GPAF unless real-data provenance, frozen validation, multi-seed stability, shard transfer and strong controls pass.
 
 ## Open theoretical gates

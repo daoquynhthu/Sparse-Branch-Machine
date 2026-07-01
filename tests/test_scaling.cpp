@@ -699,6 +699,82 @@ void verify_gpaf_probe_slot_phase_diagnostics_resume() {
     assert(after.gpaf_physically_erased_slots == before.gpaf_physically_erased_slots);
 }
 
+
+void verify_gpaf_structural_call_roles_require_dependency() {
+    auto config = sparse_config(4U, 16U);
+    config.adaptive_topology = true;
+    config.address_lags = {1U};
+    config.max_address_channels = 6U;
+    config.beam_width = 6U;
+    config.topology_enable_delta = false;
+    config.topology_probe_interval = 4U;
+    config.topology_probe_steps = 24U;
+    config.topology_probe_warmup = 4U;
+    config.topology_validation_steps = 8U;
+    config.topology_min_observations = 4U;
+    config.topology_accept_credit = -100.0F;
+    config.gpaf_shadow_observation = true;
+    config.gpaf_candidate_retrieval = true;
+    config.gpaf_query_keys_per_step = 4U;
+    config.gpaf_slots = 128U;
+    config.gpaf_residents_per_slot = 4U;
+    config.gpaf_probe_min_observations = 2U;
+    config.gpaf_probe_min_residents = 1U;
+    sbm::SparseBranchMachine machine(config);
+
+    for (std::uint32_t step = 0U; step < 512U; ++step) {
+        const std::uint32_t token = step % 2U;
+        (void)machine.step_token(token, (token + 1U) % config.vector_dim, true);
+    }
+
+    std::uint8_t content_match_channel = sbm::kInvalidChannel;
+    std::uint8_t content_follow_channel = sbm::kInvalidChannel;
+    for (const auto& event : machine.topology_events()) {
+        if (event.decision != sbm::TopologyDecision::Accepted) continue;
+        if (event.program.op == sbm::AddressOp::ContentMatch &&
+            event.program.arity == 1U && event.program.lags[0] == 2U) {
+            content_match_channel = event.channel;
+        }
+        if (event.program.op == sbm::AddressOp::ContentFollow &&
+            event.program.arity == 2U && event.program.lags[0] == 1U &&
+            event.program.lags[1] == 2U) {
+            content_follow_channel = event.channel;
+        }
+    }
+    assert(content_match_channel != sbm::kInvalidChannel);
+    assert(content_follow_channel != sbm::kInvalidChannel);
+
+    bool saw_call_match = false;
+    for (std::uint32_t step = 0U; step < 128U; ++step) {
+        const std::uint32_t token = step % 2U;
+        (void)machine.step_token(token, (token + 1U) % config.vector_dim, true);
+        for (const auto& frame : machine.last_execution_frames()) {
+            if (frame.channel == content_follow_channel && frame.call_matched) {
+                saw_call_match = true;
+            }
+        }
+    }
+    assert(saw_call_match);
+    const auto before_retire = machine.diagnostics();
+    assert(before_retire.gpaf_structural_call_observations > 0U);
+    assert(before_retire.gpaf_structural_call_keys > 0U);
+    assert(before_retire.gpaf_structural_call_candidates_returned > 0U);
+
+    assert(machine.retire_channel(
+        content_match_channel,
+        sbm::AcceptedChannelRetirement::RecoverableRetire));
+    const auto retired = machine.diagnostics();
+    assert(retired.dependency_blocked_channels > 0U);
+    assert(retired.gpaf_structural_call_blocked >
+           before_retire.gpaf_structural_call_blocked);
+    for (std::uint32_t step = 0U; step < 16U; ++step) {
+        const std::uint32_t token = step % 2U;
+        (void)machine.step_token(token, (token + 1U) % config.vector_dim, true);
+    }
+    const auto after_block = machine.diagnostics();
+    assert(after_block.gpaf_structural_call_blocked >= retired.gpaf_structural_call_blocked);
+}
+
 void verify_gpaf_lifecycle_transitions_gate_routing() {
     auto config = sparse_config(4U, 16U);
     config.adaptive_topology = false;
@@ -842,6 +918,11 @@ int main(int argc, char** argv) {
     if (mode == "gpaf_frozen") {
         verify_gpaf_frozen_retrieval_is_read_only();
         std::cout << "GPAF frozen retrieval read-only passed\n";
+        return 0;
+    }
+    if (mode == "gpaf_structural_call") {
+        verify_gpaf_structural_call_roles_require_dependency();
+        std::cout << "GPAF structural-call roles passed\n";
         return 0;
     }
     if (mode == "gpaf_lifecycle") {

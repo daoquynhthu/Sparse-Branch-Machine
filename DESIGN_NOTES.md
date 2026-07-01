@@ -228,9 +228,7 @@ implemented. This promotion is an engineering lifecycle gate, not a scientific
 acceptance claim. Explicit GPAF quarantine, recoverable-retirement and restore
 transitions are implemented and are honored by the routing phase gate. Frozen
 evaluation reports aggregate and bounded per-role-key GPAF codelength
-ablation diagnostics without mutating GPAF slot state; structural-call routing,
-description/execution cost attribution and full experiment-gate automation
-remain pending.
+ablation diagnostics without mutating GPAF slot state; structural-call role-key routing now exists for accepted dependency-bearing channels with enabled producers; description/execution cost attribution and full experiment-gate automation remain pending.
 
 GPAF must not encode linguistic abstractions as prior labels. If language,
 syntax, semantics, binding or relation-like behavior appears, it must emerge

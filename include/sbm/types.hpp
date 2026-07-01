@@ -465,6 +465,10 @@ struct Diagnostics {
     std::uint64_t gpaf_shadow_updates{};
     std::uint64_t gpaf_slots_probed{};
     std::uint64_t gpaf_candidates_returned{};
+    std::uint64_t gpaf_structural_call_observations{};
+    std::uint64_t gpaf_structural_call_keys{};
+    std::uint64_t gpaf_structural_call_candidates_returned{};
+    std::uint64_t gpaf_structural_call_blocked{};
     std::uint64_t estimated_bytes{};
     std::uint64_t sparse_output_entries{};
     std::uint64_t topology_proposals{};

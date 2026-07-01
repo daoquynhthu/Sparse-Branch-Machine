@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', 'C'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', 'D'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -410,6 +410,7 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_vector(out, machine.parents_);
     write_nested_vector(out, machine.binding_reuse_);
     write_u64_map(out, machine.gpaf_role_observations_);
+    write_u64_map(out, machine.gpaf_structural_call_observations_);
     write_u64_u8_map(out, machine.gpaf_slot_phases_);
     write_resident_map(out, machine.gpaf_residents_);
     write_vector(out, machine.output_vectors_);
@@ -449,6 +450,8 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_scalar(out, machine.gpaf_shadow_updates_);
     write_scalar(out, machine.gpaf_slots_probed_);
     write_scalar(out, machine.gpaf_candidates_returned_);
+    write_scalar(out, machine.gpaf_structural_call_candidates_returned_);
+    write_scalar(out, machine.gpaf_structural_call_blocked_);
     write_scalar(out, machine.stale_bucket_refs_skipped_);
     write_scalar(out, machine.stale_edge_refs_skipped_);
     write_scalar(out, machine.max_bucket_candidates_inspected_);
@@ -504,6 +507,7 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.binding_reuse_ =
         read_nested_vector<SparseBranchMachine::BindingReuseRecord>(in);
     machine.gpaf_role_observations_ = read_u64_map(in);
+    machine.gpaf_structural_call_observations_ = read_u64_map(in);
     machine.gpaf_slot_phases_ = read_u64_u8_map(in);
     machine.gpaf_residents_ = read_resident_map(in);
     machine.output_vectors_ = read_vector<float>(in);
@@ -544,6 +548,9 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.gpaf_shadow_updates_ = read_scalar<std::uint64_t>(in);
     machine.gpaf_slots_probed_ = read_scalar<std::uint64_t>(in);
     machine.gpaf_candidates_returned_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_structural_call_candidates_returned_ =
+        read_scalar<std::uint64_t>(in);
+    machine.gpaf_structural_call_blocked_ = read_scalar<std::uint64_t>(in);
     machine.stale_bucket_refs_skipped_ = read_scalar<std::uint64_t>(in);
     machine.stale_edge_refs_skipped_ = read_scalar<std::uint64_t>(in);
     machine.max_bucket_candidates_inspected_ = read_scalar<std::uint64_t>(in);

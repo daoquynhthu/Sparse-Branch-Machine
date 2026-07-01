@@ -226,6 +226,10 @@ int main() {
            std::string_view::npos);
     assert(std::string_view(machine_diag).find("\"gpaf_slot_quarantines\"") !=
            std::string_view::npos);
+    assert(std::string_view(machine_diag).find(
+               "\"gpaf_structural_call_observations\"") != std::string_view::npos);
+    assert(std::string_view(machine_diag).find(
+               "\"gpaf_structural_call_blocked\"") != std::string_view::npos);
     sbm_string_free(machine_diag);
     char* machine_summary = sbm_machine_summary_json(resumed);
     assert(machine_summary != nullptr);

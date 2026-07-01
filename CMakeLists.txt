@@ -141,6 +141,8 @@ if(SBM_BUILD_TESTS)
            COMMAND sbm_scaling_tests gpaf_frozen)
   add_test(NAME sbm_scaling_gpaf_lifecycle
            COMMAND sbm_scaling_tests gpaf_lifecycle)
+  add_test(NAME sbm_scaling_gpaf_structural_call
+           COMMAND sbm_scaling_tests gpaf_structural_call)
 
   if(SBM_BUILD_PYTHON_SMOKE_TEST)
     find_package(Python3 COMPONENTS Interpreter)

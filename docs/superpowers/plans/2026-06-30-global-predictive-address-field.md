@@ -307,6 +307,15 @@ git commit -m "feat: add GPAF lifecycle and frozen ablation"
 
 ## Task 5: Structural-call role keys
 
+Status: partial/engineering-complete for the first structural-call slice. GPAF now
+generates a separate structural-call role key for accepted dependency-bearing
+channels whose producer dependency is currently enabled, records structural-call
+observation/key/candidate/block diagnostics, persists those diagnostics in the
+checkpoint, and blocks structural-call lookup when the producer dependency is
+quarantined or recoverably retired. This is still not a scientific acceptance
+gate; it does not add automatic slot admission from frozen codelength or real
+corpus validation.
+
 **Files:**
 - Modify: `include/sbm/types.hpp`
 - Modify: `src/modules/global_predictive_address.cpp`
@@ -315,7 +324,7 @@ git commit -m "feat: add GPAF lifecycle and frozen ablation"
 - Test: `tests/test_scaling.cpp`
 - Test: `tests/test_sbm.cpp`
 
-- [ ] **Step 1: Add failing structural-call tests**
+- [x] **Step 1: Add failing structural-call tests**
 
 Assert that structural-call keys are produced only from accepted programs and compatible dependency states, and that disabling the producer dependency disables the call slot.
 
@@ -328,15 +337,15 @@ ctest --test-dir build-fast --output-on-failure -R "sbm_cpp_api|sbm_scaling"
 
 Expected: FAIL until structural-call roles exist.
 
-- [ ] **Step 2: Implement StructuralCallRole generation**
+- [x] **Step 2: Implement StructuralCallRole generation**
 
 Generate keys from accepted program identity, output state kind, dependency edge kind, call-depth bucket, reuse bucket and execution-cost bucket. Do not include linguistic labels or raw target tokens.
 
-- [ ] **Step 3: Enforce dependency compatibility**
+- [x] **Step 3: Enforce dependency compatibility**
 
 A structural-call slot can route only when the required producer/dependency state is active and compatible. If the producer is quarantined or recoverably retired, the dependent call slot is effectively blocked.
 
-- [ ] **Step 4: Verify dependency closure**
+- [x] **Step 4: Verify dependency closure**
 
 Run:
 
@@ -344,7 +353,7 @@ Run:
 ctest --test-dir build-fast --output-on-failure -R "sbm_cpp_api|sbm_scaling"
 ```
 
-Expected: PASS with dependency-blocked diagnostics.
+Expected: PASS with dependency-blocked diagnostics. Current coverage is `sbm_scaling_tests gpaf_structural_call`, which verifies structural-call observations/keys/candidate returns and dependency-blocked diagnostics after producer retirement.
 
 - [ ] **Step 5: Commit**
 

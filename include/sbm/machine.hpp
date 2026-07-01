@@ -178,6 +178,8 @@ private:
     void observe_gpaf_shadow_roles(std::span<const ScoredNode> active);
     [[nodiscard]] std::uint64_t gpaf_role_key_for_channel(
         std::uint8_t channel) const noexcept;
+    [[nodiscard]] std::uint64_t gpaf_structural_call_key_for_channel(
+        std::uint8_t channel) const noexcept;
     [[nodiscard]] BindingReuseSummary binding_reuse_summary(
         std::size_t channel) const noexcept;
     [[nodiscard]] double binding_reuse_bonus(
@@ -264,6 +266,8 @@ private:
     std::vector<NodeId> parents_;
     std::vector<std::vector<BindingReuseRecord>> binding_reuse_;
     std::unordered_map<std::uint64_t, std::uint64_t> gpaf_role_observations_;
+    std::unordered_map<std::uint64_t, std::uint64_t>
+        gpaf_structural_call_observations_;
     std::unordered_map<std::uint64_t, std::uint8_t> gpaf_slot_phases_;
     std::unordered_map<std::uint64_t, std::vector<NodeId>> gpaf_residents_;
     std::vector<float> output_vectors_;
@@ -320,6 +324,8 @@ private:
     std::uint64_t gpaf_shadow_updates_{};
     std::uint64_t gpaf_slots_probed_{};
     std::uint64_t gpaf_candidates_returned_{};
+    std::uint64_t gpaf_structural_call_candidates_returned_{};
+    std::uint64_t gpaf_structural_call_blocked_{};
     mutable std::uint64_t stale_bucket_refs_skipped_{};
     mutable std::uint64_t stale_edge_refs_skipped_{};
     std::uint64_t max_bucket_candidates_inspected_{};

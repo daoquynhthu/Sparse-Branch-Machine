@@ -116,7 +116,22 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures,
             }
             const auto slot = slot_of(source);
             if (slot == SIZE_MAX) continue;
-            const std::uint64_t key = gpaf_role_key_for_channel(channels_[slot]);
+            const auto channel = channels_[slot];
+            const std::uint64_t structural_key =
+                gpaf_structural_call_key_for_channel(channel);
+            const bool has_dependency =
+                channel < topology_.size() &&
+                topology_[channel].dependency_channel != kInvalidChannel;
+            if (structural_key == 0U && has_dependency &&
+                topology_[channel].phase == ChannelPhase::Active) {
+                if (update_gpaf_state) ++gpaf_structural_call_blocked_;
+                continue;
+            }
+            const bool structural_call = structural_key != 0U;
+            const std::uint64_t key = structural_call
+                ? structural_key
+                : gpaf_role_key_for_channel(channel);
+            if (key == 0U) continue;
             ++query_count;
             if (update_gpaf_state) ++gpaf_slots_probed_;
             const auto phase = gpaf_slot_phases_.find(key);
@@ -136,6 +151,9 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures,
                 if (push_candidate(output, resident, 0.0F, CandidateSource::GpafRole,
                                    key)) {
                     if (update_gpaf_state) ++gpaf_candidates_returned_;
+                    if (update_gpaf_state && structural_call) {
+                        ++gpaf_structural_call_candidates_returned_;
+                    }
                 }
                 ++returned;
             }

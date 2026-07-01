@@ -866,6 +866,14 @@ char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
             << diagnostics.gpaf_slots_probed
             << ", \"gpaf_candidates_returned\": "
             << diagnostics.gpaf_candidates_returned
+            << ", \"gpaf_structural_call_observations\": "
+            << diagnostics.gpaf_structural_call_observations
+            << ", \"gpaf_structural_call_keys\": "
+            << diagnostics.gpaf_structural_call_keys
+            << ", \"gpaf_structural_call_candidates_returned\": "
+            << diagnostics.gpaf_structural_call_candidates_returned
+            << ", \"gpaf_structural_call_blocked\": "
+            << diagnostics.gpaf_structural_call_blocked
             << ", \"address_execution_frames\": "
             << diagnostics.address_execution_frames
             << ", \"address_binding_hits\": " << diagnostics.address_binding_hits
