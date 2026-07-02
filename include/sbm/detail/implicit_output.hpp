@@ -25,6 +25,8 @@ public:
     [[nodiscard]] ImplicitSplit split(std::uint32_t lo, std::uint32_t hi) const;
     void target_path(std::uint32_t token,
                      std::vector<ImplicitDecision>& output) const;
+    [[nodiscard]] std::uint64_t region_prefix(std::uint32_t token,
+                                               std::uint32_t depth) const;
 
 private:
     std::uint32_t vocabulary_{};

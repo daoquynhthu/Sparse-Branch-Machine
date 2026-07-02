@@ -330,6 +330,8 @@ struct Config {
     float gpaf_execution_cost_weight{0.0F};
     bool gpaf_use_binding_keys{false};
     bool gpaf_use_shape_keys{false};
+    bool gpaf_use_transition_keys{false};
+    std::uint32_t gpaf_transition_depth{4};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};
     float residual_mature_learning_rate{0.030F};

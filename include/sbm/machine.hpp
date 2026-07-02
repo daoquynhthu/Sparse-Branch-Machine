@@ -177,9 +177,13 @@ private:
     [[nodiscard]] std::span<const std::uint64_t> make_signatures(
         std::span<const std::uint32_t> window, bool learn);
     void observe_binding_reuse(std::size_t channel, std::uint64_t key);
-    void observe_gpaf_shadow_roles(std::span<const ScoredNode> active);
+    void observe_gpaf_shadow_roles(std::span<const ScoredNode> active,
+                                   std::uint64_t target_region_prefix = 0U);
     [[nodiscard]] std::uint64_t gpaf_role_key_for_channel(
         std::uint8_t channel) const noexcept;
+    [[nodiscard]] static std::uint64_t gpaf_transition_key(
+        std::uint64_t role_key, std::uint64_t region_prefix,
+        std::uint32_t gpaf_slots) noexcept;
     [[nodiscard]] std::uint64_t gpaf_binding_key_for_channel(
         std::uint8_t channel, std::uint64_t binding_key,
         std::uint32_t distance, std::uint32_t span) const noexcept;

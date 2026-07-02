@@ -254,6 +254,8 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.gpaf_execution_cost_weight);
     write_scalar(out, config.gpaf_use_binding_keys);
     write_scalar(out, config.gpaf_use_shape_keys);
+    write_scalar(out, config.gpaf_use_transition_keys);
+    write_scalar(out, config.gpaf_transition_depth);
     write_scalar(out, config.output_tree_seed);
     write_scalar(out, config.seed);
 }
@@ -351,6 +353,8 @@ Config read_config(std::istream& in) {
     config.gpaf_execution_cost_weight = read_scalar<float>(in);
     config.gpaf_use_binding_keys = read_scalar<bool>(in);
     config.gpaf_use_shape_keys = read_scalar<bool>(in);
+    config.gpaf_use_transition_keys = read_scalar<bool>(in);
+    config.gpaf_transition_depth = read_scalar<std::uint32_t>(in);
     config.output_tree_seed = read_scalar<std::uint64_t>(in);
     config.seed = read_scalar<std::uint64_t>(in);
     return config;

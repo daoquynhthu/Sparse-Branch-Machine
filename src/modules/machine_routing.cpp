@@ -146,7 +146,27 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures,
                 ++returned;
             }
         };
-        if (config_.gpaf_use_binding_keys) {
+        if (config_.gpaf_use_transition_keys) {
+            // Role-transition keys: mix role key with current input token's
+            // output-tree region prefix. Retrieves nodes historically active
+            // when a similar role fired on a similar input region.
+            const std::uint64_t region = (implicit_output_ && !history_.empty())
+                ? implicit_output_->region_prefix(history_.back(),
+                                                   config_.gpaf_transition_depth)
+                : 0U;
+            for (const NodeId source : previous_route_) {
+                if (query_count >= config_.gpaf_query_keys_per_step ||
+                    output.size() >= hard_limit) break;
+                const auto slot = slot_of(source);
+                if (slot == SIZE_MAX) continue;
+                const auto channel = channels_[slot];
+                const std::uint64_t rk = gpaf_role_key_for_channel(channel);
+                if (rk == 0U) continue;
+                const std::uint64_t tk = gpaf_transition_key(
+                    rk, region, config_.gpaf_slots);
+                query_slot(tk, false);
+            }
+        } else if (config_.gpaf_use_binding_keys) {
             // Query using execution frames' binding keys (per-step context).
             for (const auto& frame : execution_frames_) {
                 if (frame.binding_state.binding_key == 0U) continue;

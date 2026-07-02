@@ -335,18 +335,32 @@ std::uint64_t SparseBranchMachine::gpaf_structural_call_key_for_channel(
     return key;
 }
 
+std::uint64_t SparseBranchMachine::gpaf_transition_key(
+    std::uint64_t role_key, std::uint64_t region_prefix,
+    std::uint32_t gpaf_slots) noexcept {
+    if (role_key == 0U) return 0U;
+    const auto mixed = mix64(role_key ^ mix64(region_prefix + 0xC4115A1C5A1E0000ULL));
+    return mixed % std::max<std::uint32_t>(1U, gpaf_slots);
+}
+
 double SparseBranchMachine::gpaf_slot_value(std::uint64_t key) const noexcept {
     const auto found = gpaf_slot_costed_net_value_.find(key);
     return found == gpaf_slot_costed_net_value_.end() ? 0.0 : found->second;
 }
 
 void SparseBranchMachine::observe_gpaf_shadow_roles(
-    std::span<const ScoredNode> active) {
+    std::span<const ScoredNode> active,
+    std::uint64_t target_region_prefix) {
     if (!config_.gpaf_shadow_observation || config_.gpaf_slots == 0U) return;
     for (const auto& node : active) {
         if (node.channel >= topology_.size() || node.id == kInvalidNode) continue;
         std::uint64_t key = 0U;
-        if (config_.gpaf_use_binding_keys) {
+        if (config_.gpaf_use_transition_keys && target_region_prefix != 0U) {
+            const auto rk = gpaf_role_key_for_channel(node.channel);
+            if (rk != 0U) {
+                key = gpaf_transition_key(rk, target_region_prefix, config_.gpaf_slots);
+            }
+        } else if (config_.gpaf_use_binding_keys) {
             const auto frame_idx = node.channel < frame_index_by_channel_.size()
                 ? frame_index_by_channel_[node.channel] : SIZE_MAX;
             if (frame_idx < execution_frames_.size()) {

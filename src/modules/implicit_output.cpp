@@ -70,6 +70,21 @@ ImplicitSplit ImplicitOutputTree::split(std::uint32_t lo, std::uint32_t hi) cons
     return {middle, middle - 1U};
 }
 
+std::uint64_t ImplicitOutputTree::region_prefix(
+    std::uint32_t token, std::uint32_t depth) const {
+    const auto rank = rank_from_token(token);
+    std::uint64_t prefix = 0U;
+    std::uint32_t lo = 0U;
+    std::uint32_t hi = vocabulary_;
+    for (std::uint32_t i = 0; i < depth && hi - lo > 1U; ++i) {
+        const auto branch = split(lo, hi);
+        const bool right = rank >= branch.middle;
+        if (right) { prefix |= (1ULL << i); lo = branch.middle; }
+        else { hi = branch.middle; }
+    }
+    return prefix;
+}
+
 void ImplicitOutputTree::target_path(
     std::uint32_t token,
     std::vector<ImplicitDecision>& output) const {

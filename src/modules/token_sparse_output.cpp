@@ -726,7 +726,12 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         contributions.push_back(node.contribution);
     }
 
-    if (learn) observe_gpaf_shadow_roles(active);
+    if (learn) {
+        const std::uint64_t target_region = config_.gpaf_use_transition_keys
+            ? output_tree.region_prefix(target_token, config_.gpaf_transition_depth)
+            : 0U;
+        observe_gpaf_shadow_roles(active, target_region);
+    }
     if (learn) observe_global_output_path(token_path_scratch_);
 
     if (learn) {
