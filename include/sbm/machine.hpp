@@ -181,6 +181,8 @@ private:
                                    std::uint64_t target_region_prefix = 0U);
     [[nodiscard]] std::uint64_t gpaf_role_key_for_channel(
         std::uint8_t channel) const noexcept;
+    [[nodiscard]] static std::uint64_t gpaf_epistemic_key(
+        float max_responsibility, std::uint32_t gpaf_slots) noexcept;
     [[nodiscard]] static std::uint64_t gpaf_transition_key(
         std::uint64_t role_key, std::uint64_t region_prefix,
         std::uint32_t gpaf_slots) noexcept;
@@ -342,6 +344,7 @@ private:
     std::uint64_t gpaf_overlap_active_nodes_{};
     std::uint64_t gpaf_structural_call_candidates_returned_{};
     std::uint64_t gpaf_structural_call_blocked_{};
+    float gpaf_previous_max_responsibility_{1.0F};
     mutable std::uint64_t stale_bucket_refs_skipped_{};
     mutable std::uint64_t stale_edge_refs_skipped_{};
     std::uint64_t max_bucket_candidates_inspected_{};

@@ -335,6 +335,14 @@ std::uint64_t SparseBranchMachine::gpaf_structural_call_key_for_channel(
     return key;
 }
 
+std::uint64_t SparseBranchMachine::gpaf_epistemic_key(
+    float max_responsibility, std::uint32_t gpaf_slots) noexcept {
+    const std::uint32_t bucket = std::min<std::uint32_t>(255U,
+        static_cast<std::uint32_t>(max_responsibility * 256.0F));
+    const auto mixed = mix64(static_cast<std::uint64_t>(bucket) + 0x9E3779B97F4A7C15ULL);
+    return mixed % std::max<std::uint32_t>(1U, gpaf_slots);
+}
+
 std::uint64_t SparseBranchMachine::gpaf_transition_key(
     std::uint64_t role_key, std::uint64_t region_prefix,
     std::uint32_t gpaf_slots) noexcept {
@@ -355,7 +363,13 @@ void SparseBranchMachine::observe_gpaf_shadow_roles(
     for (const auto& node : active) {
         if (node.channel >= topology_.size() || node.id == kInvalidNode) continue;
         std::uint64_t key = 0U;
-        if (config_.gpaf_use_transition_keys && target_region_prefix != 0U) {
+        if (config_.gpaf_use_epistemic_keys) {
+            float max_resp = 0.0F;
+            for (const auto& n : active) {
+                max_resp = std::max(max_resp, n.responsibility);
+            }
+            key = gpaf_epistemic_key(max_resp, config_.gpaf_slots);
+        } else if (config_.gpaf_use_transition_keys && target_region_prefix != 0U) {
             const auto rk = gpaf_role_key_for_channel(node.channel);
             if (rk != 0U) {
                 key = gpaf_transition_key(rk, target_region_prefix, config_.gpaf_slots);

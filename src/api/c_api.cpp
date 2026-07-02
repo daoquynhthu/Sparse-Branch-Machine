@@ -320,6 +320,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"gpaf_use_shape_keys", "bool", "false", "", "", "switch", true, false, false, "When true, GPAF binding keys use quantized distance/span buckets instead of the raw binding key (B2 variant)."},
     {"gpaf_use_transition_keys", "bool", "false", "", "", "switch", true, false, false, "When true, GPAF keys mix role key with output-tree region prefix of the current input token (role-transition addressing, Proposal C)."},
     {"gpaf_transition_depth", "uint", "4", "0", "16", "linear", true, false, false, "Number of output-tree decision levels used for the region prefix in transition-key mode."},
+    {"gpaf_use_epistemic_keys", "bool", "false", "", "", "switch", true, false, false, "When true, GPAF keys are derived from the previous step's max responsibility (epistemic-state addressing, Proposal E). Key space orthogonal to all local address mechanisms."},
     {"output_tree_seed", "uint64", "7", "0", "18446744073709551615", "linear", true, false, false, "Seed for the fixed implicit output decomposition; keep constant across model seeds."},
     {"seed", "uint64", "7", "0", "18446744073709551615", "linear", false, false, false, "Model random seed."},
 };
@@ -428,6 +429,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_BOOL(gpaf_use_shape_keys)
     SBM_SET_BOOL(gpaf_use_transition_keys)
     SBM_SET_UINT(gpaf_transition_depth)
+    SBM_SET_BOOL(gpaf_use_epistemic_keys)
     SBM_SET_U64(output_tree_seed)
     SBM_SET_U64(seed)
 #undef SBM_SET_UINT
@@ -557,6 +559,7 @@ std::string config_json(const sbm::Config& c) {
         << "  \"gpaf_use_shape_keys\": " << (c.gpaf_use_shape_keys ? "true" : "false") << ",\n"
         << "  \"gpaf_use_transition_keys\": " << (c.gpaf_use_transition_keys ? "true" : "false") << ",\n"
         << "  \"gpaf_transition_depth\": " << c.gpaf_transition_depth << ",\n"
+        << "  \"gpaf_use_epistemic_keys\": " << (c.gpaf_use_epistemic_keys ? "true" : "false") << ",\n"
         << "  \"output_tree_seed\": " << c.output_tree_seed << ",\n"
         << "  \"seed\": " << c.seed << "\n"
         << "}\n";

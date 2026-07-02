@@ -146,7 +146,14 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures,
                 ++returned;
             }
         };
-        if (config_.gpaf_use_transition_keys) {
+        if (config_.gpaf_use_epistemic_keys) {
+            // Epistemic-state key: quantized max responsibility from the
+            // previous routing step. Key space is orthogonal to all local
+            // address mechanisms — structurally zero overlap guarantee.
+            const std::uint64_t ek = gpaf_epistemic_key(
+                gpaf_previous_max_responsibility_, config_.gpaf_slots);
+            query_slot(ek, false);
+        } else if (config_.gpaf_use_transition_keys) {
             // Role-transition keys: mix role key with current input token's
             // output-tree region prefix. Retrieves nodes historically active
             // when a similar role fired on a similar input region.
@@ -357,6 +364,11 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures,
                 ++gpaf_unique_active_nodes_;
             }
         }
+        float max_resp = 0.0F;
+        for (const auto& node : selected) {
+            max_resp = std::max(max_resp, node.responsibility);
+        }
+        gpaf_previous_max_responsibility_ = max_resp;
     }
 
     return {std::span<ScoredNode>(selected.data(), selected.size()),
