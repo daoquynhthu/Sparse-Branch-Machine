@@ -237,7 +237,27 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures,
         route_score_hamming_sum_ += similarity;
         route_score_exact_sum_ += exact ? 1.0 : 0.0;
         route_score_edge_prior_sum_ += static_cast<double>(candidate.edge_prior);
-        scored.push_back({score(slot, signatures, candidate.edge_prior), candidate.id,
+        double candidate_score;
+        if (candidate.source == CandidateSource::GpafRole &&
+            !candidate.gpaf_overlap) {
+            // A genuinely GPAF-unique candidate's token-signature similarity
+            // to the current context is not a meaningful predictive-role
+            // signal by design (GPAF exists to retrieve structure that is
+            // NOT locally reachable by signature). Score it from the slot's
+            // measured live value instead of Hamming similarity, and
+            // require positive evidence before it can win a beam slot ahead
+            // of any locally-sourced candidate at all.
+            const double value = gpaf_slot_value(candidate.gpaf_key);
+            const double reliability = 1.0 / (1.0 + loss_ema_[slot]);
+            const double novelty = 1.0 /
+                std::sqrt(static_cast<double>(visits_[slot]) + 1.0);
+            candidate_score = value <= 0.0
+                ? -1.0
+                : std::tanh(value) + 0.10 * reliability + 0.02 * novelty;
+        } else {
+            candidate_score = score(slot, signatures, candidate.edge_prior);
+        }
+        scored.push_back({candidate_score, candidate.id,
                           0.0F, 0.0F, exact, channel, candidate.source,
                           candidate.gpaf_key, candidate.gpaf_overlap});
     }

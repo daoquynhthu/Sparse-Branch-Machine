@@ -578,6 +578,37 @@ void verify_gpaf_candidate_retrieval_is_bounded() {
     assert(diagnostics.avg_active <= static_cast<double>(config.beam_width));
 }
 
+void verify_gpaf_unique_candidates_need_positive_value_to_activate() {
+    auto config = sparse_config(4U, 16U);
+    config.adaptive_topology = false;
+    config.beam_width = 6U;
+    config.gpaf_shadow_observation = true;
+    config.gpaf_candidate_retrieval = true;
+    config.gpaf_query_keys_per_step = 2U;
+    config.gpaf_slots = 64U;
+    config.gpaf_residents_per_slot = 3U;
+    config.gpaf_probe_min_observations = 8U;
+    config.gpaf_probe_min_residents = 2U;
+    sbm::SparseBranchMachine machine(config);
+    // Densely prefill every bucket with local candidates so the beam is
+    // always filled from real exact-bucket residents and never needs a
+    // low-score GPAF candidate as bounded fallback filler.
+    machine.prefill_distractors(512U);
+    machine.reset_sequence();
+
+    // No slot has any recorded live value yet (gpaf_slot_costed_net_value_
+    // starts empty), so every GPAF-unique candidate must score below every
+    // locally-sourced candidate and therefore never win a beam slot ahead of
+    // the abundant exact residents seeded above.
+    for (std::uint32_t step = 0U; step < 4U; ++step) {
+        const auto stats = machine.step_token(step % 16U, (step * 7U + 5U) % 16U, true);
+        assert(stats.active_nodes > 0U);
+    }
+    const auto diag = machine.diagnostics();
+    assert(diag.gpaf_candidates_returned > 0U);
+    assert(diag.gpaf_unique_active_nodes == 0U);
+}
+
 void verify_gpaf_checkpoint_resume_preserves_retrieval_state() {
     auto config = sparse_config(4U, 16U);
     config.adaptive_topology = false;
@@ -1019,6 +1050,7 @@ int main(int argc, char** argv) {
     }
     if (mode == "gpaf_retrieval") {
         verify_gpaf_candidate_retrieval_is_bounded();
+        verify_gpaf_unique_candidates_need_positive_value_to_activate();
         std::cout << "GPAF candidate retrieval passed\n";
         return 0;
     }
