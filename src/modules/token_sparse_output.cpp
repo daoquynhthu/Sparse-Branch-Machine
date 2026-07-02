@@ -362,7 +362,6 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             gpaf_ablation_available = true;
             std::size_t path_position = 0U;
             for (const auto& step : token_path_scratch_) {
-                float removed = 0.0F;
                 float removed_unique = 0.0F;
                 float removed_overlap = 0.0F;
                 std::array<float, kMaxGpafAblationKeys> removed_by_key{};
@@ -375,12 +374,18 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                     if (slot == SIZE_MAX) continue;
                     const float node_logit =
                         node.responsibility * sparse_logit(slot, step.id);
-                    removed += node_logit;
                     if (node.gpaf_overlap) {
+                        // Overlap nodes remain reachable via their original
+                        // local source (exact bucket, control edge or
+                        // neighbor probe) even if GPAF never existed. Their
+                        // logits are not causally attributable to GPAF and
+                        // must not be subtracted when computing GPAF's
+                        // codelength value; tracked as a separate,
+                        // non-causal attribution diagnostic only.
                         removed_overlap += node_logit;
-                    } else {
-                        removed_unique += node_logit;
+                        continue;
                     }
+                    removed_unique += node_logit;
                     for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
                         if (gpaf_ablation_keys[i] == node.gpaf_key) {
                             removed_by_key[i] += node_logit;
@@ -388,8 +393,13 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                         }
                     }
                 }
+                // The primary/aggregate GPAF ablation metric equals the
+                // unique-only removal: the honest causal estimate of "what
+                // happens if GPAF is removed", since overlap-sourced nodes
+                // would still be selected without GPAF.
                 gpaf_removed_cross_entropy += branch_loss(
-                    (path_logits[path_position] - removed) / temperature, step.right);
+                    (path_logits[path_position] - removed_unique) / temperature,
+                    step.right);
                 if (gpaf_unique_ablation_nodes != 0U) {
                     gpaf_unique_removed_cross_entropy += branch_loss(
                         (path_logits[path_position] - removed_unique) / temperature,
