@@ -67,14 +67,28 @@ Key finding: **momentum with bias correction improves NLL by 0.111 nats** on 10M
 Multi-hop content following adds ~0.018 nats on 10M. Adaptive beam + refinement
 is neutral in current configuration.
 
+## 10M costed-value validation (2026-07-02)
+
+Key finding: **GPAF's positive ablation signal comes entirely from overlapping
+locally-reachable candidates.** Unique GPAF-only candidates have negative gain
+(-0.0013 nats per example). All three role keys have negative net value after
+subtracting execution cost. Full report in `RESEARCH_LOG.md`.
+
 ## Next work queue
 
-1. **GPAF research next steps:** continue the causal-attribution plan in `docs/superpowers/plans/2026-07-01-gpaf-causal-attribution-and-costed-admission.md`. Tasks 1-4 of the GPAF causal-attribution plan are implemented locally, including unique/overlap attribution, diagnostic costed slot value accounting and the disabled-by-default costed Active admission gate; next pending work is the real-corpus handoff gate.
-2. **R3 100M heterogeneous stream gate:** `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md` — requires manifest construction.
-3. Do not claim language semantics from GPAF unless real-data provenance, frozen validation, multi-seed stability, shard transfer and strong controls pass.
+1. **GPAF research next steps:** the unique/overlap finding changes the priority.
+   Before scaling up, the role-key design needs to be more discriminative so
+   GPAF finds genuinely novel global structure rather than duplicating local
+   candidates. Options: more granular role keys, GPAF-unique score boost,
+   tighter probing budgets. See `docs/superpowers/plans/2026-07-01-gpaf-causal-attribution-and-costed-admission.md`.
+2. **R3 100M heterogeneous stream gate:** `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md`
+   — not urgent until GPAF shows positive unique signal.
+3. Do not claim language semantics from GPAF unless real-data provenance,
+   frozen validation, multi-seed stability, shard transfer and strong controls pass.
 
 ## Open theoretical gates
 
-GPAF is intended to create room for global sparse retrieval to emerge from predictive role reuse.
-It does not by itself solve content-conditioned variable binding, relation-following,
-task-comparable topology value, long-horizon credit or stable cross-domain language structure.
+GPAF is intended to create room for global sparse retrieval to emerge from
+predictive role reuse. Current implementation shows that the role keys are not
+yet discriminative enough — GPAF mostly finds locally reachable nodes. This is
+a key design challenge, not an invalidation of the concept.

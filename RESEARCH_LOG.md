@@ -1581,3 +1581,70 @@ becoming Active. Default behavior remains unchanged.
 No real-corpus experiment was run. The next step in this plan is the external
 real-corpus handoff: run `upgrade-v1`, `gpaf-shadow-v1` and `gpaf-retrieval-v1`
 once the user is ready to evaluate whether unique GPAF value survives costs.
+
+
+## 2026-07-02 — 10M comprehensive GPAF costed-value and unique/overlap validation
+
+Full 10M/1M FineWeb-Edu validation of the complete GPAF architecture with
+costed-value activation gating and unique-vs-overlap diagnostics. Three
+configurations compared (2 seeds each, seeds 7 and 11):
+
+| Config | eval NLL (mean) | vs baseline |
+|---|---|---|
+| upgrade-v1 (baseline, no GPAF) | 6.21251 | — |
+| gpaf-retrieval-v1 | 6.21441 | +0.0019 |
+| gpaf-retrieval-v1 + costed gate | 6.21441 | +0.0019 |
+
+GPAF retrieval remains neutral at the noise level.
+
+### Costed gate behavior
+
+With `gpaf_active_requires_positive_net_value=true`, all 21 slots remain in
+Probe phase (0 promotions to Active). Without the gate, 19 of 21 slots promoted.
+NLL is identical in both cases because Probe and Active slots share the same
+routing eligibility. The gate is mechanically correct but currently a no-op for
+routing — its purpose is audit and future cost-gated admission.
+
+### Unique vs Overlap ablation
+
+The unique/overlap split reveals the central finding:
+
+| Group | Examples | Mean gain | Meaning |
+|---|---|---|---|
+| Unique (GPAF-only candidates) | 7,110 | **-0.0013** | GPAF's novel candidates reduce NLL slightly |
+| Overlap (locally reachable) | 55,582 | **+0.2288** | All positive signal is from overlapping |
+| Total | 62,471 | +0.2034 | |
+
+The positive frozen ablation signal (+0.203 nats/example) comes entirely from
+candidates already reachable via exact buckets, control edges or neighbor probes.
+GPAF's uniquely introduced candidates have negative mean gain (-0.0013 nats).
+This means GPAF is duplicating locally reachable nodes rather than discovering
+truly novel global predictive structure.
+
+### Per-key costed value
+
+| Key | Codelength gain | Execution cost | Net value |
+|---|---|---|---|
+| 692 | +0.0627 | 224,308 | -225,632 |
+| 234 | +0.0182 | 200,164 | -200,782 |
+| 777 | +0.3347 | 55,888 | -53,605 |
+
+All three GPAF role keys have negative net value. Execution cost (slot probing
+overhead at 4 queries per token × 10M tokens) dominates the codelength benefit.
+
+### Interpretation
+
+The unique/overlap diagnosis answers the open question from the initial 10M
+validation: why does frozen ablation show +0.203 nats gain while eval NLL is
+neutral? Because the gain comes from overlapping locally-reachable candidates,
+not from genuinely new global sparse retrieval. The unique GPAF contribution is
+slightly negative.
+
+This does not invalidate GPAF as a concept, but it reveals that the current
+implementation's role-key generation and scoring are not selective enough.
+Role keys based on program op, arity, channel index and edge kinds produce
+slots whose residents overlap heavily with the local retrieval path. Key areas
+for improvement: more discriminative role keys, score boost for GPAF-unique
+candidates, and tighter cost budgeting per query.
+
+Run directory: `E:\SPM_EXPERIMENTS\runs\gpaf_10m_costed`

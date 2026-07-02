@@ -230,32 +230,28 @@ transitions are implemented and are honored by the routing phase gate. Frozen
 evaluation reports aggregate and bounded per-role-key GPAF codelength
 ablation diagnostics without mutating GPAF slot state; structural-call role-key routing now exists for accepted dependency-bearing channels with enabled producers.
 
-10M FineWeb-Edu validation (2026-07-01, 3 seeds) confirms `gpaf-retrieval-v1`
-is neutral at the noise level (+0.0015 nats vs `upgrade-v1` baseline on seeds
-7/11). Frozen ablation shows +0.203 nats codelength gain per example when GPAF
-slots are removed, partially offset by false-positive cost (~0.100
-nats/example). The architecture is mechanically correct and safe; scientific
-benefit awaits description/execution cost attribution and automatic acceptance
-gates.
+10M FineWeb-Edu validation (2026-07-02, 2 seeds) reveals that GPAF's positive
+frozen ablation signal (+0.203 nats/example) comes entirely from overlapping
+locally-reachable candidates. GPAF-unique candidates have slightly negative gain
+(-0.0013 nats/example). All three role keys have negative net value after
+subtracting execution cost. The costed promotion gate correctly blocks all
+Probe→Active transitions when enabled (no slot has positive net value), but
+this does not change NLL because Probe and Active slots have identical routing
+eligibility. Full report in `RESEARCH_LOG.md`.
 
-The next GPAF diagnostic layer separates residents returned only by GPAF from
-residents that overlap with exact-bucket, control-edge or neighbor retrieval.
-This is diagnostic-only and does not alter scoring or active-route selection; it
-exists to determine whether future GPAF value is causal or merely duplicate
-attribution of locally reachable nodes.
+The unique/overlap diagnostic layer separates residents returned only by GPAF
+from residents that overlap with exact-bucket, control-edge or neighbor
+retrieval. This is diagnostic-only and does not alter routing or scoring; its
+purpose is to determine whether GPAF value is causal or merely duplicate
+attribution. Per-key frozen ablation carries resident count, reuse count,
+execution-budget cost and net value — audit fields that currently all show
+negative net value.
 
-Selected active nodes now preserve that unique/overlap provenance after route
-selection. The counters are still monotonic diagnostics only; they must not be
-used for score boosts until frozen unique-value and costed slot accounting pass.
-
-Frozen sparse-output ablation now also reports separate unique and overlap
-groups. This makes it possible to distinguish GPAF-caused candidate value from
-GPAF merely touching locally reachable nodes before any score calibration is
-considered. Per-key frozen ablation also carries resident count, reuse count,
-execution-budget cost and diagnostic net value. Those numbers are audit fields;
-they must not change slot promotion unless the separate disabled-by-default
-costed admission gate is enabled and its required positive slot value is
-available.
+**Implication:** the current role-key design (program op, arity, channel index,
+edge kinds) produces slots whose residents overlap heavily with the local
+retrieval path. GPAF is not yet discovering genuinely novel global sparse
+structure. Key directions: more discriminative role keys, GPAF-unique score
+boost, tighter probing budget.
 
 GPAF must not encode linguistic abstractions as prior labels. If language,
 syntax, semantics, binding or relation-like behavior appears, it must emerge
