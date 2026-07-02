@@ -148,6 +148,16 @@ struct TokenExperimentResult {
     double gpaf_ablation_mean_removed_cross_entropy{};
     double gpaf_ablation_mean_gain{};
     double gpaf_ablation_false_positive_cost{};
+    std::uint64_t gpaf_unique_ablation_examples{};
+    std::uint64_t gpaf_unique_ablation_nodes{};
+    double gpaf_unique_ablation_mean_removed_cross_entropy{};
+    double gpaf_unique_ablation_mean_gain{};
+    double gpaf_unique_ablation_false_positive_cost{};
+    std::uint64_t gpaf_overlap_ablation_examples{};
+    std::uint64_t gpaf_overlap_ablation_nodes{};
+    double gpaf_overlap_ablation_mean_removed_cross_entropy{};
+    double gpaf_overlap_ablation_mean_gain{};
+    double gpaf_overlap_ablation_false_positive_cost{};
     std::uint8_t gpaf_ablation_key_count{};
     std::array<std::uint64_t, kMaxGpafAblationKeys> gpaf_ablation_keys{};
     std::array<std::uint64_t, kMaxGpafAblationKeys> gpaf_ablation_key_examples{};
@@ -157,6 +167,12 @@ struct TokenExperimentResult {
     std::array<double, kMaxGpafAblationKeys> gpaf_ablation_key_mean_gain{};
     std::array<double, kMaxGpafAblationKeys>
         gpaf_ablation_key_false_positive_cost{};
+    std::array<std::uint32_t, kMaxGpafAblationKeys>
+        gpaf_ablation_key_resident_count{};
+    std::array<std::uint64_t, kMaxGpafAblationKeys>
+        gpaf_ablation_key_reuse_count{};
+    std::array<double, kMaxGpafAblationKeys> gpaf_ablation_key_execution_cost{};
+    std::array<double, kMaxGpafAblationKeys> gpaf_ablation_key_net_value{};
     double steps_per_second{};
     double elapsed_seconds{};
     double baseline_elapsed_seconds{};

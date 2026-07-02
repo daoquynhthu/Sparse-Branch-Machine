@@ -13,7 +13,7 @@ GPAF 的 engineering milestone 已完成并通过 10M 真实语料验证。当�
 
 ## Branch state
 
-- **Branch:** `codex/explore-research-project-repository-mgvpni` (PR #1)
+- **Branch:** `theory-alignment-v9`
 - **Status:** GPAF 实现已完成，21/21 测试通过，10M 验证完成，文档已更新
 - **Key documents:**
   - Spec: `docs/superpowers/specs/2026-06-30-global-predictive-address-field-design.md`
@@ -29,12 +29,12 @@ GPAF 的 engineering milestone 已完成并通过 10M 真实语料验证。当�
 | T3: Bounded GPAF candidate retrieval | Done | `392ea7b` |
 | T4: Slot lifecycle and frozen ablation | Done | `392ea7b`, `d46b731` |
 | T5: Structural-call role keys | Done | `d46b731` |
-| T6: Experiment gates, presets and documentation | Done | (this commit) |
+| T6: Experiment gates, presets and documentation | Done | `a76977b` |
 
 ### 10M FineWeb-Edu Results (2026-07-01)
 
 | Configuration | Seed 7 | Seed 11 | Seed 19 | Mean (7/11) | Topology |
-|---|---|---|---|---|---|
+|---|---:|---:|---:|---:|---|
 | upgrade-v1 (baseline) | 6.21185 | 6.21391 | 6.27662 | **6.2129** | 2,2,5 |
 | gpaf-retrieval-v1 | 6.21365 | 6.21517 | 6.27561 | **6.2144** | 2,2,5 |
 
@@ -69,16 +69,12 @@ is neutral in current configuration.
 
 ## Next work queue
 
-1. **GPAF research next steps:** description/execution cost attribution, automatic
-   frozen-codelength slot acceptance, richer per-slot ablation breakdown.
-2. **R3 100M heterogeneous stream gate:** `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md`
-   — requires manifest construction.
-3. Do not claim language semantics from GPAF unless real-data provenance,
-   frozen validation, multi-seed stability, shard transfer and strong controls pass.
+1. **GPAF research next steps:** continue the causal-attribution plan in `docs/superpowers/plans/2026-07-01-gpaf-causal-attribution-and-costed-admission.md`. Tasks 1-4 of the GPAF causal-attribution plan are implemented locally, including unique/overlap attribution, diagnostic costed slot value accounting and the disabled-by-default costed Active admission gate; next pending work is the real-corpus handoff gate.
+2. **R3 100M heterogeneous stream gate:** `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md` — requires manifest construction.
+3. Do not claim language semantics from GPAF unless real-data provenance, frozen validation, multi-seed stability, shard transfer and strong controls pass.
 
 ## Open theoretical gates
 
-GPAF is intended to create room for global sparse retrieval to emerge from
-predictive role reuse. It does not by itself solve content-conditioned variable
-binding, relation-following, task-comparable topology value, long-horizon credit
-or stable cross-domain language structure.
+GPAF is intended to create room for global sparse retrieval to emerge from predictive role reuse.
+It does not by itself solve content-conditioned variable binding, relation-following,
+task-comparable topology value, long-horizon credit or stable cross-domain language structure.

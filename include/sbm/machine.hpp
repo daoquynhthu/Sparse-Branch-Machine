@@ -94,6 +94,7 @@ private:
         float edge_prior{};
         CandidateSource source{CandidateSource::ExactBucket};
         std::uint64_t gpaf_key{UINT64_MAX};
+        bool gpaf_overlap{};
     };
     struct ScoredNode {
         double score{};
@@ -104,6 +105,7 @@ private:
         std::uint8_t channel{};
         CandidateSource source{CandidateSource::ExactBucket};
         std::uint64_t gpaf_key{UINT64_MAX};
+        bool gpaf_overlap{};
     };
     struct AddressChannelState {
         AddressProgram program{};
@@ -270,6 +272,7 @@ private:
         gpaf_structural_call_observations_;
     std::unordered_map<std::uint64_t, std::uint8_t> gpaf_slot_phases_;
     std::unordered_map<std::uint64_t, std::vector<NodeId>> gpaf_residents_;
+    std::unordered_map<std::uint64_t, double> gpaf_slot_costed_net_value_;
     std::vector<float> output_vectors_;
     std::vector<std::vector<detail::SparseOutputEntry>> sparse_outputs_;
     std::vector<std::vector<SparseAdmissionCandidate>> sparse_admission_;
@@ -324,6 +327,10 @@ private:
     std::uint64_t gpaf_shadow_updates_{};
     std::uint64_t gpaf_slots_probed_{};
     std::uint64_t gpaf_candidates_returned_{};
+    std::uint64_t gpaf_unique_candidates_returned_{};
+    std::uint64_t gpaf_overlap_candidates_returned_{};
+    std::uint64_t gpaf_unique_active_nodes_{};
+    std::uint64_t gpaf_overlap_active_nodes_{};
     std::uint64_t gpaf_structural_call_candidates_returned_{};
     std::uint64_t gpaf_structural_call_blocked_{};
     mutable std::uint64_t stale_bucket_refs_skipped_{};

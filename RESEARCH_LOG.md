@@ -1486,7 +1486,7 @@ gpaf_query_keys_per_step=4).
 Three seeds (7, 11, 19), 10M train / 1M eval:
 
 | Config | Seed 7 | Seed 11 | Seed 19 | Mean (7/11) |
-|---|---|---|---|---|
+|---|---:|---:|---:|---:|---:|
 | upgrade-v1 (baseline) | 6.21185 | 6.21391 | 6.27662 | 6.2129 |
 | gpaf-retrieval-v1 | 6.21365 | 6.21517 | 6.27561 | 6.2144 |
 
@@ -1515,3 +1515,69 @@ momentum + multi-hop content following. The GPAF retrieval variant preserves
 this improvement with negligible overhead.
 
 Run directory: `E:\SPM_EXPERIMENTS\runs\gpaf_10m_verify`
+
+
+## 2026-07-01 — GPAF unique-vs-overlap candidate diagnostics
+
+Added diagnostic-only GPAF candidate attribution counters to separate residents
+newly introduced by GPAF from residents that overlap candidates already retrieved
+by exact buckets, control edges or neighbor buckets. This does not change
+routing, scoring, candidate budgets or active route selection. It is the first
+mechanism-audit step after the 10M result showed positive frozen ablation signal
+but neutral eval NLL.
+
+No real-corpus experiment was run for this instrumentation step. Real-corpus
+validation should wait until active-route unique/overlap attribution and costed
+slot value accounting are implemented.
+
+
+## 2026-07-01 — GPAF unique-vs-overlap active-route diagnostics
+
+Extended the GPAF causal-attribution diagnostics from candidate return provenance
+to selected active-route provenance. Selected GPAF active nodes are now counted
+as unique or overlap according to whether GPAF newly introduced the candidate or
+only overlapped an already retrieved local/control candidate. This is still
+diagnostic-only and does not change candidate budgets, scoring or prediction.
+
+No real-corpus experiment was run. Real-corpus validation should wait until the
+frozen ablation path separates GPAF-unique from GPAF-overlap active nodes and
+slot value accounting includes cost terms.
+
+
+## 2026-07-02 — GPAF frozen ablation unique-vs-overlap split
+
+Extended frozen sparse-output GPAF ablation so each frozen step reports unique
+and overlap groups separately. Unique group means the active node was newly
+introduced by GPAF; overlap group means GPAF touched a candidate already
+retrieved by local/control paths. Token experiment JSON now aggregates examples,
+nodes, mean removed cross-entropy, mean gain and false-positive cost for both
+groups.
+
+No real-corpus experiment was run. The next implementation step is costed slot
+value accounting; after that, a real-corpus run should be requested from the
+user to inspect whether unique GPAF value is positive after costs.
+
+
+## 2026-07-02 — GPAF costed slot value diagnostics
+
+Added diagnostic-only per-slot value accounting for frozen GPAF ablation keys.
+Each reported key now carries resident count, reuse count, execution-budget
+cost and net value in addition to frozen gain and false-positive cost. This is
+intended to separate useful global sparse retrieval from slots that only add
+work or false positives.
+
+No real-corpus experiment was run. The next implementation step is the optional
+disabled-by-default costed Active admission gate; after that gate passes
+synthetic/API checks, the user should run the real-corpus presets.
+
+
+## 2026-07-02 — GPAF disabled costed Active admission gate
+
+Added an optional disabled-by-default GPAF promotion gate. When enabled, Probe
+slots must still satisfy the existing observation and resident-count engineering
+preconditions, and must also have positive diagnostic costed net value before
+becoming Active. Default behavior remains unchanged.
+
+No real-corpus experiment was run. The next step in this plan is the external
+real-corpus handoff: run `upgrade-v1`, `gpaf-shadow-v1` and `gpaf-retrieval-v1`
+once the user is ready to evaluate whether unique GPAF value survives costs.

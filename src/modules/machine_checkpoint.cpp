@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', 'D'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', 'G'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -113,6 +113,28 @@ std::unordered_map<std::uint64_t, std::uint8_t> read_u64_u8_map(std::istream& in
     for (std::uint64_t index = 0; index < size; ++index) {
         const auto key = read_scalar<std::uint64_t>(in);
         const auto value = read_scalar<std::uint8_t>(in);
+        values.emplace(key, value);
+    }
+    return values;
+}
+
+void write_u64_double_map(
+    std::ostream& out,
+    const std::unordered_map<std::uint64_t, double>& values) {
+    write_scalar<std::uint64_t>(out, values.size());
+    for (const auto& [key, value] : values) {
+        write_scalar(out, key);
+        write_scalar(out, value);
+    }
+}
+
+std::unordered_map<std::uint64_t, double> read_u64_double_map(std::istream& in) {
+    const auto size = read_scalar<std::uint64_t>(in);
+    std::unordered_map<std::uint64_t, double> values;
+    values.reserve(static_cast<std::size_t>(size));
+    for (std::uint64_t index = 0; index < size; ++index) {
+        const auto key = read_scalar<std::uint64_t>(in);
+        const auto value = read_scalar<double>(in);
         values.emplace(key, value);
     }
     return values;
@@ -227,6 +249,7 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.gpaf_residents_per_slot);
     write_scalar(out, config.gpaf_probe_min_observations);
     write_scalar(out, config.gpaf_probe_min_residents);
+    write_scalar(out, config.gpaf_active_requires_positive_net_value);
     write_scalar(out, config.output_tree_seed);
     write_scalar(out, config.seed);
 }
@@ -319,6 +342,7 @@ Config read_config(std::istream& in) {
     config.gpaf_residents_per_slot = read_scalar<std::uint32_t>(in);
     config.gpaf_probe_min_observations = read_scalar<std::uint32_t>(in);
     config.gpaf_probe_min_residents = read_scalar<std::uint32_t>(in);
+    config.gpaf_active_requires_positive_net_value = read_scalar<bool>(in);
     config.output_tree_seed = read_scalar<std::uint64_t>(in);
     config.seed = read_scalar<std::uint64_t>(in);
     return config;
@@ -413,6 +437,7 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_u64_map(out, machine.gpaf_structural_call_observations_);
     write_u64_u8_map(out, machine.gpaf_slot_phases_);
     write_resident_map(out, machine.gpaf_residents_);
+    write_u64_double_map(out, machine.gpaf_slot_costed_net_value_);
     write_vector(out, machine.output_vectors_);
     write_nested_vector(out, machine.sparse_outputs_);
     write_nested_vector(out, machine.sparse_admission_);
@@ -450,6 +475,10 @@ void save_checkpoint(const SparseBranchMachine& machine, const std::string& path
     write_scalar(out, machine.gpaf_shadow_updates_);
     write_scalar(out, machine.gpaf_slots_probed_);
     write_scalar(out, machine.gpaf_candidates_returned_);
+    write_scalar(out, machine.gpaf_unique_candidates_returned_);
+    write_scalar(out, machine.gpaf_overlap_candidates_returned_);
+    write_scalar(out, machine.gpaf_unique_active_nodes_);
+    write_scalar(out, machine.gpaf_overlap_active_nodes_);
     write_scalar(out, machine.gpaf_structural_call_candidates_returned_);
     write_scalar(out, machine.gpaf_structural_call_blocked_);
     write_scalar(out, machine.stale_bucket_refs_skipped_);
@@ -510,6 +539,7 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.gpaf_structural_call_observations_ = read_u64_map(in);
     machine.gpaf_slot_phases_ = read_u64_u8_map(in);
     machine.gpaf_residents_ = read_resident_map(in);
+    machine.gpaf_slot_costed_net_value_ = read_u64_double_map(in);
     machine.output_vectors_ = read_vector<float>(in);
     machine.sparse_outputs_ = read_nested_vector<detail::SparseOutputEntry>(in);
     machine.sparse_admission_ =
@@ -548,6 +578,10 @@ SparseBranchMachine load_checkpoint(const std::string& path) {
     machine.gpaf_shadow_updates_ = read_scalar<std::uint64_t>(in);
     machine.gpaf_slots_probed_ = read_scalar<std::uint64_t>(in);
     machine.gpaf_candidates_returned_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_unique_candidates_returned_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_overlap_candidates_returned_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_unique_active_nodes_ = read_scalar<std::uint64_t>(in);
+    machine.gpaf_overlap_active_nodes_ = read_scalar<std::uint64_t>(in);
     machine.gpaf_structural_call_candidates_returned_ =
         read_scalar<std::uint64_t>(in);
     machine.gpaf_structural_call_blocked_ = read_scalar<std::uint64_t>(in);

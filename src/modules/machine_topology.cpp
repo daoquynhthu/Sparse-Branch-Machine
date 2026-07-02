@@ -341,10 +341,14 @@ void SparseBranchMachine::observe_gpaf_shadow_roles(
                 residents[total_steps_ % residents.size()] = node.id;
             }
         }
+        const bool costed_gate_passes =
+            !config_.gpaf_active_requires_positive_net_value ||
+            gpaf_slot_costed_net_value_[key] > 0.0;
         if (phase->second == static_cast<std::uint8_t>(GpafSlotPhase::Probe) &&
             config_.gpaf_probe_min_observations > 0U &&
             gpaf_role_observations_[key] >= config_.gpaf_probe_min_observations &&
-            residents.size() >= config_.gpaf_probe_min_residents) {
+            residents.size() >= config_.gpaf_probe_min_residents &&
+            costed_gate_passes) {
             phase->second = static_cast<std::uint8_t>(GpafSlotPhase::Active);
             ++gpaf_slot_promotions_;
         }

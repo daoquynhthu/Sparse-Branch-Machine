@@ -313,6 +313,7 @@ constexpr ParameterDescriptor kParameters[] = {
     {"gpaf_residents_per_slot", "uint32", "0", "0", "64", "linear", true, false, false, "Maximum resident candidates returned by one GPAF slot."},
     {"gpaf_probe_min_observations", "uint32", "64", "1", "1048576", "log", true, false, false, "Minimum repeated role observations before a GPAF Probe slot may become Active."},
     {"gpaf_probe_min_residents", "uint32", "1", "0", "64", "linear", true, false, false, "Minimum distinct residents before a GPAF Probe slot may become Active."},
+    {"gpaf_active_requires_positive_net_value", "bool", "false", "", "", "categorical", false, false, false, "Require positive diagnostic costed GPAF slot value before Probe slots may become Active."},
     {"output_tree_seed", "uint64", "7", "0", "18446744073709551615", "linear", true, false, false, "Seed for the fixed implicit output decomposition; keep constant across model seeds."},
     {"seed", "uint64", "7", "0", "18446744073709551615", "linear", false, false, false, "Model random seed."},
 };
@@ -414,6 +415,7 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(gpaf_residents_per_slot)
     SBM_SET_UINT(gpaf_probe_min_observations)
     SBM_SET_UINT(gpaf_probe_min_residents)
+    SBM_SET_BOOL(gpaf_active_requires_positive_net_value)
     SBM_SET_U64(output_tree_seed)
     SBM_SET_U64(seed)
 #undef SBM_SET_UINT
@@ -535,6 +537,8 @@ std::string config_json(const sbm::Config& c) {
         << c.gpaf_probe_min_observations << ",\n"
         << "  \"gpaf_probe_min_residents\": "
         << c.gpaf_probe_min_residents << ",\n"
+        << "  \"gpaf_active_requires_positive_net_value\": "
+        << (c.gpaf_active_requires_positive_net_value ? "true" : "false") << ",\n"
         << "  \"output_tree_seed\": " << c.output_tree_seed << ",\n"
         << "  \"seed\": " << c.seed << "\n"
         << "}\n";
@@ -564,7 +568,8 @@ std::string_view parameter_tasks(std::string_view name) {
         name == "gpaf_slots" ||
         name == "gpaf_residents_per_slot" ||
         name == "gpaf_probe_min_observations" ||
-        name == "gpaf_probe_min_residents") {
+        name == "gpaf_probe_min_residents" ||
+        name == "gpaf_active_requires_positive_net_value") {
         return "token-ce";
     }
     if (name == "residual_learning_rate" ||
@@ -866,6 +871,14 @@ char* sbm_machine_diagnostics_json(const sbm_machine_handle* machine) {
             << diagnostics.gpaf_slots_probed
             << ", \"gpaf_candidates_returned\": "
             << diagnostics.gpaf_candidates_returned
+            << ", \"gpaf_unique_candidates_returned\": "
+            << diagnostics.gpaf_unique_candidates_returned
+            << ", \"gpaf_overlap_candidates_returned\": "
+            << diagnostics.gpaf_overlap_candidates_returned
+            << ", \"gpaf_unique_active_nodes\": "
+            << diagnostics.gpaf_unique_active_nodes
+            << ", \"gpaf_overlap_active_nodes\": "
+            << diagnostics.gpaf_overlap_active_nodes
             << ", \"gpaf_structural_call_observations\": "
             << diagnostics.gpaf_structural_call_observations
             << ", \"gpaf_structural_call_keys\": "

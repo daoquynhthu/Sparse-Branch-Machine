@@ -562,6 +562,15 @@ void verify_gpaf_candidate_retrieval_is_bounded() {
     assert(diagnostics.gpaf_role_observations > 0U);
     assert(diagnostics.gpaf_slots_probed > 0U);
     assert(diagnostics.gpaf_candidates_returned > 0U);
+    assert(diagnostics.gpaf_unique_candidates_returned > 0U);
+    assert(diagnostics.gpaf_overlap_candidates_returned > 0U);
+    assert(diagnostics.gpaf_unique_candidates_returned +
+           diagnostics.gpaf_overlap_candidates_returned >=
+           diagnostics.gpaf_candidates_returned);
+    assert(diagnostics.gpaf_unique_active_nodes > 0U);
+    assert(diagnostics.gpaf_overlap_active_nodes > 0U);
+    assert(diagnostics.gpaf_unique_active_nodes +
+           diagnostics.gpaf_overlap_active_nodes <= diagnostics.steps * config.beam_width);
     assert(diagnostics.gpaf_slots_probed <=
            diagnostics.steps * config.gpaf_query_keys_per_step);
     assert(diagnostics.gpaf_candidates_returned <=
@@ -605,6 +614,12 @@ void verify_gpaf_checkpoint_resume_preserves_retrieval_state() {
     assert(loaded.gpaf_shadow_updates == before.gpaf_shadow_updates);
     assert(loaded.gpaf_slots_probed == before.gpaf_slots_probed);
     assert(loaded.gpaf_candidates_returned == before.gpaf_candidates_returned);
+    assert(loaded.gpaf_unique_candidates_returned ==
+           before.gpaf_unique_candidates_returned);
+    assert(loaded.gpaf_overlap_candidates_returned ==
+           before.gpaf_overlap_candidates_returned);
+    assert(loaded.gpaf_unique_active_nodes == before.gpaf_unique_active_nodes);
+    assert(loaded.gpaf_overlap_active_nodes == before.gpaf_overlap_active_nodes);
 
     const auto next_machine = machine.step_token(3U, 10U, true);
     const auto next_resumed = resumed.step_token(3U, 10U, true);
@@ -648,6 +663,22 @@ void verify_gpaf_frozen_retrieval_is_read_only() {
     assert(std::isfinite(frozen.gpaf_ablation_key_removed_cross_entropy[0]));
     assert(std::isfinite(frozen.gpaf_ablation_key_gain[0]));
     assert(frozen.gpaf_ablation_key_false_positive_cost[0] >= 0.0F);
+    assert(frozen.gpaf_ablation_key_resident_count[0] > 0U);
+    assert(frozen.gpaf_ablation_key_reuse_count[0] > 0U);
+    assert(frozen.gpaf_ablation_key_execution_cost[0] >= 0.0F);
+    assert(std::isfinite(frozen.gpaf_ablation_key_net_value[0]));
+    assert(frozen.gpaf_ablation_key_net_value[0] <=
+           frozen.gpaf_ablation_key_gain[0] + 1e-6F);
+    assert(frozen.gpaf_unique_ablation_nodes +
+           frozen.gpaf_overlap_ablation_nodes == frozen.gpaf_ablation_nodes);
+    assert(frozen.gpaf_unique_ablation_nodes > 0U ||
+           frozen.gpaf_overlap_ablation_nodes > 0U);
+    assert(std::isfinite(frozen.gpaf_unique_removed_cross_entropy));
+    assert(std::isfinite(frozen.gpaf_overlap_removed_cross_entropy));
+    assert(std::isfinite(frozen.gpaf_unique_codelength_gain));
+    assert(std::isfinite(frozen.gpaf_overlap_codelength_gain));
+    assert(frozen.gpaf_unique_false_positive_cost >= 0.0F);
+    assert(frozen.gpaf_overlap_false_positive_cost >= 0.0F);
     assert(std::isfinite(frozen.gpaf_removed_cross_entropy));
     assert(std::isfinite(frozen.gpaf_codelength_gain));
     assert(frozen.gpaf_false_positive_cost >= 0.0F);
@@ -773,6 +804,40 @@ void verify_gpaf_structural_call_roles_require_dependency() {
     }
     const auto after_block = machine.diagnostics();
     assert(after_block.gpaf_structural_call_blocked >= retired.gpaf_structural_call_blocked);
+}
+
+void verify_gpaf_costed_active_gate_blocks_without_positive_value() {
+    auto default_config = sparse_config(4U, 16U);
+    default_config.adaptive_topology = false;
+    default_config.beam_width = 6U;
+    default_config.gpaf_shadow_observation = true;
+    default_config.gpaf_candidate_retrieval = true;
+    default_config.gpaf_query_keys_per_step = 2U;
+    default_config.gpaf_slots = 64U;
+    default_config.gpaf_residents_per_slot = 3U;
+    default_config.gpaf_probe_min_observations = 8U;
+    default_config.gpaf_probe_min_residents = 2U;
+    sbm::SparseBranchMachine default_machine(default_config);
+
+    auto gated_config = default_config;
+    gated_config.gpaf_active_requires_positive_net_value = true;
+    sbm::SparseBranchMachine gated_machine(gated_config);
+
+    for (std::uint32_t step = 0U; step < 320U; ++step) {
+        const std::uint32_t token = step % 16U;
+        const std::uint32_t target = (step * 7U + 5U) % 16U;
+        (void)default_machine.step_token(token, target, true);
+        (void)gated_machine.step_token(token, target, true);
+    }
+
+    const auto default_diag = default_machine.diagnostics();
+    const auto gated_diag = gated_machine.diagnostics();
+    assert(default_diag.gpaf_slot_promotions > 0U);
+    assert(default_diag.gpaf_active_slots > 0U);
+    assert(gated_diag.gpaf_role_observations > 0U);
+    assert(gated_diag.gpaf_probe_slots > 0U);
+    assert(gated_diag.gpaf_slot_promotions == 0U);
+    assert(gated_diag.gpaf_active_slots == 0U);
 }
 
 void verify_gpaf_lifecycle_transitions_gate_routing() {
@@ -923,6 +988,11 @@ int main(int argc, char** argv) {
     if (mode == "gpaf_structural_call") {
         verify_gpaf_structural_call_roles_require_dependency();
         std::cout << "GPAF structural-call roles passed\n";
+        return 0;
+    }
+    if (mode == "gpaf_costed_gate") {
+        verify_gpaf_costed_active_gate_blocks_without_positive_value();
+        std::cout << "GPAF costed active gate passed\n";
         return 0;
     }
     if (mode == "gpaf_lifecycle") {

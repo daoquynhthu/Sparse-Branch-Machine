@@ -411,6 +411,10 @@ Diagnostics SparseBranchMachine::diagnostics() const noexcept {
     result.gpaf_shadow_updates = gpaf_shadow_updates_;
     result.gpaf_slots_probed = gpaf_slots_probed_;
     result.gpaf_candidates_returned = gpaf_candidates_returned_;
+    result.gpaf_unique_candidates_returned = gpaf_unique_candidates_returned_;
+    result.gpaf_overlap_candidates_returned = gpaf_overlap_candidates_returned_;
+    result.gpaf_unique_active_nodes = gpaf_unique_active_nodes_;
+    result.gpaf_overlap_active_nodes = gpaf_overlap_active_nodes_;
     for (const auto& [key, observations] : gpaf_structural_call_observations_) {
         (void)key;
         result.gpaf_structural_call_observations += observations;

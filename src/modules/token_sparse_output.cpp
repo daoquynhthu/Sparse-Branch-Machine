@@ -312,13 +312,25 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     float gpaf_removed_cross_entropy = 0.0F;
     float gpaf_codelength_gain = 0.0F;
     float gpaf_false_positive_cost = 0.0F;
+    float gpaf_unique_removed_cross_entropy = 0.0F;
+    float gpaf_unique_codelength_gain = 0.0F;
+    float gpaf_unique_false_positive_cost = 0.0F;
+    float gpaf_overlap_removed_cross_entropy = 0.0F;
+    float gpaf_overlap_codelength_gain = 0.0F;
+    float gpaf_overlap_false_positive_cost = 0.0F;
     std::uint32_t gpaf_ablation_nodes = 0U;
+    std::uint32_t gpaf_unique_ablation_nodes = 0U;
+    std::uint32_t gpaf_overlap_ablation_nodes = 0U;
     std::uint8_t gpaf_ablation_key_count = 0U;
     std::array<std::uint64_t, kMaxGpafAblationKeys> gpaf_ablation_keys{};
     std::array<std::uint32_t, kMaxGpafAblationKeys> gpaf_ablation_key_nodes{};
     std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_removed_cross_entropy{};
     std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_gain{};
     std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_false_positive_cost{};
+    std::array<std::uint32_t, kMaxGpafAblationKeys> gpaf_ablation_key_resident_count{};
+    std::array<std::uint64_t, kMaxGpafAblationKeys> gpaf_ablation_key_reuse_count{};
+    std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_execution_cost{};
+    std::array<float, kMaxGpafAblationKeys> gpaf_ablation_key_net_value{};
     gpaf_ablation_keys.fill(UINT64_MAX);
     if (!learn) {
         for (const auto& node : active) {
@@ -327,6 +339,11 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 continue;
             }
             ++gpaf_ablation_nodes;
+            if (node.gpaf_overlap) {
+                ++gpaf_overlap_ablation_nodes;
+            } else {
+                ++gpaf_unique_ablation_nodes;
+            }
             std::size_t key_index = SIZE_MAX;
             for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
                 if (gpaf_ablation_keys[i] == node.gpaf_key) {
@@ -346,6 +363,8 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             std::size_t path_position = 0U;
             for (const auto& step : token_path_scratch_) {
                 float removed = 0.0F;
+                float removed_unique = 0.0F;
+                float removed_overlap = 0.0F;
                 std::array<float, kMaxGpafAblationKeys> removed_by_key{};
                 for (const auto& node : active) {
                     if (node.source != CandidateSource::GpafRole ||
@@ -357,6 +376,11 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                     const float node_logit =
                         node.responsibility * sparse_logit(slot, step.id);
                     removed += node_logit;
+                    if (node.gpaf_overlap) {
+                        removed_overlap += node_logit;
+                    } else {
+                        removed_unique += node_logit;
+                    }
                     for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
                         if (gpaf_ablation_keys[i] == node.gpaf_key) {
                             removed_by_key[i] += node_logit;
@@ -366,6 +390,16 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
                 }
                 gpaf_removed_cross_entropy += branch_loss(
                     (path_logits[path_position] - removed) / temperature, step.right);
+                if (gpaf_unique_ablation_nodes != 0U) {
+                    gpaf_unique_removed_cross_entropy += branch_loss(
+                        (path_logits[path_position] - removed_unique) / temperature,
+                        step.right);
+                }
+                if (gpaf_overlap_ablation_nodes != 0U) {
+                    gpaf_overlap_removed_cross_entropy += branch_loss(
+                        (path_logits[path_position] - removed_overlap) / temperature,
+                        step.right);
+                }
                 for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
                     gpaf_ablation_key_removed_cross_entropy[i] += branch_loss(
                         (path_logits[path_position] - removed_by_key[i]) / temperature,
@@ -375,11 +409,37 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
             }
             gpaf_codelength_gain = gpaf_removed_cross_entropy - cross_entropy;
             gpaf_false_positive_cost = std::max(0.0F, -gpaf_codelength_gain);
+            if (gpaf_unique_ablation_nodes != 0U) {
+                gpaf_unique_codelength_gain =
+                    gpaf_unique_removed_cross_entropy - cross_entropy;
+                gpaf_unique_false_positive_cost =
+                    std::max(0.0F, -gpaf_unique_codelength_gain);
+            }
+            if (gpaf_overlap_ablation_nodes != 0U) {
+                gpaf_overlap_codelength_gain =
+                    gpaf_overlap_removed_cross_entropy - cross_entropy;
+                gpaf_overlap_false_positive_cost =
+                    std::max(0.0F, -gpaf_overlap_codelength_gain);
+            }
             for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
                 gpaf_ablation_key_gain[i] =
                     gpaf_ablation_key_removed_cross_entropy[i] - cross_entropy;
                 gpaf_ablation_key_false_positive_cost[i] =
                     std::max(0.0F, -gpaf_ablation_key_gain[i]);
+                const auto resident_it = gpaf_residents_.find(gpaf_ablation_keys[i]);
+                if (resident_it != gpaf_residents_.end()) {
+                    gpaf_ablation_key_resident_count[i] =
+                        static_cast<std::uint32_t>(resident_it->second.size());
+                }
+                const auto reuse_it = gpaf_role_observations_.find(gpaf_ablation_keys[i]);
+                if (reuse_it != gpaf_role_observations_.end()) {
+                    gpaf_ablation_key_reuse_count[i] = reuse_it->second;
+                }
+                gpaf_ablation_key_execution_cost[i] =
+                    static_cast<float>(gpaf_ablation_key_resident_count[i]);
+                gpaf_ablation_key_net_value[i] = gpaf_ablation_key_gain[i] -
+                    gpaf_ablation_key_false_positive_cost[i] -
+                    gpaf_ablation_key_execution_cost[i];
             }
         }
     }
@@ -793,7 +853,15 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     stats.gpaf_removed_cross_entropy = gpaf_removed_cross_entropy;
     stats.gpaf_codelength_gain = gpaf_codelength_gain;
     stats.gpaf_false_positive_cost = gpaf_false_positive_cost;
+    stats.gpaf_unique_removed_cross_entropy = gpaf_unique_removed_cross_entropy;
+    stats.gpaf_unique_codelength_gain = gpaf_unique_codelength_gain;
+    stats.gpaf_unique_false_positive_cost = gpaf_unique_false_positive_cost;
+    stats.gpaf_overlap_removed_cross_entropy = gpaf_overlap_removed_cross_entropy;
+    stats.gpaf_overlap_codelength_gain = gpaf_overlap_codelength_gain;
+    stats.gpaf_overlap_false_positive_cost = gpaf_overlap_false_positive_cost;
     stats.gpaf_ablation_nodes = gpaf_ablation_nodes;
+    stats.gpaf_unique_ablation_nodes = gpaf_unique_ablation_nodes;
+    stats.gpaf_overlap_ablation_nodes = gpaf_overlap_ablation_nodes;
     stats.gpaf_ablation_key_count = gpaf_ablation_key_count;
     stats.gpaf_ablation_keys = gpaf_ablation_keys;
     stats.gpaf_ablation_key_nodes = gpaf_ablation_key_nodes;
@@ -802,6 +870,10 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
     stats.gpaf_ablation_key_gain = gpaf_ablation_key_gain;
     stats.gpaf_ablation_key_false_positive_cost =
         gpaf_ablation_key_false_positive_cost;
+    stats.gpaf_ablation_key_resident_count = gpaf_ablation_key_resident_count;
+    stats.gpaf_ablation_key_reuse_count = gpaf_ablation_key_reuse_count;
+    stats.gpaf_ablation_key_execution_cost = gpaf_ablation_key_execution_cost;
+    stats.gpaf_ablation_key_net_value = gpaf_ablation_key_net_value;
     stats.top1_correct = ranking_available && predicted == target_token;
     stats.top5_correct = ranking_available && top5;
     stats.ranking_available = ranking_available;

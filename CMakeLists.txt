@@ -139,6 +139,8 @@ if(SBM_BUILD_TESTS)
            COMMAND sbm_scaling_tests gpaf_checkpoint)
   add_test(NAME sbm_scaling_gpaf_frozen
            COMMAND sbm_scaling_tests gpaf_frozen)
+  add_test(NAME sbm_scaling_gpaf_costed_gate
+           COMMAND sbm_scaling_tests gpaf_costed_gate)
   add_test(NAME sbm_scaling_gpaf_lifecycle
            COMMAND sbm_scaling_tests gpaf_lifecycle)
   add_test(NAME sbm_scaling_gpaf_structural_call

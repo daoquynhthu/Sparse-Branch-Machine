@@ -25,6 +25,19 @@ def main() -> None:
     assert adaptive["beam_width"] == 8
     assert adaptive["max_refinement_rounds"] == 2
 
+
+    shadow = apply_preset("gpaf-shadow-v1")
+    assert shadow["gpaf_shadow_observation"] is True
+    assert shadow["gpaf_slots"] == 1024
+    assert shadow["gpaf_residents_per_slot"] == 4
+    assert "gpaf_candidate_retrieval" not in shadow
+
+    retrieval = apply_preset("gpaf-retrieval-v1")
+    assert retrieval["gpaf_shadow_observation"] is True
+    assert retrieval["gpaf_candidate_retrieval"] is True
+    assert retrieval["gpaf_query_keys_per_step"] == 4
+    assert retrieval["gpaf_slots"] == 1024
+
     overridden = apply_preset("upgrade-v1-adaptive", {"beam_width": 12})
     assert overridden["beam_width"] == 12
     assert overridden["use_momentum"] is True

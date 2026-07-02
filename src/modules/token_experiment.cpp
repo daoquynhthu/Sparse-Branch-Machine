@@ -574,8 +574,18 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     double gpaf_ablation_removed_cross_entropy_sum = 0.0;
     double gpaf_ablation_gain_sum = 0.0;
     double gpaf_ablation_false_positive_cost_sum = 0.0;
+    double gpaf_unique_ablation_removed_cross_entropy_sum = 0.0;
+    double gpaf_unique_ablation_gain_sum = 0.0;
+    double gpaf_unique_ablation_false_positive_cost_sum = 0.0;
+    double gpaf_overlap_ablation_removed_cross_entropy_sum = 0.0;
+    double gpaf_overlap_ablation_gain_sum = 0.0;
+    double gpaf_overlap_ablation_false_positive_cost_sum = 0.0;
     std::uint64_t gpaf_ablation_examples = 0U;
     std::uint64_t gpaf_ablation_nodes = 0U;
+    std::uint64_t gpaf_unique_ablation_examples = 0U;
+    std::uint64_t gpaf_unique_ablation_nodes = 0U;
+    std::uint64_t gpaf_overlap_ablation_examples = 0U;
+    std::uint64_t gpaf_overlap_ablation_nodes = 0U;
     std::uint8_t gpaf_ablation_key_count = 0U;
     std::array<std::uint64_t, kMaxGpafAblationKeys> gpaf_ablation_keys{};
     std::array<std::uint64_t, kMaxGpafAblationKeys> gpaf_ablation_key_examples{};
@@ -585,6 +595,13 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     std::array<double, kMaxGpafAblationKeys> gpaf_ablation_key_gain_sum{};
     std::array<double, kMaxGpafAblationKeys>
         gpaf_ablation_key_false_positive_cost_sum{};
+    std::array<std::uint32_t, kMaxGpafAblationKeys>
+        gpaf_ablation_key_resident_count{};
+    std::array<std::uint64_t, kMaxGpafAblationKeys>
+        gpaf_ablation_key_reuse_count{};
+    std::array<double, kMaxGpafAblationKeys>
+        gpaf_ablation_key_execution_cost_sum{};
+    std::array<double, kMaxGpafAblationKeys> gpaf_ablation_key_net_value_sum{};
     gpaf_ablation_keys.fill(UINT64_MAX);
 
     std::size_t example_index = 0U;
@@ -630,6 +647,26 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                     gpaf_ablation_false_positive_cost_sum +=
                         static_cast<double>(stats.gpaf_false_positive_cost);
                     gpaf_ablation_nodes += stats.gpaf_ablation_nodes;
+                    if (stats.gpaf_unique_ablation_nodes != 0U) {
+                        ++gpaf_unique_ablation_examples;
+                        gpaf_unique_ablation_nodes += stats.gpaf_unique_ablation_nodes;
+                        gpaf_unique_ablation_removed_cross_entropy_sum +=
+                            static_cast<double>(stats.gpaf_unique_removed_cross_entropy);
+                        gpaf_unique_ablation_gain_sum +=
+                            static_cast<double>(stats.gpaf_unique_codelength_gain);
+                        gpaf_unique_ablation_false_positive_cost_sum +=
+                            static_cast<double>(stats.gpaf_unique_false_positive_cost);
+                    }
+                    if (stats.gpaf_overlap_ablation_nodes != 0U) {
+                        ++gpaf_overlap_ablation_examples;
+                        gpaf_overlap_ablation_nodes += stats.gpaf_overlap_ablation_nodes;
+                        gpaf_overlap_ablation_removed_cross_entropy_sum +=
+                            static_cast<double>(stats.gpaf_overlap_removed_cross_entropy);
+                        gpaf_overlap_ablation_gain_sum +=
+                            static_cast<double>(stats.gpaf_overlap_codelength_gain);
+                        gpaf_overlap_ablation_false_positive_cost_sum +=
+                            static_cast<double>(stats.gpaf_overlap_false_positive_cost);
+                    }
                     for (std::size_t i = 0; i < stats.gpaf_ablation_key_count; ++i) {
                         const auto key = stats.gpaf_ablation_keys[i];
                         if (key == UINT64_MAX) continue;
@@ -657,6 +694,16 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
                         gpaf_ablation_key_false_positive_cost_sum[key_index] +=
                             static_cast<double>(
                                 stats.gpaf_ablation_key_false_positive_cost[i]);
+                        gpaf_ablation_key_resident_count[key_index] = std::max(
+                            gpaf_ablation_key_resident_count[key_index],
+                            stats.gpaf_ablation_key_resident_count[i]);
+                        gpaf_ablation_key_reuse_count[key_index] = std::max(
+                            gpaf_ablation_key_reuse_count[key_index],
+                            stats.gpaf_ablation_key_reuse_count[i]);
+                        gpaf_ablation_key_execution_cost_sum[key_index] +=
+                            static_cast<double>(stats.gpaf_ablation_key_execution_cost[i]);
+                        gpaf_ablation_key_net_value_sum[key_index] +=
+                            static_cast<double>(stats.gpaf_ablation_key_net_value[i]);
                     }
                     ++gpaf_ablation_examples;
                 }
@@ -831,10 +878,18 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         : result.eval.cross_entropy - result.oracle_cross_entropy;
     result.gpaf_ablation_examples = gpaf_ablation_examples;
     result.gpaf_ablation_nodes = gpaf_ablation_nodes;
+    result.gpaf_unique_ablation_examples = gpaf_unique_ablation_examples;
+    result.gpaf_unique_ablation_nodes = gpaf_unique_ablation_nodes;
+    result.gpaf_overlap_ablation_examples = gpaf_overlap_ablation_examples;
+    result.gpaf_overlap_ablation_nodes = gpaf_overlap_ablation_nodes;
     result.gpaf_ablation_key_count = gpaf_ablation_key_count;
     result.gpaf_ablation_keys = gpaf_ablation_keys;
     result.gpaf_ablation_key_examples = gpaf_ablation_key_examples;
     result.gpaf_ablation_key_nodes = gpaf_ablation_key_nodes;
+    result.gpaf_ablation_key_resident_count = gpaf_ablation_key_resident_count;
+    result.gpaf_ablation_key_reuse_count = gpaf_ablation_key_reuse_count;
+    result.gpaf_ablation_key_execution_cost = gpaf_ablation_key_execution_cost_sum;
+    result.gpaf_ablation_key_net_value = gpaf_ablation_key_net_value_sum;
     if (gpaf_ablation_examples != 0U) {
         const double inverse = 1.0 / static_cast<double>(gpaf_ablation_examples);
         result.gpaf_ablation_mean_removed_cross_entropy =
@@ -842,6 +897,26 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         result.gpaf_ablation_mean_gain = gpaf_ablation_gain_sum * inverse;
         result.gpaf_ablation_false_positive_cost =
             gpaf_ablation_false_positive_cost_sum;
+    }
+    if (gpaf_unique_ablation_examples != 0U) {
+        const double inverse =
+            1.0 / static_cast<double>(gpaf_unique_ablation_examples);
+        result.gpaf_unique_ablation_mean_removed_cross_entropy =
+            gpaf_unique_ablation_removed_cross_entropy_sum * inverse;
+        result.gpaf_unique_ablation_mean_gain =
+            gpaf_unique_ablation_gain_sum * inverse;
+        result.gpaf_unique_ablation_false_positive_cost =
+            gpaf_unique_ablation_false_positive_cost_sum;
+    }
+    if (gpaf_overlap_ablation_examples != 0U) {
+        const double inverse =
+            1.0 / static_cast<double>(gpaf_overlap_ablation_examples);
+        result.gpaf_overlap_ablation_mean_removed_cross_entropy =
+            gpaf_overlap_ablation_removed_cross_entropy_sum * inverse;
+        result.gpaf_overlap_ablation_mean_gain =
+            gpaf_overlap_ablation_gain_sum * inverse;
+        result.gpaf_overlap_ablation_false_positive_cost =
+            gpaf_overlap_ablation_false_positive_cost_sum;
     }
     for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
         if (gpaf_ablation_key_examples[i] == 0U) continue;
@@ -1497,6 +1572,14 @@ std::string to_json(const TokenExperimentResult& result) {
         << result.diagnostics.gpaf_slots_probed << ",\n"
         << "  \"gpaf_candidates_returned\": "
         << result.diagnostics.gpaf_candidates_returned << ",\n"
+        << "  \"gpaf_unique_candidates_returned\": "
+        << result.diagnostics.gpaf_unique_candidates_returned << ",\n"
+        << "  \"gpaf_overlap_candidates_returned\": "
+        << result.diagnostics.gpaf_overlap_candidates_returned << ",\n"
+        << "  \"gpaf_unique_active_nodes\": "
+        << result.diagnostics.gpaf_unique_active_nodes << ",\n"
+        << "  \"gpaf_overlap_active_nodes\": "
+        << result.diagnostics.gpaf_overlap_active_nodes << ",\n"
         << "  \"gpaf_structural_call_observations\": "
         << result.diagnostics.gpaf_structural_call_observations << ",\n"
         << "  \"gpaf_structural_call_keys\": "
@@ -1624,7 +1707,27 @@ std::string to_json(const TokenExperimentResult& result) {
         << "  \"gpaf_ablation_mean_gain\": "
         << result.gpaf_ablation_mean_gain << ",\n"
         << "  \"gpaf_ablation_false_positive_cost\": "
-        << result.gpaf_ablation_false_positive_cost << ",\n";
+        << result.gpaf_ablation_false_positive_cost << ",\n"
+        << "  \"gpaf_unique_ablation_examples\": "
+        << result.gpaf_unique_ablation_examples << ",\n"
+        << "  \"gpaf_unique_ablation_nodes\": "
+        << result.gpaf_unique_ablation_nodes << ",\n"
+        << "  \"gpaf_unique_ablation_mean_removed_cross_entropy\": "
+        << result.gpaf_unique_ablation_mean_removed_cross_entropy << ",\n"
+        << "  \"gpaf_unique_ablation_mean_gain\": "
+        << result.gpaf_unique_ablation_mean_gain << ",\n"
+        << "  \"gpaf_unique_ablation_false_positive_cost\": "
+        << result.gpaf_unique_ablation_false_positive_cost << ",\n"
+        << "  \"gpaf_overlap_ablation_examples\": "
+        << result.gpaf_overlap_ablation_examples << ",\n"
+        << "  \"gpaf_overlap_ablation_nodes\": "
+        << result.gpaf_overlap_ablation_nodes << ",\n"
+        << "  \"gpaf_overlap_ablation_mean_removed_cross_entropy\": "
+        << result.gpaf_overlap_ablation_mean_removed_cross_entropy << ",\n"
+        << "  \"gpaf_overlap_ablation_mean_gain\": "
+        << result.gpaf_overlap_ablation_mean_gain << ",\n"
+        << "  \"gpaf_overlap_ablation_false_positive_cost\": "
+        << result.gpaf_overlap_ablation_false_positive_cost << ",\n";
     out << "  \"gpaf_ablation_keys\": [";
     for (std::size_t i = 0; i < result.gpaf_ablation_key_count; ++i) {
         if (i != 0U) out << ", ";
@@ -1638,6 +1741,14 @@ std::string to_json(const TokenExperimentResult& result) {
             << result.gpaf_ablation_key_mean_gain[i]
             << ", \"false_positive_cost\": "
             << result.gpaf_ablation_key_false_positive_cost[i]
+            << ", \"resident_count\": "
+            << result.gpaf_ablation_key_resident_count[i]
+            << ", \"reuse_count\": "
+            << result.gpaf_ablation_key_reuse_count[i]
+            << ", \"execution_cost\": "
+            << result.gpaf_ablation_key_execution_cost[i]
+            << ", \"net_value\": "
+            << result.gpaf_ablation_key_net_value[i]
             << "}";
     }
     out << "],\n";

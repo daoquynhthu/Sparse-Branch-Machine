@@ -25,10 +25,11 @@ bool SparseBranchMachine::push_candidate(std::vector<CandidateNode>& values,
         if (source == CandidateSource::GpafRole) {
             found->source = CandidateSource::GpafRole;
             found->gpaf_key = gpaf_key;
+            found->gpaf_overlap = true;
         }
         return false;
     }
-    values.push_back({id, edge_prior, source, gpaf_key});
+    values.push_back({id, edge_prior, source, gpaf_key, false});
     return true;
 }
 
@@ -148,9 +149,19 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures,
                     output.size() >= hard_limit) {
                     break;
                 }
+                const bool already_present = std::find_if(
+                    output.begin(), output.end(), [&](const CandidateNode& candidate) {
+                        return candidate.id == resident;
+                    }) != output.end();
+                if (already_present) {
+                    if (update_gpaf_state) ++gpaf_overlap_candidates_returned_;
+                }
                 if (push_candidate(output, resident, 0.0F, CandidateSource::GpafRole,
                                    key)) {
-                    if (update_gpaf_state) ++gpaf_candidates_returned_;
+                    if (update_gpaf_state) {
+                        ++gpaf_candidates_returned_;
+                        ++gpaf_unique_candidates_returned_;
+                    }
                     if (update_gpaf_state && structural_call) {
                         ++gpaf_structural_call_candidates_returned_;
                     }
@@ -228,7 +239,7 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures,
         route_score_edge_prior_sum_ += static_cast<double>(candidate.edge_prior);
         scored.push_back({score(slot, signatures, candidate.edge_prior), candidate.id,
                           0.0F, 0.0F, exact, channel, candidate.source,
-                          candidate.gpaf_key});
+                          candidate.gpaf_key, candidate.gpaf_overlap});
     }
 
     auto& selected = selected_scratch_;
@@ -283,6 +294,17 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures,
             selected.resize(config_.beam_width_min);
             assign_responsibilities(
                 std::span<ScoredNode>(selected.data(), selected.size()));
+        }
+    }
+
+    if (update_gpaf_state) {
+        for (const auto& node : selected) {
+            if (node.source != CandidateSource::GpafRole) continue;
+            if (node.gpaf_overlap) {
+                ++gpaf_overlap_active_nodes_;
+            } else {
+                ++gpaf_unique_active_nodes_;
+            }
         }
     }
 
