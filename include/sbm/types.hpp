@@ -328,6 +328,8 @@ struct Config {
     bool gpaf_active_requires_positive_net_value{false};
     float gpaf_value_ema_decay{0.98F};
     float gpaf_execution_cost_weight{0.0F};
+    bool gpaf_use_binding_keys{false};
+    bool gpaf_use_shape_keys{false};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};
     float residual_mature_learning_rate{0.030F};

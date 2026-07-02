@@ -136,8 +136,7 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
     if (binding_reuse_.size() < topology_.size()) {
         binding_reuse_.resize(topology_.size());
     }
-    std::array<std::size_t, kMaxAddressChannels> frame_index_by_channel{};
-    frame_index_by_channel.fill(SIZE_MAX);
+    frame_index_by_channel_.fill(SIZE_MAX);
     for (std::size_t channel = 0; channel < topology_.size(); ++channel) {
         if (!channel_enabled(channel)) continue;
         const auto& program = topology_[channel].program;
@@ -153,16 +152,16 @@ std::span<const AddressExecutionFrame> SparseBranchMachine::execute_address_prog
         frame.output_state = address_program_output_state(program);
         frame.required_dependency_binding =
             address_program_required_dependency_binding(program);
-        if (channel < frame_index_by_channel.size()) {
-            frame_index_by_channel[channel] = execution_frames_.size();
+        if (channel < frame_index_by_channel_.size()) {
+            frame_index_by_channel_[channel] = execution_frames_.size();
         }
         execution_frames_.push_back(frame);
     }
     for (auto& frame : execution_frames_) {
         const auto channel = static_cast<std::size_t>(frame.channel);
         const auto dependency_channel = static_cast<std::size_t>(frame.dependency_channel);
-        if (dependency_channel < frame_index_by_channel.size()) {
-            const auto dependency_index = frame_index_by_channel[dependency_channel];
+        if (dependency_channel < frame_index_by_channel_.size()) {
+            const auto dependency_index = frame_index_by_channel_[dependency_channel];
             if (dependency_index != SIZE_MAX && dependency_index < execution_frames_.size()) {
                 const auto& dependency_frame = execution_frames_[dependency_index];
                 frame.dependency_signature = dependency_frame.signature;
@@ -280,6 +279,29 @@ std::uint64_t SparseBranchMachine::gpaf_role_key_for_channel(
     return key;
 }
 
+std::uint64_t SparseBranchMachine::gpaf_binding_key_for_channel(
+    std::uint8_t channel_index, std::uint64_t binding_key,
+    std::uint32_t distance, std::uint32_t span) const noexcept {
+    if (channel_index >= topology_.size() || config_.gpaf_slots == 0U ||
+        binding_key == 0U) return 0U;
+    const auto& channel = topology_[channel_index];
+    const std::uint64_t distance_bucket =
+        std::min<std::uint64_t>(15U, static_cast<std::uint64_t>(distance));
+    const std::uint64_t span_bucket =
+        std::min<std::uint64_t>(15U, static_cast<std::uint64_t>(span));
+    std::uint64_t key = mix64(
+        (static_cast<std::uint64_t>(channel.program.op) << 56U) ^
+        (static_cast<std::uint64_t>(channel.program.arity) << 48U) ^
+        (static_cast<std::uint64_t>(channel.dependency_edge_kind) << 40U) ^
+        (static_cast<std::uint64_t>(channel.parent_edge_kind) << 32U) ^
+        (config_.gpaf_use_shape_keys
+             ? ((distance_bucket << 24U) ^ (span_bucket << 16U))
+             : binding_key) ^
+        mix64(channel.generation + 0xD1B54A32D192ED03ULL));
+    key %= std::max<std::uint32_t>(1U, config_.gpaf_slots);
+    return key;
+}
+
 std::uint64_t SparseBranchMachine::gpaf_structural_call_key_for_channel(
     std::uint8_t channel_index) const noexcept {
     if (channel_index >= topology_.size() || config_.gpaf_slots == 0U) return 0U;
@@ -323,15 +345,30 @@ void SparseBranchMachine::observe_gpaf_shadow_roles(
     if (!config_.gpaf_shadow_observation || config_.gpaf_slots == 0U) return;
     for (const auto& node : active) {
         if (node.channel >= topology_.size() || node.id == kInvalidNode) continue;
-        const std::uint64_t structural_key =
-            gpaf_structural_call_key_for_channel(node.channel);
-        const bool structural_call = structural_key != 0U;
-        const std::uint64_t key = structural_call
-            ? structural_key
-            : gpaf_role_key_for_channel(node.channel);
+        std::uint64_t key = 0U;
+        if (config_.gpaf_use_binding_keys) {
+            const auto frame_idx = node.channel < frame_index_by_channel_.size()
+                ? frame_index_by_channel_[node.channel] : SIZE_MAX;
+            if (frame_idx < execution_frames_.size()) {
+                const auto& frame = execution_frames_[frame_idx];
+                if (frame.binding_state.binding_key != 0U) {
+                    key = gpaf_binding_key_for_channel(
+                        node.channel, frame.binding_state.binding_key,
+                        frame.binding_state.matched_distance,
+                        frame.binding_state.pattern_span);
+                }
+            }
+        }
+        bool is_structural_call = false;
+        if (key == 0U) {
+            const std::uint64_t structural_key =
+                gpaf_structural_call_key_for_channel(node.channel);
+            if (structural_key != 0U) { key = structural_key; is_structural_call = true; }
+        }
+        if (key == 0U) key = gpaf_role_key_for_channel(node.channel);
         if (key == 0U) continue;
         ++gpaf_role_observations_[key];
-        if (structural_call) ++gpaf_structural_call_observations_[key];
+        if (is_structural_call) ++gpaf_structural_call_observations_[key];
         auto [phase, inserted] = gpaf_slot_phases_.try_emplace(
             key, static_cast<std::uint8_t>(GpafSlotPhase::Probe));
         (void)inserted;

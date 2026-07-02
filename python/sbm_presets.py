@@ -52,6 +52,27 @@ PRESETS: dict[str, dict[str, Any]] = {
         "gpaf_slots": 1024,
         "gpaf_residents_per_slot": 4,
     },
+    "gpaf-binding-v1": {
+        # upgrade-v1 plus GPAF binding-key-based role keys (B1).
+        # Role keys include the current step's content binding key instead
+        # of only topology metadata, enabling cross-context slot reuse.
+        "adaptive_topology": True,
+        "address_lags": 1,
+        "topology_enable_delta": False,
+        "max_sparse_decisions_per_node": 512,
+        "classification_learning_rate": 0.8,
+        "classification_mature_learning_rate": 0.2,
+        "record_channel_attribution": True,
+        "topology_accept_uses_structural_value": True,
+        "use_momentum": True,
+        "topology_enable_content_follow_multi": True,
+        "gpaf_shadow_observation": True,
+        "gpaf_candidate_retrieval": True,
+        "gpaf_slots": 1024,
+        "gpaf_residents_per_slot": 4,
+        "gpaf_query_keys_per_step": 4,
+        "gpaf_use_binding_keys": True,
+    },
     "gpaf-retrieval-v1": {
         # upgrade-v1 plus GPAF candidate retrieval.
         # Enables full read path: shadow observation + bounded slot lookup.

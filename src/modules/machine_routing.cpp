@@ -110,54 +110,31 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures,
     if (config_.gpaf_candidate_retrieval && config_.gpaf_query_keys_per_step > 0U &&
         config_.gpaf_residents_per_slot > 0U) {
         std::uint32_t query_count = 0U;
-        for (const NodeId source : previous_route_) {
-            if (query_count >= config_.gpaf_query_keys_per_step ||
-                output.size() >= hard_limit) {
-                break;
-            }
-            const auto slot = slot_of(source);
-            if (slot == SIZE_MAX) continue;
-            const auto channel = channels_[slot];
-            const std::uint64_t structural_key =
-                gpaf_structural_call_key_for_channel(channel);
-            const bool has_dependency =
-                channel < topology_.size() &&
-                topology_[channel].dependency_channel != kInvalidChannel;
-            if (structural_key == 0U && has_dependency &&
-                topology_[channel].phase == ChannelPhase::Active) {
-                if (update_gpaf_state) ++gpaf_structural_call_blocked_;
-                continue;
-            }
-            const bool structural_call = structural_key != 0U;
-            const std::uint64_t key = structural_call
-                ? structural_key
-                : gpaf_role_key_for_channel(channel);
-            if (key == 0U) continue;
+        auto query_slot = [&](std::uint64_t key, bool structural_call) {
+            if (key == 0U || query_count >= config_.gpaf_query_keys_per_step ||
+                output.size() >= hard_limit) return;
             ++query_count;
             if (update_gpaf_state) ++gpaf_slots_probed_;
             const auto phase = gpaf_slot_phases_.find(key);
             if (phase == gpaf_slot_phases_.end() ||
                 (phase->second != static_cast<std::uint8_t>(GpafSlotPhase::Probe) &&
                  phase->second != static_cast<std::uint8_t>(GpafSlotPhase::Active))) {
-                continue;
+                return;
             }
             const auto found = gpaf_residents_.find(key);
-            if (found == gpaf_residents_.end()) continue;
+            if (found == gpaf_residents_.end()) return;
             std::size_t returned = 0U;
             for (const NodeId resident : found->second) {
                 if (returned >= config_.gpaf_residents_per_slot ||
-                    output.size() >= hard_limit) {
-                    break;
-                }
+                    output.size() >= hard_limit) break;
                 const bool already_present = std::find_if(
-                    output.begin(), output.end(), [&](const CandidateNode& candidate) {
-                        return candidate.id == resident;
+                    output.begin(), output.end(), [&](const CandidateNode& c) {
+                        return c.id == resident;
                     }) != output.end();
                 if (already_present) {
                     if (update_gpaf_state) ++gpaf_overlap_candidates_returned_;
                 }
-                if (push_candidate(output, resident, 0.0F, CandidateSource::GpafRole,
-                                   key)) {
+                if (push_candidate(output, resident, 0.0F, CandidateSource::GpafRole, key)) {
                     if (update_gpaf_state) {
                         ++gpaf_candidates_returned_;
                         ++gpaf_unique_candidates_returned_;
@@ -167,6 +144,40 @@ SparseBranchMachine::candidate_ids(std::span<const std::uint64_t> signatures,
                     }
                 }
                 ++returned;
+            }
+        };
+        if (config_.gpaf_use_binding_keys) {
+            // Query using execution frames' binding keys (per-step context).
+            for (const auto& frame : execution_frames_) {
+                if (frame.binding_state.binding_key == 0U) continue;
+                const auto ch = static_cast<std::uint8_t>(frame.channel);
+                const std::uint64_t sk = gpaf_structural_call_key_for_channel(ch);
+                if (sk != 0U) { query_slot(sk, true); continue; }
+                const std::uint64_t bk = gpaf_binding_key_for_channel(
+                    ch, frame.binding_state.binding_key,
+                    frame.binding_state.matched_distance,
+                    frame.binding_state.pattern_span);
+                query_slot(bk, false);
+            }
+        } else {
+            // Legacy: query using previous route nodes' channels.
+            for (const NodeId source : previous_route_) {
+                if (query_count >= config_.gpaf_query_keys_per_step ||
+                    output.size() >= hard_limit) break;
+                const auto slot = slot_of(source);
+                if (slot == SIZE_MAX) continue;
+                const auto channel = channels_[slot];
+                const std::uint64_t sk = gpaf_structural_call_key_for_channel(channel);
+                const bool has_dep = channel < topology_.size() &&
+                    topology_[channel].dependency_channel != kInvalidChannel;
+                if (sk == 0U && has_dep &&
+                    topology_[channel].phase == ChannelPhase::Active) {
+                    if (update_gpaf_state) ++gpaf_structural_call_blocked_;
+                    continue;
+                }
+                if (sk != 0U) { query_slot(sk, true); continue; }
+                const std::uint64_t rk = gpaf_role_key_for_channel(channel);
+                query_slot(rk, false);
             }
         }
     }

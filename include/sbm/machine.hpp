@@ -180,6 +180,9 @@ private:
     void observe_gpaf_shadow_roles(std::span<const ScoredNode> active);
     [[nodiscard]] std::uint64_t gpaf_role_key_for_channel(
         std::uint8_t channel) const noexcept;
+    [[nodiscard]] std::uint64_t gpaf_binding_key_for_channel(
+        std::uint8_t channel, std::uint64_t binding_key,
+        std::uint32_t distance, std::uint32_t span) const noexcept;
     [[nodiscard]] std::uint64_t gpaf_structural_call_key_for_channel(
         std::uint8_t channel) const noexcept;
     [[nodiscard]] double gpaf_slot_value(std::uint64_t key) const noexcept;
@@ -301,6 +304,7 @@ private:
     std::vector<float> channel_credit_buffer_;
     std::vector<std::uint64_t> signature_buffer_;
     std::vector<AddressExecutionFrame> execution_frames_;
+    std::array<std::size_t, kMaxAddressChannels> frame_index_by_channel_{};
     std::vector<CandidateNode> candidate_scratch_;
     std::vector<ScoredNode> scored_scratch_;
     std::vector<ScoredNode> selected_scratch_;
