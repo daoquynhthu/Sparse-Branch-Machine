@@ -182,6 +182,7 @@ private:
         std::uint8_t channel) const noexcept;
     [[nodiscard]] std::uint64_t gpaf_structural_call_key_for_channel(
         std::uint8_t channel) const noexcept;
+    [[nodiscard]] double gpaf_slot_value(std::uint64_t key) const noexcept;
     [[nodiscard]] BindingReuseSummary binding_reuse_summary(
         std::size_t channel) const noexcept;
     [[nodiscard]] double binding_reuse_bonus(

@@ -806,7 +806,13 @@ void verify_gpaf_structural_call_roles_require_dependency() {
     assert(after_block.gpaf_structural_call_blocked >= retired.gpaf_structural_call_blocked);
 }
 
-void verify_gpaf_costed_active_gate_blocks_without_positive_value() {
+void verify_gpaf_costed_active_gate_blocks_under_high_execution_cost() {
+    // gpaf_slot_costed_net_value_ now has a live EMA writer (fixed from the
+    // previous permanently-dead map). A large per-visit execution cost
+    // reliably keeps every slot's value negative regardless of how useful
+    // its residents are, so this proves the gate still blocks promotion for
+    // a principled, evidence-based reason rather than the old "always 0.0"
+    // no-op.
     auto default_config = sparse_config(4U, 16U);
     default_config.adaptive_topology = false;
     default_config.beam_width = 6U;
@@ -821,6 +827,10 @@ void verify_gpaf_costed_active_gate_blocks_without_positive_value() {
 
     auto gated_config = default_config;
     gated_config.gpaf_active_requires_positive_net_value = true;
+    // Per-visit contribution is bounded by roughly log(vector_dim) = log(16)
+    // nats; a cost far above that scale guarantees the EMA never turns
+    // positive.
+    gated_config.gpaf_execution_cost_weight = 5.0F;
     sbm::SparseBranchMachine gated_machine(gated_config);
 
     for (std::uint32_t step = 0U; step < 320U; ++step) {
@@ -838,6 +848,43 @@ void verify_gpaf_costed_active_gate_blocks_without_positive_value() {
     assert(gated_diag.gpaf_probe_slots > 0U);
     assert(gated_diag.gpaf_slot_promotions == 0U);
     assert(gated_diag.gpaf_active_slots == 0U);
+    assert(gated_diag.gpaf_quarantined_slots == 0U);
+}
+
+void verify_gpaf_costed_active_gate_allows_positive_value() {
+    // With zero execution cost, at least one role key must eventually
+    // accumulate positive live value and be promoted, proving the writer
+    // added in this fix actually produces evidence-driven behavior in both
+    // directions rather than only ever blocking.
+    auto config = sparse_config(4U, 16U);
+    config.adaptive_topology = false;
+    config.beam_width = 6U;
+    config.gpaf_shadow_observation = true;
+    config.gpaf_candidate_retrieval = true;
+    config.gpaf_query_keys_per_step = 2U;
+    config.gpaf_slots = 64U;
+    config.gpaf_residents_per_slot = 3U;
+    config.gpaf_probe_min_observations = 8U;
+    config.gpaf_probe_min_residents = 2U;
+    config.gpaf_active_requires_positive_net_value = true;
+    config.gpaf_execution_cost_weight = 0.0F;
+    sbm::SparseBranchMachine machine(config);
+
+    bool ever_promoted = false;
+    for (std::uint32_t step = 0U; step < 4096U; ++step) {
+        const std::uint32_t token = step % 16U;
+        const std::uint32_t target = (step * 7U + 5U) % 16U;
+        (void)machine.step_token(token, target, true);
+        if (machine.diagnostics().gpaf_slot_promotions > 0U) {
+            ever_promoted = true;
+            break;
+        }
+    }
+
+    const auto diag = machine.diagnostics();
+    assert(diag.gpaf_role_observations > 0U);
+    assert(ever_promoted);
+    assert(diag.gpaf_slot_promotions > 0U);
 }
 
 void verify_gpaf_lifecycle_transitions_gate_routing() {
@@ -991,7 +1038,8 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (mode == "gpaf_costed_gate") {
-        verify_gpaf_costed_active_gate_blocks_without_positive_value();
+        verify_gpaf_costed_active_gate_blocks_under_high_execution_cost();
+        verify_gpaf_costed_active_gate_allows_positive_value();
         std::cout << "GPAF costed active gate passed\n";
         return 0;
     }

@@ -313,6 +313,11 @@ std::uint64_t SparseBranchMachine::gpaf_structural_call_key_for_channel(
     return key;
 }
 
+double SparseBranchMachine::gpaf_slot_value(std::uint64_t key) const noexcept {
+    const auto found = gpaf_slot_costed_net_value_.find(key);
+    return found == gpaf_slot_costed_net_value_.end() ? 0.0 : found->second;
+}
+
 void SparseBranchMachine::observe_gpaf_shadow_roles(
     std::span<const ScoredNode> active) {
     if (!config_.gpaf_shadow_observation || config_.gpaf_slots == 0U) return;
@@ -341,9 +346,22 @@ void SparseBranchMachine::observe_gpaf_shadow_roles(
                 residents[total_steps_ % residents.size()] = node.id;
             }
         }
+        // Live costed-value evidence: EMA of this slot's per-visit
+        // counterfactual contribution, net of a configurable per-visit
+        // execution cost. This is the only writer of
+        // gpaf_slot_costed_net_value_; previously the map was never written
+        // and the costed gate below permanently blocked all promotions
+        // (operator[] default-inserted 0.0, so 0.0 > 0.0 was always false).
+        auto& value_ema = gpaf_slot_costed_net_value_[key];
+        const double decay = static_cast<double>(
+            std::clamp(config_.gpaf_value_ema_decay, 0.0F, 0.999999F));
+        const double sample = static_cast<double>(node.contribution) -
+            static_cast<double>(config_.gpaf_execution_cost_weight);
+        value_ema = decay * value_ema + (1.0 - decay) * sample;
+
         const bool costed_gate_passes =
             !config_.gpaf_active_requires_positive_net_value ||
-            gpaf_slot_costed_net_value_[key] > 0.0;
+            value_ema > 0.0;
         if (phase->second == static_cast<std::uint8_t>(GpafSlotPhase::Probe) &&
             config_.gpaf_probe_min_observations > 0U &&
             gpaf_role_observations_[key] >= config_.gpaf_probe_min_observations &&
@@ -351,6 +369,11 @@ void SparseBranchMachine::observe_gpaf_shadow_roles(
             costed_gate_passes) {
             phase->second = static_cast<std::uint8_t>(GpafSlotPhase::Active);
             ++gpaf_slot_promotions_;
+        } else if (phase->second == static_cast<std::uint8_t>(GpafSlotPhase::Active) &&
+                   config_.gpaf_active_requires_positive_net_value &&
+                   value_ema <= 0.0) {
+            phase->second = static_cast<std::uint8_t>(GpafSlotPhase::Quarantined);
+            ++gpaf_slot_quarantines_;
         }
     }
 }

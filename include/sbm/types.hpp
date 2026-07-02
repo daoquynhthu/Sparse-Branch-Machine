@@ -326,6 +326,8 @@ struct Config {
     std::uint32_t gpaf_probe_min_observations{64};
     std::uint32_t gpaf_probe_min_residents{1};
     bool gpaf_active_requires_positive_net_value{false};
+    float gpaf_value_ema_decay{0.98F};
+    float gpaf_execution_cost_weight{0.0F};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};
     float residual_mature_learning_rate{0.030F};

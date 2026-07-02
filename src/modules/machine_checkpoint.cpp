@@ -250,6 +250,8 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.gpaf_probe_min_observations);
     write_scalar(out, config.gpaf_probe_min_residents);
     write_scalar(out, config.gpaf_active_requires_positive_net_value);
+    write_scalar(out, config.gpaf_value_ema_decay);
+    write_scalar(out, config.gpaf_execution_cost_weight);
     write_scalar(out, config.output_tree_seed);
     write_scalar(out, config.seed);
 }
@@ -343,6 +345,8 @@ Config read_config(std::istream& in) {
     config.gpaf_probe_min_observations = read_scalar<std::uint32_t>(in);
     config.gpaf_probe_min_residents = read_scalar<std::uint32_t>(in);
     config.gpaf_active_requires_positive_net_value = read_scalar<bool>(in);
+    config.gpaf_value_ema_decay = read_scalar<float>(in);
+    config.gpaf_execution_cost_weight = read_scalar<float>(in);
     config.output_tree_seed = read_scalar<std::uint64_t>(in);
     config.seed = read_scalar<std::uint64_t>(in);
     return config;

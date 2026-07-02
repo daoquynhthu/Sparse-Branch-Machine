@@ -314,6 +314,8 @@ constexpr ParameterDescriptor kParameters[] = {
     {"gpaf_probe_min_observations", "uint32", "64", "1", "1048576", "log", true, false, false, "Minimum repeated role observations before a GPAF Probe slot may become Active."},
     {"gpaf_probe_min_residents", "uint32", "1", "0", "64", "linear", true, false, false, "Minimum distinct residents before a GPAF Probe slot may become Active."},
     {"gpaf_active_requires_positive_net_value", "bool", "false", "", "", "categorical", false, false, false, "Require positive diagnostic costed GPAF slot value before Probe slots may become Active."},
+    {"gpaf_value_ema_decay", "float", "0.98", "0.0", "0.999999", "linear", true, false, false, "EMA decay for the live GPAF per-slot costed-value estimate; higher means slower-adapting evidence."},
+    {"gpaf_execution_cost_weight", "float", "0.0", "0.0", "10.0", "linear", true, false, false, "Per-visit nats cost subtracted from a GPAF slot's live value estimate before the costed Active-admission gate."},
     {"output_tree_seed", "uint64", "7", "0", "18446744073709551615", "linear", true, false, false, "Seed for the fixed implicit output decomposition; keep constant across model seeds."},
     {"seed", "uint64", "7", "0", "18446744073709551615", "linear", false, false, false, "Model random seed."},
 };
@@ -416,6 +418,8 @@ bool set_parameter(sbm::Config& config, std::string_view name, std::string_view 
     SBM_SET_UINT(gpaf_probe_min_observations)
     SBM_SET_UINT(gpaf_probe_min_residents)
     SBM_SET_BOOL(gpaf_active_requires_positive_net_value)
+    SBM_SET_FLOAT(gpaf_value_ema_decay)
+    SBM_SET_FLOAT(gpaf_execution_cost_weight)
     SBM_SET_U64(output_tree_seed)
     SBM_SET_U64(seed)
 #undef SBM_SET_UINT
@@ -539,6 +543,8 @@ std::string config_json(const sbm::Config& c) {
         << c.gpaf_probe_min_residents << ",\n"
         << "  \"gpaf_active_requires_positive_net_value\": "
         << (c.gpaf_active_requires_positive_net_value ? "true" : "false") << ",\n"
+        << "  \"gpaf_value_ema_decay\": " << c.gpaf_value_ema_decay << ",\n"
+        << "  \"gpaf_execution_cost_weight\": " << c.gpaf_execution_cost_weight << ",\n"
         << "  \"output_tree_seed\": " << c.output_tree_seed << ",\n"
         << "  \"seed\": " << c.seed << "\n"
         << "}\n";
@@ -569,7 +575,9 @@ std::string_view parameter_tasks(std::string_view name) {
         name == "gpaf_residents_per_slot" ||
         name == "gpaf_probe_min_observations" ||
         name == "gpaf_probe_min_residents" ||
-        name == "gpaf_active_requires_positive_net_value") {
+        name == "gpaf_active_requires_positive_net_value" ||
+        name == "gpaf_value_ema_decay" ||
+        name == "gpaf_execution_cost_weight") {
         return "token-ce";
     }
     if (name == "residual_learning_rate" ||
