@@ -227,11 +227,13 @@ private:
         bool update_gpaf_state = true);
     [[nodiscard]] double score(std::size_t slot,
                                std::span<const std::uint64_t> signatures,
-                               float edge_prior) const noexcept;
+                               float edge_prior,
+                               const float* state_vector = nullptr) const noexcept;
     [[nodiscard]] std::pair<std::span<ScoredNode>, std::uint32_t>
         select_route(std::span<const std::uint64_t> signatures,
                      std::int64_t max_radius = 2,
-                     bool update_gpaf_state = true);
+                     bool update_gpaf_state = true,
+                     const float* state_vector = nullptr);
     void assign_responsibilities(std::span<ScoredNode> active) const;
     void aggregate(std::span<const ScoredNode> active, std::span<float> output) const;
     void compute_counterfactual_contributions(std::span<ScoredNode> active,

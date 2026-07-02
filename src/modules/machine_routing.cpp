@@ -245,7 +245,8 @@ NodePhase SparseBranchMachine::phase(NodeId id) const noexcept {
 
 double SparseBranchMachine::score(std::size_t slot,
                                   std::span<const std::uint64_t> signatures,
-                                  float edge_prior) const noexcept {
+                                  float edge_prior,
+                                  const float* state_vector) const noexcept {
     const auto channel = channels_[slot];
     const auto signature = signatures[channel];
     const double similarity = hamming_similarity(prototypes_[slot], signature);
@@ -254,14 +255,23 @@ double SparseBranchMachine::score(std::size_t slot,
         std::sqrt(static_cast<double>(visits_[slot]) + 1.0);
     const double exact = bucket(prototypes_[slot]) == bucket(signature) ? 0.42 : 0.0;
     const double phase_bias = phase_of_slot(slot) == NodePhase::Dormant ? -0.18 : 0.0;
-    return exact + 0.72 * similarity + 0.10 * reliability + 0.02 * novelty +
-           static_cast<double>(config_.edge_score_weight * edge_prior) + phase_bias;
+    double s = exact + 0.72 * similarity + 0.10 * reliability + 0.02 * novelty +
+               static_cast<double>(config_.edge_score_weight * edge_prior) + phase_bias;
+    if (state_vector != nullptr && config_.multi_pass_weight > 0.0F) {
+        const double align = detail::cosine(
+            std::span<const float>(output_vectors_.data() + slot * config_.vector_dim,
+                                   config_.vector_dim),
+            std::span<const float>(state_vector, config_.vector_dim));
+        s += static_cast<double>(config_.multi_pass_weight) * align;
+    }
+    return s;
 }
 
 std::pair<std::span<SparseBranchMachine::ScoredNode>, std::uint32_t>
 SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures,
                                   std::int64_t max_radius,
-                                  bool update_gpaf_state) {
+                                  bool update_gpaf_state,
+                                  const float* state_vector) {
     const auto candidates = candidate_ids(signatures, max_radius, update_gpaf_state);
     auto& scored = scored_scratch_;
     scored.clear();
@@ -293,7 +303,7 @@ SparseBranchMachine::select_route(std::span<const std::uint64_t> signatures,
                 ? -1.0
                 : std::tanh(value) + 0.10 * reliability + 0.02 * novelty;
         } else {
-            candidate_score = score(slot, signatures, candidate.edge_prior);
+            candidate_score = score(slot, signatures, candidate.edge_prior, state_vector);
         }
         scored.push_back({candidate_score, candidate.id,
                           0.0F, 0.0F, exact, channel, candidate.source,

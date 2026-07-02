@@ -141,6 +141,33 @@ StepStats SparseBranchMachine::step_token_dense(std::uint32_t token,
 
     auto [active, examined] = select_route(signatures, 2, learn);
     aggregate(active, logit_buffer_);
+
+    // Multi-pass routing: additional passes with state vector from previous pass.
+    std::vector<ScoredNode> multi_pass_storage;
+    if (config_.multi_pass_count > 1) {
+        for (std::uint32_t pass = 1; pass < config_.multi_pass_count; ++pass) {
+            auto [extra, extra_examined] = select_route(signatures, 2, learn,
+                logit_buffer_.data());
+            examined += extra_examined;
+            float total_mass = 0.0F;
+            for (const auto& n : active) total_mass += n.responsibility;
+            for (const auto& n : extra) total_mass += n.responsibility;
+            if (total_mass > 0.0F) {
+                const float inv = 1.0F / total_mass;
+                multi_pass_storage.clear();
+                for (const auto& n : active) {
+                    auto c = n; c.responsibility *= inv; multi_pass_storage.push_back(c);
+                }
+                for (const auto& n : extra) {
+                    auto c = n; c.responsibility *= inv; multi_pass_storage.push_back(c);
+                }
+                active = std::span<ScoredNode>(multi_pass_storage.data(),
+                                               multi_pass_storage.size());
+            }
+            aggregate(active, logit_buffer_);
+        }
+    }
+
     softmax(logit_buffer_, prediction_buffer_, config_.softmax_temperature);
 
     const float target_probability = std::max(prediction_buffer_[target_token], 1e-12F);

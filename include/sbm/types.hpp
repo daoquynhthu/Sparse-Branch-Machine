@@ -333,6 +333,8 @@ struct Config {
     bool gpaf_use_transition_keys{false};
     std::uint32_t gpaf_transition_depth{4};
     bool gpaf_use_epistemic_keys{false};
+    std::uint32_t multi_pass_count{1};
+    float multi_pass_weight{0.0F};
     float residual_channel_gain{1.0F};
     float residual_learning_rate{0.10F};
     float residual_mature_learning_rate{0.030F};

@@ -14,7 +14,7 @@
 namespace sbm {
 namespace {
 
-constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', 'H'};
+constexpr std::array<char, 8> kMagic{'S', 'B', 'M', 'C', 'K', 'P', 'T', 'I'};
 
 template <class T>
 void write_scalar(std::ostream& out, const T& value) {
@@ -257,6 +257,8 @@ void write_config(std::ostream& out, const Config& config) {
     write_scalar(out, config.gpaf_use_transition_keys);
     write_scalar(out, config.gpaf_transition_depth);
     write_scalar(out, config.gpaf_use_epistemic_keys);
+    write_scalar(out, config.multi_pass_count);
+    write_scalar(out, config.multi_pass_weight);
     write_scalar(out, config.output_tree_seed);
     write_scalar(out, config.seed);
 }
@@ -357,6 +359,8 @@ Config read_config(std::istream& in) {
     config.gpaf_use_transition_keys = read_scalar<bool>(in);
     config.gpaf_transition_depth = read_scalar<std::uint32_t>(in);
     config.gpaf_use_epistemic_keys = read_scalar<bool>(in);
+    config.multi_pass_count = read_scalar<std::uint32_t>(in);
+    config.multi_pass_weight = read_scalar<float>(in);
     config.output_tree_seed = read_scalar<std::uint64_t>(in);
     config.seed = read_scalar<std::uint64_t>(in);
     return config;

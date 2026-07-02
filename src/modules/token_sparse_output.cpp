@@ -292,6 +292,36 @@ StepStats SparseBranchMachine::step_token_sparse(std::uint32_t token,
         }
     }
 
+    // Multi-pass routing: additional passes refine the prediction by routing
+    // with the previous pass's aggregate as a state vector. Each pass adds at
+    // most beam_width nodes; total active nodes ≤ multi_pass_count × beam_width.
+    std::vector<ScoredNode> multi_pass_storage;
+    if (config_.multi_pass_count > 1) {
+        std::vector<float> state(config_.vector_dim, 0.0F);
+        aggregate(active, state);
+        for (std::uint32_t pass = 1; pass < config_.multi_pass_count; ++pass) {
+            auto [extra, extra_examined] = select_route(signatures, 2, learn, state.data());
+            examined += extra_examined;
+            float total_mass = 0.0F;
+            for (const auto& n : active) total_mass += n.responsibility;
+            for (const auto& n : extra) total_mass += n.responsibility;
+            if (total_mass > 0.0F) {
+                const float inv = 1.0F / total_mass;
+                multi_pass_storage.clear();
+                for (const auto& n : active) {
+                    auto c = n; c.responsibility *= inv; multi_pass_storage.push_back(c);
+                }
+                for (const auto& n : extra) {
+                    auto c = n; c.responsibility *= inv; multi_pass_storage.push_back(c);
+                }
+                active = std::span<ScoredNode>(multi_pass_storage.data(),
+                                               multi_pass_storage.size());
+            }
+            std::fill(state.begin(), state.end(), 0.0F);
+            aggregate(active, state);
+        }
+    }
+
     auto& output_tree = *implicit_output_;
     output_tree.target_path(target_token, token_path_scratch_);
     const float temperature = std::max(config_.softmax_temperature, 1e-5F);
