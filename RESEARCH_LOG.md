@@ -1775,3 +1775,71 @@ Report:
 
 Fix commits: `2c9e4d7` (HV1), `3be364f` (HV2), `17d77c2` (HV3),
 `28814c0` (HV4). All on branch `theory-alignment-v9`.
+
+
+## 2026-07-02 — GPAF B1 and B2 key variants 10M validation
+
+Two context-bearing key variants (Proposal B from the architecture
+investigation) tested on 10M FineWeb-Edu, 2 seeds (7, 11). Both use
+`gpaf_use_binding_keys=true` to query GPAF from execution frame binding
+state instead of previous-route channel metadata.
+
+### B1: content-identity keys
+
+`key = mix(program op/arity, lineage, binding_key) mod gpaf_slots`
+
+| Metric | B1 (content identity) | Old retrieval (topology-only) |
+|---|---|---|
+| eval NLL | 6.2152 (+0.0023 vs baseline) | 6.2136 (+0.0007) |
+| Unique role keys | 1,023 | 21 |
+| Active slots | 1,023 | 19 |
+| Candidates/token | ~3.5 | ~12 |
+| Unique active nodes | 9,196 | 159 |
+| Overlap rate | 14% | 35% |
+| Honest causal gain | 0.000000 | 0.000000 |
+
+Key space utilization dramatically improved (21→1023 slots filled). But NLL
+slightly worse than baseline (+0.0023). Each slot receives sparse observations
+(~9,775 vs ~2.8M for old keys), making value estimates unreliable.
+
+### B2: structural shape keys
+
+`key = mix(program op/arity, lineage, distance_bucket, span_bucket) mod gpaf_slots`
+
+| Metric | B2 (shape keys) | Old retrieval |
+|---|---|---|
+| eval NLL | **6.21296 (+0.00008)** | 6.2136 (+0.0007) |
+| Unique role keys | 25 | 21 |
+| Active slots | 23 | 19 |
+| Candidates/token | ~3.9 | ~12 |
+| Unique active nodes | 8,136 | 159 |
+| Overlap rate | **2.6%** | 35% |
+| Honest causal gain | 0.000000 | 0.000000 |
+
+**B2 is the first GPAF variant that does not regress NLL** (+0.00008 nats
+vs baseline, well within noise). Overlap rate is only 2.6% — virtually all
+GPAF-introduced candidates are genuinely GPAF-unique. Unique active node count
+is 8,136 (healthy injection). The quantized distance/span buckets produce
+25 distinct keys (vs 1,023 for B1), giving each slot ~400K observations —
+enough for stable value estimation.
+
+The honest causal gain remains zero across all variants, confirming that GAF
+currently retrieves candidates with zero net predictive value. The architecture
+is now working correctly (low overlap, safe NLL, calibrated scoring, honest
+attribution), but the role keys still don't discriminate genuinely useful
+global structure.
+
+### Full comparison
+
+| Config | NLL (mean) | vs baseline | Overlap | Unique keys | Slots used |
+|---|---|---|---|---|---|
+| upgrade-v1 (baseline) | 6.21288 | — | — | — | — |
+| gpaf-retrieval (old keys) | 6.21361 | +0.00073 | 35% | 21 | 19 |
+| gpaf-binding-v1 (B1) | 6.21520 | +0.00232 | 14% | 1023 | 1023 |
+| **gpaf-shape-v1 (B2)** | **6.21296** | **+0.00008** | **2.6%** | **25** | **23** |
+
+B2 is the recommended baseline for future GPAF experiments: it's safe (no NLL
+regression), efficient (2.6% overlap, 3.9 candidates/token), and
+architecturally sound (keys carry per-step content information).
+
+Commit: `9a33967` (preset), `bbd872f` (B1 implementation, B2 already built-in).

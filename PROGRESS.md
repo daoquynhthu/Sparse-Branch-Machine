@@ -77,12 +77,22 @@ Key finding: **momentum with bias correction improves NLL by 0.111 nats** on 10M
 Multi-hop content following adds ~0.018 nats on 10M. Adaptive beam + refinement
 is neutral in current configuration.
 
-## 10M costed-value validation (2026-07-02)
+## 10M GPAF key variants (2026-07-02)
 
-Key finding: **GPAF's positive ablation signal comes entirely from overlapping
-locally-reachable candidates.** Unique GPAF-only candidates have negative gain
-(-0.0013 nats per example). All three role keys have negative net value after
-subtracting execution cost. Full report in `RESEARCH_LOG.md`.
+Three GPAF key variants compared on 10M FineWeb-Edu (2 seeds):
+
+| Config | NLL | Overlap | Keys used | Unique active |
+|---|---|---|---|---|
+| upgrade-v1 (baseline) | 6.2129 | — | — | — |
+| gpaf-retrieval (topology-only) | 6.2136 | 35% | 21 | 159 |
+| gpaf-binding-v1 (B1, raw binding_key) | 6.2152 | 14% | 1023 | 9,196 |
+| **gpaf-shape-v1 (B2, quantized shape)** | **6.2130** | **2.6%** | **25** | **8,136** |
+
+**B2 is the first GPAF variant with no NLL regression** (+0.00008 nats).
+Overlap rate is only 2.6% (virtually all GPAF candidates are truly
+GPAF-unique). Honest causal gain remains 0 across all variants — the current
+role keys don't yet discriminate genuinely useful global structure, but the
+architecture is now correct and safe.
 
 ## Honest-value and calibrated-scoring fixes (2026-07-02)
 
