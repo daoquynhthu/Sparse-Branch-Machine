@@ -888,15 +888,13 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
     result.gpaf_ablation_key_nodes = gpaf_ablation_key_nodes;
     result.gpaf_ablation_key_resident_count = gpaf_ablation_key_resident_count;
     result.gpaf_ablation_key_reuse_count = gpaf_ablation_key_reuse_count;
-    result.gpaf_ablation_key_execution_cost = gpaf_ablation_key_execution_cost_sum;
-    result.gpaf_ablation_key_net_value = gpaf_ablation_key_net_value_sum;
     if (gpaf_ablation_examples != 0U) {
         const double inverse = 1.0 / static_cast<double>(gpaf_ablation_examples);
         result.gpaf_ablation_mean_removed_cross_entropy =
             gpaf_ablation_removed_cross_entropy_sum * inverse;
         result.gpaf_ablation_mean_gain = gpaf_ablation_gain_sum * inverse;
         result.gpaf_ablation_false_positive_cost =
-            gpaf_ablation_false_positive_cost_sum;
+            gpaf_ablation_false_positive_cost_sum * inverse;
     }
     if (gpaf_unique_ablation_examples != 0U) {
         const double inverse =
@@ -906,7 +904,7 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         result.gpaf_unique_ablation_mean_gain =
             gpaf_unique_ablation_gain_sum * inverse;
         result.gpaf_unique_ablation_false_positive_cost =
-            gpaf_unique_ablation_false_positive_cost_sum;
+            gpaf_unique_ablation_false_positive_cost_sum * inverse;
     }
     if (gpaf_overlap_ablation_examples != 0U) {
         const double inverse =
@@ -916,8 +914,17 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         result.gpaf_overlap_ablation_mean_gain =
             gpaf_overlap_ablation_gain_sum * inverse;
         result.gpaf_overlap_ablation_false_positive_cost =
-            gpaf_overlap_ablation_false_positive_cost_sum;
+            gpaf_overlap_ablation_false_positive_cost_sum * inverse;
     }
+    // NOTE: gpaf_ablation_key_execution_cost and gpaf_ablation_key_net_value
+    // were previously assigned directly from the raw *_sum accumulators
+    // (summed over every eval example) while gain/removed-cross-entropy were
+    // correctly normalized to per-example means. That units mismatch made
+    // execution cost scale with eval-set size (e.g. ~224,000 for a ~4-
+    // resident slot over 56,582 examples) against gains bounded by a few
+    // nats, guaranteeing every net value was deeply negative regardless of
+    // whether the role key was useful. Both are now normalized to the same
+    // per-example nats units as mean_gain below.
     for (std::size_t i = 0; i < gpaf_ablation_key_count; ++i) {
         if (gpaf_ablation_key_examples[i] == 0U) continue;
         const double inverse =
@@ -927,7 +934,11 @@ static TokenExperimentResult run_token_views(std::span<const TokenDataView> data
         result.gpaf_ablation_key_mean_gain[i] =
             gpaf_ablation_key_gain_sum[i] * inverse;
         result.gpaf_ablation_key_false_positive_cost[i] =
-            gpaf_ablation_key_false_positive_cost_sum[i];
+            gpaf_ablation_key_false_positive_cost_sum[i] * inverse;
+        result.gpaf_ablation_key_execution_cost[i] =
+            gpaf_ablation_key_execution_cost_sum[i] * inverse;
+        result.gpaf_ablation_key_net_value[i] =
+            gpaf_ablation_key_net_value_sum[i] * inverse;
     }
     result.steps_per_second = static_cast<double>(total_examples) / elapsed;
     result.elapsed_seconds = elapsed;
