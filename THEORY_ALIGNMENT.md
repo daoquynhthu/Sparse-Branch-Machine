@@ -24,7 +24,9 @@ The project is investigating a learning machine whose dominant computation is:
 The desired properties are:
 
 - persistent capacity much larger than the active working set;
-- content- and state-dependent execution paths;
+- content- and state-dependent execution paths (see the Global Predictive Address Field
+  in `DESIGN_NOTES.md §Next-generation global predictive addressing` for the current
+  approach toward this goal);
 - local learning without a dense global backward pass;
 - structures that can be proposed, evaluated, retained and erased;
 - a small set of auditable meta-rules rather than a hand-written cognitive
@@ -273,6 +275,11 @@ It is justified to say that the repository contains:
 - first-class dependency edge summaries for rollback-oriented audit.
 - explicit restore of masked committed channels while preserving channel
   generation.
+- an experimental Global Predictive Address Field (GPAF) with bounded
+  shadow observation, candidate retrieval, slot lifecycle, per-key frozen
+  ablation and costed-value diagnostics; unique/overlap ablation shows that
+  GPAF's positive signal currently comes from overlapping locally-reachable
+  candidates rather than genuinely novel global retrieval.
 
 It is not justified to say that it has demonstrated:
 
@@ -295,6 +302,13 @@ Theory work should resume in this order after real data is available:
    typed state, reusable caller graphs and rollback;
 6. test transfer across documents, shards and seeds;
 7. only then consider composition, calls or deeper program graphs.
+
+The GPAF work (see `DESIGN_NOTES.md §Next-generation global predictive
+addressing`) is the engineering approach toward gate 4 and beyond. Current
+10M validation shows that GPAF role keys need better discrimination: the
+positive frozen ablation signal comes from overlapping locally-reachable
+candidates, and unique GPAF-only candidates have slightly negative gain.
+This is a concrete next design problem within the theoretical direction.
 
 The project should prefer one falsifiable primitive over a broad hand-written
 instruction set.

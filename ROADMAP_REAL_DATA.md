@@ -10,16 +10,21 @@
 
 ## 1. Why the project is currently blocked
 
-**Status update (2026-06-24):** local data availability is no longer the
+**Status update (2026-07-02):** local data availability is no longer the
 immediate engineering blocker. A 1.0M-train/0.1M-validation subset of the NAIME
 FineWeb-Edu artifact now runs through mapped shards, bounded output state and
 split-correct frozen evaluation. It remains `compatibility_only` because source
 document identity, tokenizer provenance and cross-split deduplication evidence
-are absent. The original three-seed run failed at NLL 10.6696 versus unigram
-7.6826; subsequent shared-prior, decision-learning and admission repairs brought
-the seed-7 gate to NLL 7.5115. This establishes a compatibility predictive gate,
-not document-level generalization. The remaining research boundary is evidence
-on an admissible corpus plus unresolved content-conditioned addressing.
+are absent. Multi-seed 10M/1M FineWeb-Edu runs now achieve eval NLL ~6.21 with
+the `upgrade-v1` preset (momentum + multi-hop content following). An
+experimental Global Predictive Address Field (GPAF) has been added as a
+next-generation addressing mechanism but current 10M validation shows its role
+keys are not yet discriminative enough (unique GPAF-only gain is -0.0013 nats,
+all positive signal comes from overlapping locally-reachable candidates). The
+remaining research boundary is evidence on an admissible corpus plus unresolved
+content-conditioned addressing — GPAF is the current engineering approach
+toward the latter, but needs better role-key discrimination before it can
+contribute.
 
 The mathematical token generator has been useful for:
 

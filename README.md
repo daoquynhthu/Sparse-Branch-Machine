@@ -77,9 +77,12 @@ C_{step}\not\propto N_{stored}.
 \]
 
 Current address programs can select small combinations of historical positions
-and include an experimental generic modular-difference form. They do not yet
-provide content-conditioned variable binding or relation-following. Those remain
-architecture research problems, not completed features.
+and include an experimental generic modular-difference form. The experimental
+Global Predictive Address Field (GPAF) adds bounded role-key-based candidate
+retrieval on top of the local address system; current 10M validation shows its
+role keys need better discrimination before it contributes positive unique
+value. Content-conditioned variable binding and relation-following remain
+architecture research problems.
 
 ## Current experimental boundary
 
@@ -91,6 +94,13 @@ The current branch also contains an experimental hierarchical output tree. It
 reduces large-vocabulary storage and target-NLL work, but on the small synthetic
 vocabulary it currently trails the dense output in quality. It is an enabling
 experiment, not an accepted final output architecture.
+
+An experimental Global Predictive Address Field (GPAF) is implemented as a
+bounded global sparse address layer with role-key observation, candidate
+retrieval, slot lifecycle and per-key frozen ablation diagnostics. Current 10M
+validation indicates its role keys need better discrimination — see
+`DESIGN_NOTES.md §Next-generation global predictive addressing` for the current
+findings and open directions.
 
 See:
 
