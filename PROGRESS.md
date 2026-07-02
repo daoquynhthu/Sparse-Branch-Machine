@@ -13,7 +13,7 @@ GPAF 的 engineering milestone 已完成并通过 10M 真实语料验证。当�
 
 ## Branch state
 
-- **Branch:** `theory-alignment-v9` remote state observed via GitHub Web; local git fetch is blocked by environment HTTP CONNECT 403.
+- **Branch:** `theory-alignment-v9`
 - **Status:** GPAF 实现已完成，21/21 测试通过，10M 验证完成，文档已更新
 - **Key documents:**
   - Spec: `docs/superpowers/specs/2026-06-30-global-predictive-address-field-design.md`

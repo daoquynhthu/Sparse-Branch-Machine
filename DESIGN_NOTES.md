@@ -238,7 +238,6 @@ nats/example). The architecture is mechanically correct and safe; scientific
 benefit awaits description/execution cost attribution and automatic acceptance
 gates.
 
-
 The next GPAF diagnostic layer separates residents returned only by GPAF from
 residents that overlap with exact-bucket, control-edge or neighbor retrieval.
 This is diagnostic-only and does not alter scoring or active-route selection; it

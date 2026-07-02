@@ -1486,7 +1486,7 @@ gpaf_query_keys_per_step=4).
 Three seeds (7, 11, 19), 10M train / 1M eval:
 
 | Config | Seed 7 | Seed 11 | Seed 19 | Mean (7/11) |
-|---|---:|---:|---:|---:|
+|---|---:|---:|---:|---:|---:|
 | upgrade-v1 (baseline) | 6.21185 | 6.21391 | 6.27662 | 6.2129 |
 | gpaf-retrieval-v1 | 6.21365 | 6.21517 | 6.27561 | 6.2144 |
 

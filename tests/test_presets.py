@@ -42,6 +42,18 @@ def main() -> None:
     assert overridden["beam_width"] == 12
     assert overridden["use_momentum"] is True
 
+    shadow = apply_preset("gpaf-shadow-v1")
+    assert shadow["gpaf_shadow_observation"] is True
+    assert shadow["gpaf_slots"] == 1024
+    assert shadow["gpaf_residents_per_slot"] == 4
+    assert "gpaf_candidate_retrieval" not in shadow
+
+    retrieval = apply_preset("gpaf-retrieval-v1")
+    assert retrieval["gpaf_shadow_observation"] is True
+    assert retrieval["gpaf_candidate_retrieval"] is True
+    assert retrieval["gpaf_query_keys_per_step"] == 4
+    assert retrieval["gpaf_slots"] == 1024
+
     try:
         apply_preset("nonexistent")
         raise AssertionError("expected KeyError")
