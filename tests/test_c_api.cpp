@@ -24,6 +24,10 @@ int main() {
            std::string_view::npos);
     assert(schema.find("max_binding_reuse_records_per_channel") !=
            std::string_view::npos);
+    assert(schema.find("gpaf_probe_min_observations") != std::string_view::npos);
+    assert(schema.find("gpaf_probe_min_residents") != std::string_view::npos);
+    assert(schema.find("gpaf_active_requires_positive_net_value") !=
+           std::string_view::npos);
     assert(schema.find("search_default") != std::string_view::npos);
 
     sbm_config_handle* config = sbm_config_create();
@@ -80,6 +84,15 @@ int main() {
     assert(sbm_dataset_vocab_size(token_dataset) == 16U);
     assert(sbm_dataset_sequence_count(token_dataset) == 8U);
     assert(sbm_dataset_example_count(token_dataset) == 4088U);
+    assert(sbm_config_set(config, "gpaf_shadow_observation", "true") == 0);
+    assert(sbm_config_set(config, "gpaf_candidate_retrieval", "true") == 0);
+    assert(sbm_config_set(config, "gpaf_slots", "64") == 0);
+    assert(sbm_config_set(config, "gpaf_residents_per_slot", "3") == 0);
+    assert(sbm_config_set(config, "gpaf_query_keys_per_step", "2") == 0);
+    assert(sbm_config_set(config, "gpaf_probe_min_observations", "4") == 0);
+    assert(sbm_config_set(config, "gpaf_probe_min_residents", "1") == 0);
+    assert(sbm_config_set(config, "gpaf_active_requires_positive_net_value",
+                          "false") == 0);
 
     char* token_result = sbm_run_experiment_json(token_dataset, 2500, config, 1, 0, 0, 0);
     assert(token_result != nullptr);
@@ -103,6 +116,57 @@ int main() {
     assert(token_view.find("\"structural_description_cost\"") !=
            std::string_view::npos);
     assert(token_view.find("\"structural_execution_cost\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"candidate_source_exact_bucket\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"candidate_source_control_edge\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"candidate_source_neighbor_bucket\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"route_score_hamming_sum\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"route_score_exact_sum\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"route_score_edge_prior_sum\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_probe_slots\"") != std::string_view::npos);
+    assert(token_view.find("\"gpaf_active_slots\"") != std::string_view::npos);
+    assert(token_view.find("\"gpaf_quarantined_slots\"") != std::string_view::npos);
+    assert(token_view.find("\"gpaf_recoverable_retired_slots\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_physically_erased_slots\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_slot_promotions\"") != std::string_view::npos);
+    assert(token_view.find("\"gpaf_slot_quarantines\"") != std::string_view::npos);
+    assert(token_view.find("\"gpaf_slot_recoverable_retires\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_slot_restores\"") != std::string_view::npos);
+    assert(token_view.find("\"gpaf_ablation_examples\"") != std::string_view::npos);
+    assert(token_view.find("\"gpaf_ablation_mean_gain\"") != std::string_view::npos);
+    assert(token_view.find("\"gpaf_ablation_key_count\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_ablation_keys\"") != std::string_view::npos);
+    assert(token_view.find("\"resident_count\"") != std::string_view::npos);
+    assert(token_view.find("\"reuse_count\"") != std::string_view::npos);
+    assert(token_view.find("\"execution_cost\"") != std::string_view::npos);
+    assert(token_view.find("\"net_value\"") != std::string_view::npos);
+    assert(token_view.find("\"gpaf_ablation_false_positive_cost\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_unique_candidates_returned\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_overlap_candidates_returned\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_unique_active_nodes\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_overlap_active_nodes\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_unique_ablation_examples\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_overlap_ablation_examples\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_unique_ablation_mean_gain\"") !=
+           std::string_view::npos);
+    assert(token_view.find("\"gpaf_overlap_ablation_mean_gain\"") !=
            std::string_view::npos);
     sbm_string_free(token_result);
 
@@ -183,6 +247,28 @@ int main() {
            std::string_view::npos);
     assert(std::string_view(machine_diag).find("\"topology_restored\"") !=
            std::string_view::npos);
+    assert(std::string_view(machine_diag).find("\"candidate_source_exact_bucket\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_diag).find("\"route_score_hamming_sum\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_diag).find("\"gpaf_probe_slots\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_diag).find("\"gpaf_slot_promotions\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_diag).find("\"gpaf_slot_quarantines\"") !=
+           std::string_view::npos);
+    assert(std::string_view(machine_diag).find(
+               "\"gpaf_structural_call_observations\"") != std::string_view::npos);
+    assert(std::string_view(machine_diag).find(
+               "\"gpaf_structural_call_blocked\"") != std::string_view::npos);
+    assert(std::string_view(machine_diag).find(
+               "\"gpaf_unique_candidates_returned\"") != std::string_view::npos);
+    assert(std::string_view(machine_diag).find(
+               "\"gpaf_overlap_candidates_returned\"") != std::string_view::npos);
+    assert(std::string_view(machine_diag).find(
+               "\"gpaf_unique_active_nodes\"") != std::string_view::npos);
+    assert(std::string_view(machine_diag).find(
+               "\"gpaf_overlap_active_nodes\"") != std::string_view::npos);
     sbm_string_free(machine_diag);
     char* machine_summary = sbm_machine_summary_json(resumed);
     assert(machine_summary != nullptr);

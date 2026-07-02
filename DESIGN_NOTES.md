@@ -214,6 +214,66 @@ topology event and preserves the channel generation. Rollback is therefore a
 tracked lifecycle transition of the same address-program instance, not an
 implicit re-proposal.
 
+
+## Next-generation global predictive addressing
+
+The next addressing direction is the Global Predictive Address Field (GPAF),
+defined in `docs/superpowers/specs/2026-06-30-global-predictive-address-field-design.md`.
+The purpose is to move global sparse retrieval away from token-ID or
+token-signature similarity and toward predictive-role reuse measured by
+held-out codelength. The diagnostics, shadow-observation, disabled-by-default
+bounded candidate retrieval, frozen read-only retrieval guard, Probe/Active slot
+phase accounting and repeated-evidence Probe -> Active promotion are
+implemented. This promotion is an engineering lifecycle gate, not a scientific
+acceptance claim. Explicit GPAF quarantine, recoverable-retirement and restore
+transitions are implemented and are honored by the routing phase gate. Frozen
+evaluation reports aggregate and bounded per-role-key GPAF codelength
+ablation diagnostics without mutating GPAF slot state; structural-call role-key routing now exists for accepted dependency-bearing channels with enabled producers.
+
+10M FineWeb-Edu validation (2026-07-01, 3 seeds) confirms `gpaf-retrieval-v1`
+is neutral at the noise level (+0.0015 nats vs `upgrade-v1` baseline on seeds
+7/11). Frozen ablation shows +0.203 nats codelength gain per example when GPAF
+slots are removed, partially offset by false-positive cost (~0.100
+nats/example). The architecture is mechanically correct and safe; scientific
+benefit awaits description/execution cost attribution and automatic acceptance
+gates.
+
+
+The next GPAF diagnostic layer separates residents returned only by GPAF from
+residents that overlap with exact-bucket, control-edge or neighbor retrieval.
+This is diagnostic-only and does not alter scoring or active-route selection; it
+exists to determine whether future GPAF value is causal or merely duplicate
+attribution of locally reachable nodes.
+
+Selected active nodes now preserve that unique/overlap provenance after route
+selection. The counters are still monotonic diagnostics only; they must not be
+used for score boosts until frozen unique-value and costed slot accounting pass.
+
+Frozen sparse-output ablation now also reports separate unique and overlap
+groups. This makes it possible to distinguish GPAF-caused candidate value from
+GPAF merely touching locally reachable nodes before any score calibration is
+considered. Per-key frozen ablation also carries resident count, reuse count,
+execution-budget cost and diagnostic net value. Those numbers are audit fields;
+they must not change slot promotion unless the separate disabled-by-default
+costed admission gate is enabled and its required positive slot value is
+available.
+
+GPAF must not encode linguistic abstractions as prior labels. If language,
+syntax, semantics, binding or relation-like behavior appears, it must emerge
+from reusable predictive structures that survive frozen validation, ablation,
+reuse accounting and real-data controls. The mechanism may use generic role
+keys such as coarse output correction, binding-state kind, dependency/call kind,
+structural lineage, reuse count and execution-cost bucket. It may not use labels
+such as subject, object, entity, coreference or topic as supervision or routing
+rules.
+
+The current token-signature buckets, content-match/follow operators and learned
+control edges remain compatibility controls and bootstrap mechanisms. They are
+not the intended primary source of global sparse influence. Any GPAF
+implementation must keep per-token query count, returned residents, candidates
+inspected, active nodes and output work bounded, and must report the byte cost of
+the global address field separately.
+
 ## Real-corpus invariants
 
 The next phase is governed by `ROADMAP_REAL_DATA.md`. Any real-corpus implementation must preserve these design invariants:
