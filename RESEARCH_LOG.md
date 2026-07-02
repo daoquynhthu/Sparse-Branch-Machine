@@ -1648,3 +1648,130 @@ for improvement: more discriminative role keys, score boost for GPAF-unique
 candidates, and tighter cost budgeting per query.
 
 Run directory: `E:\SPM_EXPERIMENTS\runs\gpaf_10m_costed`
+
+## 2026-07-02 — GPAF honest-value and calibrated-scoring implementation
+
+Plan: `docs/superpowers/plans/2026-07-02-gpaf-honest-value-and-calibrated-scoring.md`
+Investigation: `docs/superpowers/research/2026-07-02-gpaf-architecture-investigation.md`
+
+Implemented 4 fixes on top of the existing GPAF codebase (commits
+`2c9e4d7`, `3be364f`, `17d77c2`, `28814c0`). All verified via CTest (22/22
+pass, `sbm_scaling_gpaf_*` + `sbm_c_api` + `sbm_cpp_api` + non-GPAF tests).
+Preset test passes unchanged.
+
+### HV1 — Normalize cost/net-value to per-example means
+
+`src/modules/token_experiment.cpp`: replaced raw-sum-to-output assignments
+for `gpaf_ablation_key_execution_cost`, `gpaf_ablation_key_net_value`, and
+the three `*_false_positive_cost` fields with `sum * inverse` normalization,
+matching what `gpaf_ablation_mean_gain` already did. No CTest expectations
+change (tests check finiteness and sign, not specific magnitudes). Verified:
+`./build-fast/sbm_c_api_tests.exe` passes (the JSON key existence checks),
+full suite passes.
+
+### HV2 — Stop attributing GPAF-overlap logits as causal ablation
+
+`src/modules/token_sparse_output.cpp`: the frozen ablation loop now
+`continue`s past overlap nodes when computing the primary/aggregate
+`gpaf_removed_cross_entropy`, and no longer includes overlap logits in
+`removed_by_key` for per-key ablation either. Overlap removal remains as a
+separate, non-causal diagnostic (`gpaf_overlap_removed_cross_entropy`).
+Verified: `./build-fast/sbm_scaling_tests.exe gpaf_frozen` passes
+(the `net_value <= gain + 1e-6` assertion still holds; unique/overlap
+`||` tolerance handles zero-overlap cases).
+
+### HV3 — Live costed-value writer and evidence-based lifecycle gating
+
+The critical fix. Previously `gpaf_slot_costed_net_value_` was declared,
+serialized, and read once (at `machine_topology.cpp:346`) but *never
+written* — a permanently empty map. With `gpaf_active_requires_positive_net_value`
+enabled, `operator[]` default-inserted `0.0` and `0.0 > 0.0` was always
+false, so every slot was permanently stuck in Probe regardless of evidence.
+
+Changes:
+- Two new Config fields: `gpaf_value_ema_decay` (default 0.98F) and
+  `gpaf_execution_cost_weight` (default 0.0F), exposed through checkpoint,
+  C API schema/setter/JSON, and the `parameter_tasks` chain.
+- In `observe_gpaf_shadow_roles`: EMA update of `value_ema =
+  decay * value_ema + (1-decay) * (contribution - exec_cost_weight)` as the
+  sole writer of `gpaf_slot_costed_net_value_[key]`.
+- Active→Quarantined demotion when `gpaf_active_requires_positive_net_value`
+  is enabled and `value_ema <= 0.0`.
+
+Test outcomes observed during implementation:
+- Original `verify_gpaf_costed_active_gate_blocks_without_positive_value`
+  with `gpaf_execution_cost_weight` left at default `0.0F` and 320 steps:
+  the writer now produces a positive EMA on this deterministic pattern,
+  slots get promoted, and the assertion `gated_diag.gpaf_probe_slots > 0U`
+  fails (slot moved from Probe to Active → no longer counted as Probe).
+  Fixed by: renaming the test to `verify_gpaf_costed_active_gate_blocks_under_high_execution_cost`,
+  setting `gpaf_execution_cost_weight = 5.0F` (well above any plausible
+  per-visit contribution of ≤~log(16) nats), which correctly blocks all
+  promotions (passes). Added a complementary
+  `verify_gpaf_costed_active_gate_allows_positive_value` that runs for up to
+  4096 steps with zero execution cost and proves promotion does occur
+  (observed: promotion within ≈2048 steps).
+
+### HV4 — Calibrated GPAF-unique candidate scoring
+
+`src/modules/machine_routing.cpp::select_route`: for candidates with
+`source == GpafRole && !gpaf_overlap`, replace the uniform
+`score()` (which applies `0.42·exact + 0.72·hamming` — the signal GPAF
+exists to move away from) with scoring from the slot's measured live value:
+`score = value <= 0.0 ? -1.0 : tanh(value) + 0.10·reliability + 0.02·novelty`.
+A score of `-1.0` is below any possible `score()` minimum (~ -0.18 for a
+Dormant node with zero terms), so non-positive-value GPAF-unique candidates
+lose every ranked comparison against any local candidate.
+
+Test outcome:
+- `verify_gpaf_candidate_retrieval_is_bounded` (line 570): was passing
+  (`gpaf_unique_active_nodes > 0U`) because the old scoring let
+  uncalibrated GPAF candidates win beam slots in low-evidence buckets.
+  After the fix, this assertion still passes (the 512-step run accumulates
+  enough positive value for some promotions, and promoted slots have
+  positive value → their unique candidates can score > 0 and win beam
+  slots). This is the desired behavior: GPAF-unique candidates now require
+  evidence before activating.
+- Added `verify_gpaf_unique_candidates_need_positive_value_to_activate`:
+  with a 512-node prefill fill, 4 steps of training, and no accumulated
+  slot value, `gpaf_unique_active_nodes == 0U` — the calibration block
+  is effective. Passes.
+
+### Remaining work
+
+The per-key and aggregate `execution_cost` model in frozen ablation
+(`token_sparse_output.cpp:438`, `token_experiment.cpp` aggregation) still
+uses `resident_count` as a proxy for execution cost, which is an
+improvement over the raw-sum unit bug but is not a calibrated cost model.
+The spec's intended `λ·probe_cost` approach requires measuring the actual
+resource footprint of slot probing and converting it to nats. This is
+deferred pending real-corpus re-validation: if the fixes reveal positive
+unique GPAF value, cost calibration can be tightened then; if not, the cost
+model is a secondary concern to the key-design problem.
+
+Requesting real-corpus validation: re-run `upgrade-v1` vs `gpaf-retrieval-v1`
+on 10M FineWeb-Edu, 2 seeds, with the following settings explicitly
+configured to exercise the now-functional costed gate:
+
+```python
+# gpaf-retrieval-v1 plus:
+gpaf_active_requires_positive_net_value = true
+gpaf_execution_cost_weight = 0.0  # start with zero, gate is evidence-driven
+# or for a more conservative test:
+gpaf_active_requires_positive_net_value = true
+gpaf_execution_cost_weight = 0.01  # small positive cost to filter marginal slots
+```
+
+Report:
+- eval NLL (both configs, 2 seeds)
+- gpaf_unique_ablation_mean_gain and gpaf_overlap_ablation_mean_gain
+  (should now be meaningfully separated: unique is the causal estimate,
+  overlap is a separate diagnostic)
+- gpaf_ablation_key_net_value per key (now nats-per-example, not sums)
+- gpaf_slot_promotions (should be > 0 if any slot has positive net value;
+  if 0, either no key is useful or `gpaf_execution_cost_weight` was set
+  too high)
+- gpaf_unique_active_nodes (requires positive slot value per HV4 scoring)
+
+Fix commits: `2c9e4d7` (HV1), `3be364f` (HV2), `17d77c2` (HV3),
+`28814c0` (HV4). All on branch `theory-alignment-v9`.

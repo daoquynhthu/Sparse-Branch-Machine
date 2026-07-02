@@ -14,7 +14,7 @@ GPAF 的 engineering milestone 已完成并通过 10M 真实语料验证。当�
 ## Branch state
 
 - **Branch:** `theory-alignment-v9`
-- **Status:** GPAF 实现已完成，21/21 测试通过，10M 验证完成，文档已更新
+- **Status:** GPAF 实现已完成，22/22 测试通过，10M 验证完成 (pre-fix) + 4 defects fixed (post-fix), 文档已更新
 - **Key documents:**
   - Spec: `docs/superpowers/specs/2026-06-30-global-predictive-address-field-design.md`
   - Plan: `docs/superpowers/plans/2026-06-30-global-predictive-address-field.md`
@@ -30,6 +30,16 @@ GPAF 的 engineering milestone 已完成并通过 10M 真实语料验证。当�
 | T4: Slot lifecycle and frozen ablation | Done | `392ea7b`, `d46b731` |
 | T5: Structural-call role keys | Done | `d46b731` |
 | T6: Experiment gates, presets and documentation | Done | `a76977b` |
+
+## GPAF Honest-Value and Calibrated-Scoring Status (plan `2026-07-02-gpaf-honest-value-and-calibrated-scoring.md`)
+
+| Task | Status | Commit(s) |
+|---|---|---|
+| HV1: Normalize cost/net-value to per-example means | Done | `2c9e4d7` |
+| HV2: Stop attributing GPAF-overlap logits | Done | `3be364f` |
+| HV3: Live costed-value writer + evidence-based lifecycle gating | Done | `17d77c2` |
+| HV4: Calibrated GPAF-unique candidate scoring | Done | `28814c0` |
+| HV5: Docs + real-corpus handoff | Done | (current) |
 
 ### 10M FineWeb-Edu Results (2026-07-01)
 
@@ -74,16 +84,48 @@ locally-reachable candidates.** Unique GPAF-only candidates have negative gain
 (-0.0013 nats per example). All three role keys have negative net value after
 subtracting execution cost. Full report in `RESEARCH_LOG.md`.
 
+## Honest-value and calibrated-scoring fixes (2026-07-02)
+
+Plan: `docs/superpowers/plans/2026-07-02-gpaf-honest-value-and-calibrated-scoring.md`
+Investigation: `docs/superpowers/research/2026-07-02-gpaf-architecture-investigation.md`
+
+Four defects identified in the 10M GPAF measurement surface and fixed:
+
+| Task | Fix | Commit |
+|---|---|---|
+| HV1 | Normalize GPAF cost/net-value aggregation to per-example means (was raw sums, unit-incoherent with gain) | `2c9e4d7` |
+| HV2 | Stop attributing GPAF-overlap logits to GPAF causal ablation value (was +0.2288 artifact) | `3be364f` |
+| HV3 | Implement live `gpaf_slot_costed_net_value_` writer + evidence-based Probe→Active/Active→Quarantined gating (was dead map, permanently-blocking no-op gate) | `17d77c2` |
+| HV4 | Score GPAF-unique candidates from calibrated slot value, not token-signature Hamming similarity; block on non-positive value | `28814c0` |
+
+Synthetic test evidence (all passing):
+- `gpaf_costed_gate`: blocking branch (large `gpaf_execution_cost_weight=5.0F` → no promotions) passes; allowing branch (`gpaf_execution_cost_weight=0.0F`, 4096 steps → promotions within ≈2048 steps) passes.
+- `gpaf_retrieval`: prefill-test confirms `gpaf_unique_active_nodes == 0U` when no slot value exists yet; bounded-run test still sees positive unique and overlap active nodes.
+- Full CTest: 22/22 pass (including non-GPAF tests), no regression.
+- `gpaf_slot_costed_net_value_` now has a live EMA writer per role key; the map is no longer empty after training.
+- `gpaf_frozen`: aggregate `gpaf_codelength_gain` now equals `gpaf_unique_codelength_gain` (both are unique-only), `gpaf_overlap_codelength_gain` separated as non-causal diagnostic.
+
+**NOTE:** None of this has been validated on real corpus data (10M FineWeb-Edu)
+yet. The synthetic tests prove the fix mechanics work correctly, but whether
+they change GPAF's real-corpus NLL requires re-running `upgrade-v1` vs
+`gpaf-retrieval-v1` with `gpaf_execution_cost_weight` and
+`gpaf_active_requires_positive_net_value` explicitly configured.
+
 ## Next work queue
 
-1. **GPAF research next steps:** the unique/overlap finding changes the priority.
-   Before scaling up, the role-key design needs to be more discriminative so
-   GPAF finds genuinely novel global structure rather than duplicating local
-   candidates. Options: more granular role keys, GPAF-unique score boost,
-   tighter probing budgets. See `docs/superpowers/plans/2026-07-01-gpaf-causal-attribution-and-costed-admission.md`.
-2. **R3 100M heterogeneous stream gate:** `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md`
-   — not urgent until GPAF shows positive unique signal.
-3. Do not claim language semantics from GPAF unless real-data provenance,
+1. **Real-corpus re-validation:** run 10M FineWeb-Edu `upgrade-v1` vs
+   `gpaf-retrieval-v1` with the fixed code and explicit cost/admission
+   config to see whether honest measurement and calibrated scoring change
+   the NLL picture. See
+   `docs/superpowers/plans/2026-07-02-gpaf-honest-value-and-calibrated-scoring.md`.
+2. **GPAF research next steps (post-validation):** if the fix reveals positive
+   unique GPAF value, proceed with binding-conditioned role keys (Proposal B),
+   role-transition addressing (Proposal C), or epistemic-state addressing
+   (Proposal E) per the investigation doc. If not, focus on enriching local
+   address programs instead.
+3. **R3 100M heterogeneous stream gate:** `docs/superpowers/plans/2026-06-28-r3-100m-heterogeneous-stream.md`
+   — gated on GPAF showing positive unique signal post-fix.
+4. Do not claim language semantics from GPAF unless real-data provenance,
    frozen validation, multi-seed stability, shard transfer and strong controls pass.
 
 ## Open theoretical gates
@@ -91,4 +133,8 @@ subtracting execution cost. Full report in `RESEARCH_LOG.md`.
 GPAF is intended to create room for global sparse retrieval to emerge from
 predictive role reuse. Current implementation shows that the role keys are not
 yet discriminative enough — GPAF mostly finds locally reachable nodes. This is
-a key design challenge, not an invalidation of the concept.
+a key design challenge, not an invalidation of the concept. The four fixes in
+the honest-value plan remove measurement artifacts that obscured this picture;
+binding-conditioned keys (Proposal B) and role-transition addressing
+(Proposal C) remain the next concrete engineering steps if the fixed
+measurement confirms unique positive value.

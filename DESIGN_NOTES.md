@@ -253,6 +253,51 @@ retrieval path. GPAF is not yet discovering genuinely novel global sparse
 structure. Key directions: more discriminative role keys, GPAF-unique score
 boost, tighter probing budget.
 
+**2026-07-02 fixes (plan `2026-07-02-gpaf-honest-value-and-calibrated-scoring.md`):**
+the investigation above led to four concrete defects being fixed, all covered
+by CTest (`sbm_scaling_gpaf_*`, `sbm_c_api`) but not yet re-validated on real
+corpus data:
+
+1. `gpaf_ablation_key_execution_cost`/`gpaf_ablation_key_net_value` and the
+   three false-positive-cost fields were raw sums accumulated over the whole
+   eval run while gain/removed-cross-entropy were correctly normalized to
+   per-example means — a units bug that made execution cost scale with
+   eval-set size (e.g. ~224,000 for a 4-resident slot over 56,582 examples)
+   against gains of a few nats, guaranteeing every reported net value was
+   deeply negative regardless of role-key quality. All GPAF cost/gain/value
+   fields are now consistently nats-per-example.
+2. The frozen ablation's primary/aggregate `gpaf_codelength_gain` (and the
+   per-key gain) previously removed the logits of every GPAF-touched node,
+   including GPAF-overlap nodes that remain reachable via their original
+   local source even without GPAF. That inflated the reported causal GPAF
+   value with locally-earned contribution. The aggregate and per-key metrics
+   now equal the unique-only removal; overlap removal remains a separate,
+   explicitly non-causal diagnostic.
+3. `gpaf_slot_costed_net_value_` had no writer anywhere in the codebase — the
+   costed Active-admission gate permanently blocked all promotions
+   (`operator[]` default-inserted `0.0`, and `0.0 > 0.0` is always false).
+   It now has a live EMA writer driven by each active node's existing
+   per-step counterfactual contribution, net of a configurable
+   `gpaf_execution_cost_weight`, with a matching Active→Quarantined demotion
+   when the gate is enabled and value turns non-positive.
+4. GPAF-unique candidates were scored by the same token-signature Hamming
+   similarity the mechanism exists to move away from, so they were
+   systematically outscored by local candidates except as an uncalibrated
+   fallback in low-evidence contexts. They are now scored from the slot's
+   live measured value and blocked entirely (score below every local
+   candidate) when that value is non-positive.
+
+None of this has been validated on real corpus data yet — all evidence so far
+is synthetic CTest coverage (see `RESEARCH_LOG.md` for the exact synthetic
+outcomes observed while implementing). A fresh 10M FineWeb-Edu run
+(`upgrade-v1` vs `gpaf-retrieval-v1`, with `gpaf_execution_cost_weight` and
+`gpaf_active_requires_positive_net_value` set explicitly) is required before
+drawing any conclusion about whether these fixes change GPAF's real-corpus
+value. See `docs/superpowers/research/2026-07-02-gpaf-architecture-investigation.md`
+for the full root-cause analysis and further proposals (binding-conditioned
+keys, role-transition addressing, epistemic-state addressing) that remain
+unimplemented.
+
 GPAF must not encode linguistic abstractions as prior labels. If language,
 syntax, semantics, binding or relation-like behavior appears, it must emerge
 from reusable predictive structures that survive frozen validation, ablation,
